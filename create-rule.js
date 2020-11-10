@@ -9,16 +9,31 @@
 			el: '#app',
 			data: function(){
 				return {
-					url: undefined
+					url: undefined,
+					name: undefined,
+					isNew: true
 				};
 			},
 			mounted: async function(){
 				var initMsg = await initializedPromise;
-				this.url = initMsg.url;
+				this.isNew = initMsg.isNew;
+				if(this.isNew){
+					this.url = initMsg.url;
+				}
 			},
 			methods: {
+				setRule: function(rule){
+					this.name = rule.name;
+				},
 				gotoPage: function(){
 					chrome.runtime.sendMessage(undefined, {focusPage: true});
+				},
+				saveRule: function(){
+					var rule = {name: this.name};
+					chrome.runtime.sendMessage(undefined, {createdRule: rule}, (resp) => {
+						this.isNew = false;
+						this.setRule(resp.rule);
+					});
 				}
 			}
 		});

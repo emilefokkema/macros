@@ -6,7 +6,11 @@
 </head>
 <body>
 	<div id="app">
-		<div>Create rule for <span class="url" v-on:click="gotoPage()">{{url}}</span></div>
+		<div v-if="isNew">Create rule for <span class="url" v-on:click="gotoPage()">{{url}}</span></div>
+		<div>
+			<input type="text" v-model="name"/>
+			<input type="button" v-on:click="saveRule()"/>
+		</div>
 	</div>
 <script src="create-rule.js">
 	

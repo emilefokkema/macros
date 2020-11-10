@@ -10,6 +10,20 @@ function executeScript(tabId, file){
 	});
 	return promise;
 }
+function listenToMessageFromTab(tabId, listener){
+	var messageListener = (msg, sender, sendResponse) => {
+		if(!sender.tab || sender.tab.id !== tabId){
+			return;
+		}
+		listener(msg, sendResponse);
+	};
+	chrome.runtime.onMessage.addListener(messageListener);
+	return {
+		cancel(){
+			chrome.runtime.onMessage.removeListener(messageListener);
+		}
+	}
+}
 var pageId = 0;
 class Event{
 	constructor(){
@@ -24,6 +38,21 @@ class Event{
 		}
 	}
 }
+class RuleCollection{
+	constructor(){}
+	saveNewRule(rule){
+		console.log(`saving new rule`, rule)
+		return rule;
+	}
+	editRuleOnTab(tabId, rule){
+		var listen = listenToMessageFromTab(tabId, (msg, sendResponse) => {
+			if(msg.createdRule){
+				sendResponse({ruleSaved: true, rule: rule})
+			}
+		});
+	}
+}
+var rules = new RuleCollection();
 class Page{
 	constructor(tabId, url, addTabMessageListener){
 		this.pageId = pageId++;
@@ -161,7 +190,7 @@ class PageRuleCreator{
 				this.removeEditor(tabId);
 			}
 		});
-		chrome.runtime.onMessage.addListener((msg, sender) => {
+		chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 			if(!sender.tab){
 				return;
 			}
@@ -171,12 +200,18 @@ class PageRuleCreator{
 			}
 			if(msg.focusPage){
 				pages.focusPage(editor.pageId);
+			}else if(msg.createdRule){
+				var rule = msg.createdRule;
+				rule = rules.saveNewRule(rule);
+				rules.editRuleOnTab(sender.tab.id, rule);
+				this.removeEditor(sender.tab.id);
+				sendResponse({ruleSaved: true, rule: rule});
 			}
 		});
 	}
 	initializeEditor(editor){
 		var page = pages.getPageById(editor.pageId);
-		chrome.tabs.sendMessage(editor.tabId, {initialize: true, pageId: editor.pageId, url: page.url});
+		chrome.tabs.sendMessage(editor.tabId, {initialize: true, url: page.url, isNew: true});
 		editor.initialized = true;
 	}
 	closeEditor(pageId){
