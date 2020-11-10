@@ -54,13 +54,13 @@ class RuleCollection{
 }
 var rules = new RuleCollection();
 class Page{
-	constructor(tabId, url, addTabMessageListener){
+	constructor(tabId, url){
 		this.pageId = pageId++;
 		this.tabId = tabId;
 		this.url = url;
 		this.currentContentScriptId = undefined;
 		this.onDestroyed = new Event();
-		addTabMessageListener((msg) => {
+		this.listener = listenToMessageFromTab(tabId, (msg, sendResponse) => {
 			if(msg.contentScriptLoaded){
 				this.onContentScriptLoaded(msg.contentScriptId);
 			}
@@ -87,6 +87,7 @@ class Page{
 		});
 	}
 	destroy(){
+		this.listener.cancel();
 		if(this.currentContentScriptId === undefined){
 			return;
 		}
@@ -97,16 +98,6 @@ class Page{
 class PageCollection{
 	constructor(){
 		this.pages = [];
-		this.tabMessageListeners = [];
-		this.activePage = undefined;
-		chrome.runtime.onMessage.addListener((msg, sender) => {
-			if(!sender.tab){
-				return;
-			}
-			for(let listener of this.tabMessageListeners){
-				listener.handle(sender.tab.id, msg);
-			}
-		});
 		chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
 			if(changeInfo.status === "loading"){
 				this.removePage(tabId);
@@ -118,19 +109,8 @@ class PageCollection{
 			this.removePage(tabId);
 		});
 	}
-	addTabMessageListener(tabId, listener){
-		this.tabMessageListeners.push({
-			tabId: tabId,
-			handle(_tabId, msg){
-				if(_tabId !== tabId){
-					return;
-				}
-				listener(msg);
-			}
-		});
-	}
 	async addPage(tab){
-		var page = new Page(tab.id, tab.url, (listener) => this.addTabMessageListener(tab.id, listener));
+		var page = new Page(tab.id, tab.url);
 		this.pages.push(page);
 		try{
 			await page.initialize();
@@ -154,14 +134,7 @@ class PageCollection{
 	getPageById(pageId){
 		return this.pages.find(p => p.pageId === pageId);
 	}
-	removeTabMessageListener(tabId){
-		var index = this.tabMessageListeners.findIndex(l => l.tabId === tabId);
-		if(index > -1){
-			this.tabMessageListeners.splice(index, 1);
-		}
-	}
 	removePage(tabId){
-		this.removeTabMessageListener(tabId);
 		var index = this.pages.findIndex(p => p.tabId === tabId);
 		if(index === -1){
 			return;
