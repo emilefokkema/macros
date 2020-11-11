@@ -5,6 +5,22 @@
 	<link rel="stylesheet" type="text/css" href="create-rule.css" />
 </head>
 <body>
+	<template id="classFinderTemplate">
+		<div class="class-finder">
+			<div class="row">Find class</div>
+			<div class="row">
+				<label class="label" for="property">Property</label>
+				<input class="text-input" type="text" id="property" v-model="property"/>	
+			</div>
+			<div class="row">
+				<label class="label" for="value">Value</label>
+				<input class="text-input" type="text" id="value" v-model="value"/>	
+			</div>
+			<div class="row">
+				<input type="button" value="Search" v-on:click="search()"/>
+			</div>
+		</div>
+	</template>
 	<div id="app">
 		<div class="row">
 			<div v-if="isNew">Create new rule</div>
@@ -16,11 +32,11 @@
 		
 		<div class="row">
 			<label class="label" for="name-input">Name</label>
-			<input class="text-input" type="text" id="name-input" v-model="name"/>	
+			<input class="text-input wide" type="text" id="name-input" v-model="name"/>	
 		</div>
 		<div class="row">
 			<label class="label" for="pattern-input">Url pattern</label>
-			<input class="text-input" type="text" id="pattern-input" v-model="urlPattern"/>	
+			<input class="text-input wide" type="text" id="pattern-input" v-model="urlPattern"/>	
 		</div>
 		<div class="row">
 			<div class="row-part label">Actions</div>
@@ -34,6 +50,7 @@
 		<div class="row">
 			<input type="button" v-on:click="saveRule()" value="Save"/>
 		</div>
+		<class-finder v-if="hasPage"></class-finder>
 	</div>
 <script src="create-rule.js">
 	

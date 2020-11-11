@@ -70,8 +70,22 @@
 						});
 					}
 				}
+			},
+			components: {
+				'class-finder': {
+					template: document.getElementById("classFinderTemplate").innerHTML,
+					data: function(){
+						return {
+							property: undefined,
+							value: undefined
+						};
+					},
+					methods: {
+						search: function(){
+							chrome.runtime.sendMessage(undefined, {findClass: true, req: {property: this.property, value: this.value}});
+						}
+					}
+				}
 			}
 		});
-		
-
 	})();

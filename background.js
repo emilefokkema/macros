@@ -138,6 +138,9 @@ class Page{
 	focus(){
 		chrome.tabs.update(this.tabId, {active: true})
 	}
+	findClass(req){
+		chrome.tabs.sendMessage(this.tabId, {findClass: true, contentScriptId: this.currentContentScriptId, req:req})
+	}
 	onContentScriptLoaded(contentScriptId){
 		if(this.currentContentScriptId !== undefined){
 			console.log(`page ${this.url} has loaded another content script: ${contentScriptId}`);
@@ -241,6 +244,8 @@ class RuleEditor{
 		}else if(msg.updatedRule){
 			rules.updateRule(this.ruleId, msg.updatedRule);
 			sendResponse({});
+		}else if(msg.findClass){
+			this.page.findClass(msg.req);
 		}
 	}
 	dispatchEditorPageGone(){

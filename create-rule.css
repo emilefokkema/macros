@@ -8,15 +8,27 @@
 	border-bottom: 1pt solid #ddd;
 
 }
-.row .text-input{
-	width: 40em;
+.text-input{
 	padding:5px;
+}
+.wide{
+	width: 40em;
+}
+.label{
+	display: inline-block;
 }
 .row .label{
 	width: 10em;
-	display: inline-block;
 }
 .row .row-part{
 	display: inline-block;
 	vertical-align: top;
+}
+.class-finder{
+	position: absolute;
+	top: 20px;
+	right: 20px;
+	border: 1pt solid #ddd;
+	padding: 10px;
+	background-color: #fff;
 }
