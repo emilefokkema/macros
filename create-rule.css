@@ -3,3 +3,15 @@
 	text-decoration: underline;
 	cursor: pointer;
 }
+.row{
+	padding: 10px;
+	border-bottom: 1pt solid #ddd;
+}
+.row .text-input{
+	width: 40em;
+	padding:5px;
+}
+.row label{
+	width: 10em;
+	display: inline-block;
+}

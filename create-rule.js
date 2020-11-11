@@ -12,7 +12,8 @@
 					url: undefined,
 					name: undefined,
 					hasPage: false,
-					ruleId: undefined
+					ruleId: undefined,
+					urlPattern: undefined
 				};
 			},
 			mounted: function(){
@@ -38,10 +39,13 @@
 					if(initMsg.ruleId){
 						this.ruleId = initMsg.ruleId;
 						this.setRule(initMsg.rule);
+					}else{
+						this.urlPattern = this.url;
 					}
 				},
 				setRule: function(rule){
 					this.name = rule.name;
+					this.urlPattern = rule.urlPattern;
 					this.setTitle();
 				},
 				setTitle: function(){
@@ -51,7 +55,10 @@
 					chrome.runtime.sendMessage(undefined, {focusPage: true});
 				},
 				saveRule: function(){
-					var rule = {name: this.name};
+					var rule = {
+						name: this.name,
+						urlPattern: this.urlPattern
+					};
 					if(this.isNew){
 						chrome.runtime.sendMessage(undefined, {createdRule: rule}, (msg) => {
 							this.ruleId = msg.ruleId;

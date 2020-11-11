@@ -61,6 +61,11 @@ function tabComplete(tabId){
 	chrome.tabs.onUpdated.addListener(listener);
 	return promise;
 }
+function urlMatchesPattern(url, pattern){
+	var regexPattern = pattern.replace(/[.+?^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '[\\S]*?');
+	var regex = new RegExp(`^${regexPattern}$`);
+	return !!url.match(regex);
+}
 var pageId = 0;
 class Event{
 	constructor(){
@@ -98,7 +103,7 @@ class RuleCollection{
 		return this.records.find(r => r.ruleId === ruleId);
 	}
 	getRulesForUrl(url){
-		return this.records;
+		return this.records.filter(r => urlMatchesPattern(url, r.rule.urlPattern));
 	}
 	getRule(ruleId){
 		var record = this.getRecord(ruleId);
