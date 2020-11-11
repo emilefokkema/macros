@@ -1,14 +1,38 @@
 <html>
-<head>
-<style>
-	body{
-		margin:0px;
-		padding: 0px;
-	}
-</style></head>
+	<head>
+		<script src="https://cdn.jsdelivr.net/npm/vue@2.6.12"></script>
+		<style>
+			body{
+				margin:0px;
+				padding: 0px;
+			}
+			.row{
+				width: 200px;
+				height: 30px;
+				padding: 5px;
+			}
+			.block{
+				display: inline-block;
+			}
+		</style>
+	</head>
 <body>
-	<div id="url"></div>
-	<input type="button" value="Add" id="add-button"/>
+	<template id="ruleTemplate">
+		<div class="row">
+			<div class="block">{{rule.rule.name}}</div>
+			<div class="block">
+				<input v-if="editable" type="button" value="Edit" id="add-button" v-on:click="onEditClicked()"/>
+			</div>
+		</div>
+	</template>
+	<div id="app">
+		<rule v-for="rule of rules" v-bind:rule="rule" v-on:editclicked="onEditClicked($event)"></rule>
+		<div class="row">
+			<input type="button" value="Add" id="add-button" v-on:click="addRule()"/>
+		</div>
+		
+	</div>
+	
 <script src="popup.js"></script>
 </body>
 </html>

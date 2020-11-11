@@ -24,6 +24,43 @@ function listenToMessageFromTab(tabId, listener){
 		}
 	}
 }
+function onTabStartsLoading(tabId, listener){
+	var updatedListener = (_tabId, changeInfo, tab) => {
+		if(_tabId === tabId && changeInfo.status === "loading"){
+			listener();
+		}
+	};
+	chrome.tabs.onUpdated.addListener(updatedListener);
+	return {
+		cancel(){
+			chrome.tabs.onUpdated.removeListener(updatedListener);
+		}
+	};
+}
+function onTabRemoved(tabId, listener){
+	var removedListener = (_tabId) => {
+		if(_tabId === tabId){
+			listener();
+		}
+	};
+	chrome.tabs.onRemoved.addListener(removedListener);
+	return {
+		cancel(){
+			chrome.tabs.onRemoved.removeListener(removedListener);
+		}
+	};
+}
+function tabComplete(tabId){
+	var resolve, promise = new Promise((res) => {resolve = res;});
+	var listener = (_tabId, changeInfo, tab) => {
+		if(_tabId === tabId && changeInfo.status === "complete"){
+			chrome.tabs.onUpdated.removeListener(listener);
+			resolve();
+		}
+	};
+	chrome.tabs.onUpdated.addListener(listener);
+	return promise;
+}
 var pageId = 0;
 class Event{
 	constructor(){
@@ -39,17 +76,35 @@ class Event{
 	}
 }
 class RuleCollection{
-	constructor(){}
+	constructor(){
+		this.latestRuleId = 0;
+		this.records = [];
+	}
 	saveNewRule(rule){
 		console.log(`saving new rule`, rule)
-		return rule;
+		var ruleId = ++this.latestRuleId;
+		this.records.push({ruleId: ruleId, rule: rule});
+		return ruleId;
 	}
-	editRuleOnTab(tabId, rule){
-		var listen = listenToMessageFromTab(tabId, (msg, sendResponse) => {
-			if(msg.createdRule){
-				sendResponse({ruleSaved: true, rule: rule})
-			}
-		});
+	updateRule(ruleId, rule){
+		var record = this.getRecord(ruleId);
+		if(!record){
+			return;
+		}
+		console.log(`updating rule ${ruleId}`, rule)
+		record.rule = rule;
+	}
+	getRecord(ruleId){
+		return this.records.find(r => r.ruleId === ruleId);
+	}
+	getRulesForUrl(url){
+		return this.records;
+	}
+	getRule(ruleId){
+		var record = this.getRecord(ruleId);
+		if(record){
+			return record.rule;
+		}
 	}
 }
 var rules = new RuleCollection();
@@ -66,8 +121,14 @@ class Page{
 			}
 		});
 	}
-	getPopupInfo(){
-		return {url: this.url, pageId: this.pageId}
+	getPopupInfo(nonEditableRuleIds){
+		var rulesForPage = rules.getRulesForUrl(this.url);
+		rulesForPage = rulesForPage.map(r => ({
+			ruleId: r.ruleId,
+			rule: r.rule,
+			editable: !nonEditableRuleIds.some(id => id === r.ruleId)
+		}))
+		return {url: this.url, pageId: this.pageId, rules: rulesForPage}
 	}
 	focus(){
 		chrome.tabs.update(this.tabId, {active: true})
@@ -121,13 +182,6 @@ class PageCollection{
 			chrome.browserAction.disable(tab.id);
 		}
 	}
-	focusPage(pageId){
-		var page = this.getPageById(pageId);
-		if(!page){
-			return;
-		}
-		page.focus();
-	}
 	getPageByTabId(tabId){
 		return this.pages.find(p => p.tabId === tabId);
 	}
@@ -146,79 +200,126 @@ class PageCollection{
 	}
 }
 var pages = new PageCollection();
-class PageRuleCreator{
+var ruleEditorId = 0;
+class RuleEditor{
+	constructor(page, tabId, ruleId){
+		this.ruleEditorId = ruleEditorId++;
+		this.page = page;
+		page.onDestroyed.addListener(() => this.onPageDestroyed())
+		this.tabId = tabId;
+		this.initialized = false;
+		this.editorPageExists = true;
+		this.editorPageGone = new Event();
+		this.ruleCreated = new Event();
+		this.ruleId = ruleId;
+		this.tabStartLoadingListener = onTabStartsLoading(tabId, () => {
+			if(this.initialized){
+				this.dispatchEditorPageGone();
+			}
+		});
+		this.tabRemovedListener = onTabRemoved(tabId, () => this.dispatchEditorPageGone());
+		this.tabMessageListener = listenToMessageFromTab(tabId, (msg, sendResponse) => this.onMessageFromTab(msg, sendResponse));
+		this.initialize();
+	}
+	onPageDestroyed(){
+		this.page = undefined;
+		chrome.tabs.sendMessage(this.tabId, {pageDestroyed: true});
+	}
+	onMessageFromTab(msg, sendResponse){
+		if(msg.focusPage){
+			this.page.focus();
+		}else if(msg.createdRule){
+			var ruleId = rules.saveNewRule(msg.createdRule);
+			this.ruleId = ruleId;
+			this.ruleCreated.dispatch();
+			sendResponse({ruleId: ruleId});
+		}else if(msg.updatedRule){
+			rules.updateRule(this.ruleId, msg.updatedRule);
+			sendResponse({});
+		}
+	}
+	dispatchEditorPageGone(){
+		if(this.editorPageExists){
+			this.editorPageExists = false;
+			this.editorPageGone.dispatch();
+		}
+	}
+	async initialize(){
+		await tabComplete(this.tabId);
+		var rule = undefined;
+		if(this.ruleId !== undefined){
+			rule = rules.getRule(this.ruleId);
+		}
+		chrome.tabs.sendMessage(this.tabId, {initialize: true, url: this.page.url, ruleId: this.ruleId, rule: rule});
+		this.initialized = true;
+	}
+	focus(){
+		chrome.tabs.update(this.tabId, {active: true})
+	}
+	destroy(){
+		this.tabStartLoadingListener.cancel();
+		this.tabRemovedListener.cancel();
+		this.tabMessageListener.cancel();
+	}
+}
+class RuleEditorCollection{
 	constructor(){
-		this.editors = [];
-		chrome.tabs.onRemoved.addListener((tabId) => {
-			this.removeEditor(tabId);
-		});
-		chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-			var editor = this.editors.find(e => e.tabId === tabId);
-			if(!editor){
-				return;
-			}
-			if(changeInfo.status === "complete"){
-				this.initializeEditor(editor);
-			}else if(changeInfo.status === "loading" && editor.initialized){
-				this.removeEditor(tabId);
-			}
-		});
-		chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
-			if(!sender.tab){
-				return;
-			}
-			var editor = this.editors.find(e => e.tabId === sender.tab.id);
-			if(!editor){
-				return;
-			}
-			if(msg.focusPage){
-				pages.focusPage(editor.pageId);
-			}else if(msg.createdRule){
-				var rule = msg.createdRule;
-				rule = rules.saveNewRule(rule);
-				rules.editRuleOnTab(sender.tab.id, rule);
-				this.removeEditor(sender.tab.id);
-				sendResponse({ruleSaved: true, rule: rule});
-			}
-		});
+		this.newRuleEditors = [];
+		this.existingRuleEditors = [];
 	}
-	initializeEditor(editor){
-		var page = pages.getPageById(editor.pageId);
-		chrome.tabs.sendMessage(editor.tabId, {initialize: true, url: page.url, isNew: true});
-		editor.initialized = true;
-	}
-	closeEditor(pageId){
-		var index = this.editors.findIndex(e => e.pageId === pageId);
+	removeEditorFromList(list, editor){
+		var index = list.indexOf(editor);
 		if(index === -1){
 			return;
 		}
-		var editor = this.editors[index];
-		chrome.tabs.remove(editor.tabId);
-		this.editors.splice(index, 1);
+		list.splice(index, 1);
 	}
-	removeEditor(tabId){
-		var index = this.editors.findIndex(e => e.tabId === tabId);
-		if(index > -1){
-			this.editors.splice(index, 1);
+	removeRuleEditor(editor){
+		console.log(`removing editor`)
+		editor.destroy();
+		this.removeEditorFromList(this.newRuleEditors, editor);
+		this.removeEditorFromList(this.existingRuleEditors, editor);
+	}
+	getNonEditableRuleIds(pageId){
+		return this.existingRuleEditors.filter(e => !!e.page && e.page.pageId !== pageId).map(e => e.ruleId);
+	}
+	editRuleForPage(pageId, ruleId){
+		var existing = this.existingRuleEditors.find(e => e.ruleId === ruleId);
+		if(existing){
+			existing.focus();
+		}else{
+			var page = pages.getPageById(pageId);
+			chrome.tabs.create({url: 'create-rule.html'}, (tab) => {
+				var editor = new RuleEditor(page, tab.id, ruleId);
+				editor.editorPageGone.addListener(() => {
+					this.removeRuleEditor(editor);
+				});
+				this.existingRuleEditors.push(editor);
+			});
 		}
 	}
 	createRuleForPage(pageId){
-		var editor = this.editors.find(e => e.pageId === pageId);
-		if(editor){
-			chrome.tabs.update(editor.tabId, {active: true})
+		var existing = this.newRuleEditors.find(e => e.page.pageId === pageId);
+		if(existing){
+			existing.focus();
 		}else{
 			var page = pages.getPageById(pageId);
-			page.onDestroyed.addListener(() => {
-				this.closeEditor(pageId);
-			});
 			chrome.tabs.create({url: 'create-rule.html'}, (tab) => {
-				console.log(`created an editor tab`)
-				this.editors.push({pageId: pageId, tabId: tab.id, initialized: false});
+				var editor = new RuleEditor(page, tab.id);
+				editor.editorPageGone.addListener(() => {
+					this.removeRuleEditor(editor);
+				});
+				editor.ruleCreated.addListener(() => {
+					console.log(`editor created new rule`)
+					this.removeEditorFromList(this.newRuleEditors, editor);
+					this.existingRuleEditors.push(editor);
+				});
+				this.newRuleEditors.push(editor);
 			});
 		}
 	}
 }
-var ruleCreator = new PageRuleCreator();
+var ruleEditors = new RuleEditorCollection();
 
 chrome.tabs.query({}, async (tabs) => {
 	await Promise.all(tabs.map(t => pages.addPage(t)));
@@ -232,10 +333,13 @@ chrome.runtime.onMessage.addListener((msg, sender) => {
 			}
 			var tab = tabs[0];
 			var page = pages.getPageByTabId(tab.id);
-			var info = page.getPopupInfo();
+			var nonEditableRuleIds = ruleEditors.getNonEditableRuleIds(page.pageId);
+			var info = page.getPopupInfo(nonEditableRuleIds);
 			chrome.runtime.sendMessage(undefined, {popupInfo: info})
 		});
 	}else if(msg.createRuleForPage){
-		ruleCreator.createRuleForPage(msg.pageId);
+		ruleEditors.createRuleForPage(msg.pageId);
+	}else if(msg.editRule){
+		ruleEditors.editRuleForPage(msg.pageId, msg.ruleId);
 	}
 });
