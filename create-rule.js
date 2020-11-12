@@ -76,13 +76,26 @@
 					template: document.getElementById("classFinderTemplate").innerHTML,
 					data: function(){
 						return {
-							property: undefined,
-							value: undefined
+							queryProperties: [
+								{
+									property: undefined,
+									value: undefined,
+									comparison: "eq"
+								}
+							]
 						};
 					},
 					methods: {
 						search: function(){
-							chrome.runtime.sendMessage(undefined, {findClass: true, req: {property: this.property, value: this.value}});
+							chrome.runtime.sendMessage(undefined, {findClass: true, req: {properties: this.queryProperties}});
+						}
+					},
+					components: {
+						'query-property': {
+							template: document.getElementById("queryPropertyTemplate").innerHTML,
+							props: {
+								property: Object
+							}
 						}
 					}
 				}

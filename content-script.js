@@ -39,8 +39,8 @@
 			console.log(`bye from content script ${contentScriptId}`)
 		}else if(msg.findClass){
 			console.log(`got request to find class`, msg.req);
-			var result = [...findClass(msg.req)];
-			console.log(result)
+			//var result = [...findClass(msg.req)];
+			//console.log(result)
 		}
 	});
 	chrome.runtime.sendMessage(undefined, {contentScriptLoaded: true, contentScriptId: contentScriptId});

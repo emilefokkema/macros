@@ -139,6 +139,7 @@ class Page{
 		chrome.tabs.update(this.tabId, {active: true})
 	}
 	findClass(req){
+		console.log(`going to find class for`, req)
 		chrome.tabs.sendMessage(this.tabId, {findClass: true, contentScriptId: this.currentContentScriptId, req:req})
 	}
 	onContentScriptLoaded(contentScriptId){

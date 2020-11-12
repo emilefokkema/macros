@@ -32,3 +32,9 @@
 	padding: 10px;
 	background-color: #fff;
 }
+::placeholder{
+	color: #aaa;
+}
+.comparison-select{
+	border: none;
+}

@@ -5,16 +5,22 @@
 	<link rel="stylesheet" type="text/css" href="create-rule.css" />
 </head>
 <body>
+	<template id="queryPropertyTemplate">
+		<div>
+			<input class="text-input" type="text" id="property" v-model="property.property" placeholder="property-name" />
+			<select class="comparison-select" v-model="property.comparison">
+				<option value="eq">=</option>
+				<option value="lt">&lt;</option>
+			</select>
+			<input class="text-input" type="text" id="value" v-model="property.value" placeholder="value" />	
+		</div>
+	</template>
 	<template id="classFinderTemplate">
 		<div class="class-finder">
 			<div class="row">Find class</div>
 			<div class="row">
-				<label class="label" for="property">Property</label>
-				<input class="text-input" type="text" id="property" v-model="property"/>	
-			</div>
-			<div class="row">
-				<label class="label" for="value">Value</label>
-				<input class="text-input" type="text" id="value" v-model="value"/>	
+				
+				<query-property v-for="property of queryProperties" v-bind:property="property"></query-property>
 			</div>
 			<div class="row">
 				<input type="button" value="Search" v-on:click="search()"/>
