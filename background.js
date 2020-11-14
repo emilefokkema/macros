@@ -15,7 +15,10 @@ function listenToMessageFromTab(tabId, listener){
 		if(!sender.tab || sender.tab.id !== tabId){
 			return;
 		}
-		listener(msg, sendResponse);
+		var result = listener(msg, (resp) => {
+			sendResponse(resp);
+		});
+		return result;
 	};
 	chrome.runtime.onMessage.addListener(messageListener);
 	return {
@@ -138,9 +141,10 @@ class Page{
 	focus(){
 		chrome.tabs.update(this.tabId, {active: true})
 	}
-	findClass(req){
-		console.log(`going to find class for`, req)
-		chrome.tabs.sendMessage(this.tabId, {findClass: true, contentScriptId: this.currentContentScriptId, req:req})
+	findSelectors(req, sendResponse){
+		chrome.tabs.sendMessage(this.tabId, {findSelectors: true, contentScriptId: this.currentContentScriptId, req:req}, (resp) => {
+			sendResponse(resp);
+		});
 	}
 	onContentScriptLoaded(contentScriptId){
 		if(this.currentContentScriptId !== undefined){
@@ -245,8 +249,11 @@ class RuleEditor{
 		}else if(msg.updatedRule){
 			rules.updateRule(this.ruleId, msg.updatedRule);
 			sendResponse({});
-		}else if(msg.findClass){
-			this.page.findClass(msg.req);
+		}else if(msg.findSelectors){
+			this.page.findSelectors(msg.req, (resp) => {
+				sendResponse(resp)
+			});
+			return true;
 		}
 	}
 	dispatchEditorPageGone(){

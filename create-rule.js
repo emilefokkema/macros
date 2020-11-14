@@ -82,12 +82,15 @@
 									value: undefined,
 									comparison: "eq"
 								}
-							]
+							],
+							result: []
 						};
 					},
 					methods: {
 						search: function(){
-							chrome.runtime.sendMessage(undefined, {findClass: true, req: {properties: this.queryProperties}});
+							chrome.runtime.sendMessage(undefined, {findSelectors: true, req: {properties: this.queryProperties}}, (resp) => {
+								this.result = resp;
+							});
 						}
 					},
 					components: {
@@ -95,6 +98,20 @@
 							template: document.getElementById("queryPropertyTemplate").innerHTML,
 							props: {
 								property: Object
+							}
+						},
+						'selector-match': {
+							template: document.getElementById("selectorMatchTemplate").innerHTML,
+							props: {
+								match: Object
+							},
+							components: {
+								'match-node': {
+									template: document.getElementById("matchNodeTemplate").innerHTML,
+									props: {
+										node: Object
+									},
+								}
 							}
 						}
 					}

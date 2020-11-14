@@ -5,6 +5,21 @@
 	<link rel="stylesheet" type="text/css" href="create-rule.css" />
 </head>
 <body>
+	<template id="matchNodeTemplate">
+		<div><pre><span class="node-name">{{node.nodeName}}</span><span v-if="node.id" class="node-id">#{{node.id}}</span><span class="class-name" v-for="className of node.classes">.{{className}}</span></pre></div>
+	</template>
+	<template id="selectorMatchTemplate">
+		<div>
+			<div><pre class="selector-text">{{match.cssText}}</pre></div>
+			<div>
+				<div class="row-part indent"></div>
+				<div class="row-part">
+					<match-node v-for="node of match.nodes" v-bind:node="node"></match-node>
+				</div>
+			</div>
+		</div>
+		
+	</template>
 	<template id="queryPropertyTemplate">
 		<div>
 			<input class="text-input" type="text" id="property" v-model="property.property" placeholder="property-name" />
@@ -25,6 +40,9 @@
 			</div>
 			<div class="row">
 				<input type="button" value="Search" v-on:click="search()"/>
+			</div>
+			<div class="row list">
+				<selector-match v-for="match of result" v-bind:match="match"></selector-match>
 			</div>
 		</div>
 	</template>
