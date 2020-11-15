@@ -5,6 +5,17 @@
 	<link rel="stylesheet" type="text/css" href="create-rule.css" />
 </head>
 <body>
+	<template id="actionTemplate">
+		<div>this</div>
+	</template>
+	<template id="actionAdderTemplate">
+		<div>
+			<select v-model="type">
+				<option value="select">Select nodes</option>
+			</select>
+			<input type="button" value="Add" v-on:click="onAddClicked()"/>
+		</div>
+	</template>
 	<template id="matchNodeTemplate">
 		<div><pre><span class="node-name">{{node.nodeName}}</span><span v-if="node.id" class="node-id">#{{node.id}}</span><span class="class-name" v-for="className of node.classes">.{{className}}</span></pre></div>
 	</template>
@@ -66,10 +77,9 @@
 		<div class="row">
 			<div class="row-part label">Actions</div>
 			<div class="row-part">
-				<div>this</div>
-				<div>this</div>
-				<div>this</div>
-				<div>this</div>
+				<action v-for="action of actions" v-bind:action="action"></action>
+				<action-adder v-on:addtype="onAddType($event)"></action-adder>
+				
 			</div>
 		</div>
 		<div class="row">

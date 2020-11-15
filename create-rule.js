@@ -13,7 +13,8 @@
 					name: undefined,
 					hasPage: false,
 					ruleId: undefined,
-					urlPattern: undefined
+					urlPattern: undefined,
+					actions: []
 				};
 			},
 			mounted: function(){
@@ -30,6 +31,18 @@
 				}
 			},
 			methods: {
+				onAddType: function(type){
+					switch(type){
+						case "select": return this.addSelectingAction();
+					}
+				},
+				addSelectingAction: function(){
+					this.actions.push({
+						type: "select",
+						selector: undefined,
+						action: undefined
+					});
+				},
 				initialize: async function(){
 					var initMsg = await initializedPromise;
 					if(initMsg.url){
@@ -114,6 +127,25 @@
 								}
 							}
 						}
+					}
+				},
+				'action-adder': {
+					template: document.getElementById("actionAdderTemplate").innerHTML,
+					data: function(){
+						return {
+							type: "select"
+						};
+					},
+					methods: {
+						onAddClicked: function(){
+							this.$emit('addtype', this.type);
+						}
+					}
+				},
+				'action': {
+					template: document.getElementById("actionTemplate").innerHTML,
+					props: {
+						action: Object
 					}
 				}
 			}
