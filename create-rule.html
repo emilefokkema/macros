@@ -5,8 +5,28 @@
 	<link rel="stylesheet" type="text/css" href="create-rule.css" />
 </head>
 <body>
+	<template id="removeClassActionTemplate">
+		<input class="text-input" type="text" v-model="action.class"/>
+	</template>
+	<template id="selectActionTemplate">
+		<div>
+			<div class="row-part">
+				Select nodes matching
+				<input type="text" class="text-input" v-model="action.selector"/>
+			</div>
+			<div class="row-part">
+				and
+				<select v-model="actionType">
+					<option value="delete">delete them</option>
+					<option value="removeClass">remove class</option>
+				</select>
+				<remove-class-action v-if="actionType === 'removeClass'" v-bind:action="action.action"></remove-class-action>
+			</div>
+		</div>
+		
+	</template>
 	<template id="actionTemplate">
-		<div>this</div>
+		<select-action v-if="action.type === 'select'" v-bind:action="action"></select-action>
 	</template>
 	<template id="actionAdderTemplate">
 		<div>

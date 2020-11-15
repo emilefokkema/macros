@@ -40,7 +40,7 @@
 					this.actions.push({
 						type: "select",
 						selector: undefined,
-						action: undefined
+						action: {type: "delete"}
 					});
 				},
 				initialize: async function(){
@@ -70,7 +70,8 @@
 				saveRule: function(){
 					var rule = {
 						name: this.name,
-						urlPattern: this.urlPattern
+						urlPattern: this.urlPattern,
+						actions: this.actions
 					};
 					if(this.isNew){
 						chrome.runtime.sendMessage(undefined, {createdRule: rule}, (msg) => {
@@ -146,6 +147,46 @@
 					template: document.getElementById("actionTemplate").innerHTML,
 					props: {
 						action: Object
+					},
+					components: {
+						'select-action': {
+							template: document.getElementById("selectActionTemplate").innerHTML,
+							props: {
+								action: Object
+							},
+							methods: {
+								setDeleteAction: function(){
+									this.action.action = {type: "delete"};
+								},
+								setRemoveClassAction: function(){
+									this.action.action = {type: "removeClass", class: undefined}
+								}
+							},
+							computed: {
+								actionType: {
+									get: function(){
+										return this.action.action && this.action.action.type;
+									},
+									set: function(type){
+										if(this.action.action && this.action.action.type === type){
+											return;
+										}
+										switch(type){
+											case "delete": return this.setDeleteAction();
+											case "removeClass": return this.setRemoveClassAction();
+										}
+									}
+								}
+							},
+							components: {
+								'remove-class-action': {
+									template: document.getElementById("removeClassActionTemplate").innerHTML,
+									props: {
+										action: Object
+									},
+								}
+							}
+						}
 					}
 				}
 			}
