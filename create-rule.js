@@ -151,7 +151,8 @@
 				'action': {
 					template: document.getElementById("actionTemplate").innerHTML,
 					props: {
-						action: Object
+						action: Object,
+						runnable: Boolean
 					},
 					components: {
 						'select-action': {

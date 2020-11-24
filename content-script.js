@@ -72,7 +72,13 @@
 	}
 	class SelectorQuery{
 		constructor(restrictions){
-			this.matchers = restrictions.map((r) => this.createMatcher(r));
+			this.matchers = [];
+			for(var restriction of restrictions){
+				if(!restriction.property){
+					continue;
+				}
+				this.matchers.push(this.createMatcher(restriction));
+			}
 		}
 		createMatcher(restriction){
 			switch(restriction.comparison){
@@ -82,6 +88,9 @@
 			}
 		}
 		matchesDeclaration(declaration){
+			if(this.matchers.length === 0){
+				return false;
+			}
 			for(var matcher of this.matchers){
 				if(!matcher.matchesDeclaration(declaration)){
 					return false;

@@ -10,7 +10,7 @@
 		<input class="text-input" type="text" v-model="action.class"/>
 	</template>
 	<template id="selectActionTemplate">
-		<div>
+		<div class="row-part">
 			<div class="row-part">
 				Select nodes matching
 				<input type="text" class="text-input" v-model="action.selector"/>
@@ -29,6 +29,16 @@
 	<template id="actionTemplate">
 		<div class="row">
 			<select-action v-if="action.type === 'select'" v-bind:action="action"></select-action>
+			<div class="row-part">
+				<div class="action-buttons">
+					<div class="action-button" v-if="runnable">
+						<span class="button run-button fa fa-play"></span>
+					</div>
+					<div class="action-button">
+						<span class="button fa fa-trash"></span>
+					</div>
+				</div>
+			</div>
 		</div>
 		
 	</template>
@@ -70,7 +80,7 @@
 		<div class="class-finder" v-bind:class='{collapsed: collapsed}'>
 			<div class="row with-buttons">
 				<div class="row-part">Find style</div>
-				<div class="row-part buttons">
+				<div class="row-part right">
 					<span class="button fa fa-minus" v-if="!collapsed" v-on:click="toggleCollapsed()"></span>
 					<span class="button fa fa-plus" v-if="collapsed" v-on:click="toggleCollapsed()"></span>
 				</div>
@@ -106,7 +116,7 @@
 		<div class="row">
 			<div class="row-part label">Actions</div>
 			<div class="row-part">
-				<action v-for="action of actions" v-bind:action="action"></action>
+				<action v-for="action of actions" v-bind:action="action" v-bind:runnable="hasPage"></action>
 				<action-adder v-on:addtype="onAddType($event)"></action-adder>
 				
 			</div>

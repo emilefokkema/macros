@@ -26,9 +26,18 @@
 .row.with-buttons{
 	min-width: 10em;
 }
-.buttons{
+.right{
 	position: absolute;
 	right: 20px;
+}
+.action-buttons{
+	border-left: 1pt solid #ddd;
+}
+.action-button{
+	padding: 5px;
+}
+.run-button{
+	color: #0a0;
 }
 .row .label{
 	width: 10em;
