@@ -154,6 +154,14 @@
 						action: Object,
 						runnable: Boolean
 					},
+					methods: {
+						execute: function(){
+							console.log(`going to execute action`)
+							chrome.runtime.sendMessage(undefined, {executeAction: true, action: this.action}, (resp) => {
+								console.log(`executed action with result`, resp)
+							})
+						}
+					},
 					components: {
 						'select-action': {
 							template: document.getElementById("selectActionTemplate").innerHTML,

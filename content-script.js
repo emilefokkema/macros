@@ -102,7 +102,80 @@
 			return this.matchers.map(m => m.toString()).join(' && ');
 		}
 	}
+	class DeleteSelectedNodeAction{
+		constructor(definition){
 
+		}
+		execute(node, result){
+			try{
+				node.parentNode.removeChild(node);
+			}catch(e){
+				result.reportError(e);
+			}
+		}
+	}
+	class RemoveClassFromSelectedNodeAction{
+		constructor(definition){
+			this.class = definition.class;
+		}
+		execute(node, result){
+			var classes = node.getAttribute('class');
+			if(!classes){
+				return;
+			}
+			var matches = classes.match(/\S+/g);
+			var newClasses = [];
+			for(var match of matches){
+				if(match === this.class){
+					continue;
+				}
+				newClasses.push(match);
+			}
+			node.setAttribute('class', newClasses.join(' '));
+		}
+	}
+	class SelectedNodeAction{
+		static create(definition){
+			switch(definition.type){
+				case "delete": return new DeleteSelectedNodeAction(definition);
+				case "removeClass": return new RemoveClassFromSelectedNodeAction(definition);
+			}
+		}
+	}
+	class SelectAction{
+		constructor(definition){
+			this.selector = definition.selector;
+			this.action = SelectedNodeAction.create(definition.action)
+		}
+		execute(result){
+			try{
+				var nodes = document.querySelectorAll(this.selector);
+				if(nodes.length === 0){
+					return;
+				}
+				for(var i = 0; i < nodes.length; i++){
+					this.action.execute(nodes[i], result);
+				}
+			}catch(e){
+				result.reportError(e);
+			}
+		}
+	}
+	class Action{
+		static create(definition){
+			switch(definition.type){
+				case "select": return new SelectAction(definition)
+			}
+		}
+	}
+	class ActionExecutionResult{
+		constructor(){
+			this.error = undefined;
+		}
+		reportError(e){
+			this.error = e.message;
+		}
+	}
 	function* findCssRulesInSheet(cssStyleSheet){
 		try{
 			var rules = cssStyleSheet.cssRules;
@@ -181,6 +254,12 @@
 		}
 		return matches;
 	}
+	function executeAction(actionDefinition){
+		var result = new ActionExecutionResult();
+		var action = Action.create(actionDefinition);
+		action.execute(result);
+		return result;
+	}
 	var contentScriptId = +new Date() - Math.floor(Math.random() * 1000);
 	console.log(`hello from content script ${contentScriptId}`)
 	chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
@@ -191,6 +270,9 @@
 			console.log(`bye from content script ${contentScriptId}`)
 		}else if(msg.findSelectors){
 			var result = findSelectors(msg.req);
+			sendResponse(result)
+		}else if(msg.executeAction){
+			var result = executeAction(msg.action);
 			sendResponse(result)
 		}
 	});

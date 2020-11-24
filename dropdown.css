@@ -1,0 +1,12 @@
+body{
+	margin:0px;
+	padding: 0px;
+}
+.row{
+	width: 200px;
+	height: 30px;
+	padding: 5px;
+}
+.block{
+	display: inline-block;
+}

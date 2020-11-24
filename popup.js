@@ -19,6 +19,9 @@
 			this.initialize();
 		},
 		methods: {
+			onExecuteClicked: function(ruleId){
+				chrome.runtime.sendMessage(undefined, {executeRule: true, pageId: this.pageId, ruleId: ruleId});
+			},
 			onEditClicked: function(ruleId){
 				chrome.runtime.sendMessage(undefined, {editRule: true, pageId: this.pageId, ruleId: ruleId});
 				window.close();
@@ -45,6 +48,9 @@
 					}
 				},
 				methods: {
+					onExecuteClicked: function(){
+						this.$emit('executeclicked', this.rule.ruleId);
+					},
 					onEditClicked: function(){
 						this.$emit('editclicked', this.rule.ruleId);
 					},

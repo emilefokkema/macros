@@ -10,6 +10,11 @@ function executeScript(tabId, file){
 	});
 	return promise;
 }
+function sendTabMessageAsync(tabId, msg){
+	var resolve, promise = new Promise((res) => {resolve = res;});
+	chrome.tabs.sendMessage(tabId, msg, resp => resolve(resp));
+	return promise;
+}
 function listenToMessageFromTab(tabId, listener){
 	var messageListener = (msg, sender, sendResponse) => {
 		if(!sender.tab || sender.tab.id !== tabId){
@@ -157,6 +162,14 @@ class Page{
 	focus(){
 		chrome.tabs.update(this.tabId, {active: true})
 	}
+	executeAction(action){
+		return sendTabMessageAsync(this.tabId, {executeAction: true, contentScriptId: this.currentContentScriptId, action: action});
+	}
+	async executeRule(rule){
+		for(var action of rule.actions){
+			await this.executeAction(action);
+		}
+	}
 	findSelectors(req, sendResponse){
 		chrome.tabs.sendMessage(this.tabId, {findSelectors: true, contentScriptId: this.currentContentScriptId, req:req}, (resp) => {
 			sendResponse(resp);
@@ -270,6 +283,9 @@ class RuleEditor{
 				sendResponse(resp)
 			});
 			return true;
+		}else if(msg.executeAction){
+			this.page.executeAction(msg.action).then(resp => sendResponse(resp));
+			return true;
 		}
 	}
 	dispatchEditorPageGone(){
@@ -375,5 +391,9 @@ chrome.runtime.onMessage.addListener((msg, sender) => {
 		ruleEditors.createRuleForPage(msg.pageId);
 	}else if(msg.editRule){
 		ruleEditors.editRuleForPage(msg.pageId, msg.ruleId);
+	}else if(msg.executeRule){
+		var rule = rules.getRule(msg.ruleId);
+		var page = pages.getPageById(msg.pageId);
+		page.executeRule(rule);
 	}
 });

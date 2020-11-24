@@ -31,7 +31,7 @@
 			<select-action v-if="action.type === 'select'" v-bind:action="action"></select-action>
 			<div class="row-part">
 				<div class="action-buttons">
-					<div class="action-button" v-if="runnable">
+					<div class="action-button" v-if="runnable" v-on:click="execute()">
 						<span class="button run-button fa fa-play"></span>
 					</div>
 					<div class="action-button">
