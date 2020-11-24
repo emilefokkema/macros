@@ -2,6 +2,7 @@
 <head>
 	<title>Create rule</title>
 	<script src="https://cdn.jsdelivr.net/npm/vue@2.6.12"></script>
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
 	<link rel="stylesheet" type="text/css" href="create-rule.css" />
 </head>
 <body>
@@ -16,7 +17,7 @@
 			</div>
 			<div class="row-part">
 				and
-				<select v-model="actionType">
+				<select class="text-input" v-model="actionType">
 					<option value="delete">delete them</option>
 					<option value="removeClass">remove class</option>
 				</select>
@@ -26,11 +27,14 @@
 		
 	</template>
 	<template id="actionTemplate">
-		<select-action v-if="action.type === 'select'" v-bind:action="action"></select-action>
+		<div class="row">
+			<select-action v-if="action.type === 'select'" v-bind:action="action"></select-action>
+		</div>
+		
 	</template>
 	<template id="actionAdderTemplate">
 		<div>
-			<select v-model="type">
+			<select class="text-input" v-model="type">
 				<option value="select">Select nodes</option>
 			</select>
 			<input type="button" value="Add" v-on:click="onAddClicked()"/>
@@ -63,10 +67,15 @@
 		</div>
 	</template>
 	<template id="classFinderTemplate">
-		<div class="class-finder">
-			<div class="row">Find class</div>
+		<div class="class-finder" v-bind:class='{collapsed: collapsed}'>
+			<div class="row with-buttons">
+				<div class="row-part">Find style</div>
+				<div class="row-part buttons">
+					<span class="button fa fa-minus" v-if="!collapsed" v-on:click="toggleCollapsed()"></span>
+					<span class="button fa fa-plus" v-if="collapsed" v-on:click="toggleCollapsed()"></span>
+				</div>
+			</div>
 			<div class="row">
-				
 				<query-property v-for="property of queryProperties" v-bind:property="property"></query-property>
 			</div>
 			<div class="row">

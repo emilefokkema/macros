@@ -11,11 +11,24 @@
 .text-input{
 	padding:5px;
 }
+.collapsed .row:not(:first-child){
+	display: none;
+}
 .wide{
 	width: 40em;
 }
 .label{
 	display: inline-block;
+}
+.button{
+	cursor: pointer;
+}
+.row.with-buttons{
+	min-width: 10em;
+}
+.buttons{
+	position: absolute;
+	right: 20px;
 }
 .row .label{
 	width: 10em;

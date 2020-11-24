@@ -60,6 +60,7 @@
 					this.name = rule.name;
 					this.urlPattern = rule.urlPattern;
 					this.setTitle();
+					this.actions = rule.actions;
 				},
 				setTitle: function(){
 					document.title = `Edit '${this.name}'`
@@ -97,10 +98,14 @@
 									comparison: "eq"
 								}
 							],
-							result: []
+							result: [],
+							collapsed: true
 						};
 					},
 					methods: {
+						toggleCollapsed: function(){
+							this.collapsed = !this.collapsed;
+						},
 						search: function(){
 							chrome.runtime.sendMessage(undefined, {findSelectors: true, req: {properties: this.queryProperties}}, (resp) => {
 								this.result = resp;
