@@ -87,11 +87,27 @@ class RuleCollection{
 	constructor(){
 		this.latestRuleId = 0;
 		this.records = [];
+		this.load();
+	}
+	load(){
+		var item = localStorage.getItem('rules');
+		var parsed = JSON.parse(item);
+		if(!Array.isArray(parsed)){
+			return;
+		}
+		for(var rule of parsed){
+			this.saveNewRule(rule);
+		}
+		console.log(`loaded ${this.records.length} rules`)
+	}
+	save(){
+		var rules = this.records.map(r => r.rule);
+		localStorage.setItem('rules', JSON.stringify(rules));
 	}
 	saveNewRule(rule){
-		console.log(`saving new rule`, rule)
 		var ruleId = ++this.latestRuleId;
 		this.records.push({ruleId: ruleId, rule: rule});
+		this.save();
 		return ruleId;
 	}
 	updateRule(ruleId, rule){
@@ -99,8 +115,8 @@ class RuleCollection{
 		if(!record){
 			return;
 		}
-		console.log(`updating rule ${ruleId}`, rule)
 		record.rule = rule;
+		this.save();
 	}
 	getRecord(ruleId){
 		return this.records.find(r => r.ruleId === ruleId);
