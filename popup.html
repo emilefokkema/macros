@@ -2,17 +2,20 @@
 	<head>
 		<script src="https://cdn.jsdelivr.net/npm/vue@2.6.12"></script>
 		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
-		<link rel="stylesheet" type="text/css" href="dropdown.css" />
+		<link rel="stylesheet" type="text/css" href="shared.css" />
+		<link rel="stylesheet" type="text/css" href="popup.css" />
 	</head>
 <body>
 	<template id="ruleTemplate">
 		<div class="row">
-			<div class="block">{{rule.rule.name}}</div>
-			<div class="block">
-				<input v-if="editable" type="button" value="Edit" id="add-button" v-on:click="onEditClicked()"/>
-			</div>
-			<div class="block">
-				<input type="button" value="Execute" v-on:click="onExecuteClicked()"/>
+			<div class="row-part">{{rule.rule.name}}</div>
+			<div class="row-part right">
+				<div class="action-button" v-on:click="onExecuteClicked()">
+					<span class="button run-button fa fa-play"></span>
+				</div>
+				<div class="action-button" v-on:click="onEditClicked()">
+					<span class="button fa fa-edit"></span>
+				</div>
 			</div>
 		</div>
 	</template>

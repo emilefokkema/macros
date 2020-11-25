@@ -3,11 +3,6 @@
 	text-decoration: underline;
 	cursor: pointer;
 }
-.row{
-	padding: 10px;
-	border-bottom: 1pt solid #ddd;
-
-}
 .text-input{
 	padding:5px;
 }
@@ -20,34 +15,14 @@
 .label{
 	display: inline-block;
 }
-.button{
-	cursor: pointer;
-}
 .row.with-buttons{
 	min-width: 10em;
-}
-.right{
-	position: absolute;
-	right: 20px;
-}
-.action-buttons{
-	border-left: 1pt solid #ddd;
-}
-.action-button{
-	padding: 5px;
-}
-.run-button{
-	color: #0a0;
-}
-.run-button-disabled{
-	color: #aaa;
 }
 .row .label{
 	width: 10em;
 }
-.row-part{
-	display: inline-block;
-	vertical-align: top;
+.action-buttons{
+	border-left: 1pt solid #ddd;
 }
 .class-finder{
 	position: absolute;

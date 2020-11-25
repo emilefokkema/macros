@@ -186,7 +186,7 @@ class Page{
 		await executeScript(this.tabId, 'content-script.js');
 		chrome.browserAction.setPopup({
 			tabId: this.tabId,
-			popup:"dropdown.html"
+			popup:"popup.html"
 		});
 	}
 	destroy(){

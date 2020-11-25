@@ -1,0 +1,24 @@
+.row{
+	padding: 10px;
+	border-bottom: 1pt solid #ddd;
+}
+.row-part{
+	display: inline-block;
+	vertical-align: top;
+}
+.right{
+	position: absolute;
+	right: 20px;
+}
+.button{
+	cursor: pointer;
+}
+.run-button{
+	color: #0a0;
+}
+.run-button-disabled{
+	color: #aaa;
+}
+.action-button{
+	padding: 5px;
+}
