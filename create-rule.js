@@ -14,7 +14,8 @@
 					hasPage: false,
 					ruleId: undefined,
 					urlPattern: undefined,
-					actions: []
+					actions: [],
+					runningAction: undefined
 				};
 			},
 			mounted: function(){
@@ -84,6 +85,14 @@
 							this.setTitle();
 						});
 					}
+				},
+				executeAction: function(action){
+					this.runningAction = action;
+					console.log(`going to execute action`)
+					chrome.runtime.sendMessage(undefined, {executeAction: true, action: action}, (resp) => {
+						console.log(`executed action with result`, resp);
+						this.runningAction = undefined;
+					})
 				}
 			},
 			components: {
@@ -152,14 +161,23 @@
 					template: document.getElementById("actionTemplate").innerHTML,
 					props: {
 						action: Object,
+						runningaction: Object,
 						runnable: Boolean
 					},
 					methods: {
 						execute: function(){
-							console.log(`going to execute action`)
-							chrome.runtime.sendMessage(undefined, {executeAction: true, action: this.action}, (resp) => {
-								console.log(`executed action with result`, resp)
-							})
+							this.$emit('executeclicked', this.action);
+						}
+					},
+					computed: {
+						canExecute: function(){
+							return this.runnable && !this.runningaction;
+						},
+						isExecuting: function(){
+							return this.runningaction === this.action;
+						},
+						otherIsExecuting: function(){
+							return !!this.runningaction && this.runningaction !== this.action;
 						}
 					},
 					components: {

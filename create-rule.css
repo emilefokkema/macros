@@ -39,6 +39,9 @@
 .run-button{
 	color: #0a0;
 }
+.run-button-disabled{
+	color: #aaa;
+}
 .row .label{
 	width: 10em;
 }
