@@ -30,6 +30,10 @@
 				chrome.runtime.sendMessage(undefined, {createRuleForPage: true, pageId: this.pageId});
 				window.close();
 			},
+			goToManagementPage: function(){
+				chrome.runtime.sendMessage(undefined, {goToManagementPage: true});
+				window.close();
+			},
 			initialize: async function(){
 				var info = await initializedPromise;
 				this.pageId = info.pageId;

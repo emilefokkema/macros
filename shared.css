@@ -6,10 +6,6 @@
 	display: inline-block;
 	vertical-align: top;
 }
-.right{
-	position: absolute;
-	right: 20px;
-}
 .button{
 	cursor: pointer;
 }

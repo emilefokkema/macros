@@ -15,6 +15,10 @@
 .label{
 	display: inline-block;
 }
+.right{
+	position: absolute;
+	right: 20px;
+}
 .row.with-buttons{
 	min-width: 10em;
 }

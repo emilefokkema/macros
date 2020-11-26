@@ -3,6 +3,8 @@ body{
 	padding: 0px;
 }
 .row{
-	width: 200px;
-	height: 30px;
+	width:200px;
+}
+.row-part.left{
+	width: 170px;
 }
