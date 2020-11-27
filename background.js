@@ -1,86 +1,40 @@
-function executeScript(tabId, file){
-	var resolve, reject, promise = new Promise((res, rej) => {resolve = res; reject = rej;});
-	chrome.tabs.executeScript(tabId, {file: file}, () => {
-		var e = chrome.runtime.lastError;
-		if(e !== undefined){
-			reject(e.message);
-		}else{
-			resolve();
-		}
-	});
-	return promise;
-}
-function sendTabMessageAsync(tabId, msg){
-	var resolve, promise = new Promise((res) => {resolve = res;});
-	chrome.tabs.sendMessage(tabId, msg, resp => resolve(resp));
-	return promise;
-}
-function listenToMessageFromTab(tabId, listener){
-	var messageListener = (msg, sender, sendResponse) => {
-		if(!sender.tab || sender.tab.id !== tabId){
-			return;
-		}
-		var result = listener(msg, (resp) => {
-			sendResponse(resp);
+class EventSource{
+	listen(listener){
+		this.addListener(listener);
+		return {
+			cancel: () => {
+				this.removeListener(listener)
+			}
+		};
+	}
+	when(predicate, cancellationToken){
+		var resolve;
+		var promise = new Promise((res) => {resolve = res;});
+		var listener = this.listen(function(){
+			if(predicate.apply(null, arguments)){
+				listener.cancel();
+				resolve();
+			}
 		});
-		return result;
-	};
-	chrome.runtime.onMessage.addListener(messageListener);
-	return {
-		cancel(){
-			chrome.runtime.onMessage.removeListener(messageListener);
+		if(cancellationToken){
+			cancellationToken.onCancelled(() => listener.cancel());
 		}
+		return promise;
 	}
 }
-function onTabStartsLoading(tabId, listener){
-	var updatedListener = (_tabId, changeInfo, tab) => {
-		if(_tabId === tabId && changeInfo.status === "loading"){
-			listener();
-		}
-	};
-	chrome.tabs.onUpdated.addListener(updatedListener);
-	return {
-		cancel(){
-			chrome.tabs.onUpdated.removeListener(updatedListener);
-		}
-	};
-}
-function onTabRemoved(tabId, listener){
-	var removedListener = (_tabId) => {
-		if(_tabId === tabId){
-			listener();
-		}
-	};
-	chrome.tabs.onRemoved.addListener(removedListener);
-	return {
-		cancel(){
-			chrome.tabs.onRemoved.removeListener(removedListener);
-		}
-	};
-}
-function tabComplete(tabId){
-	var resolve, promise = new Promise((res) => {resolve = res;});
-	var listener = (_tabId, changeInfo, tab) => {
-		if(_tabId === tabId && changeInfo.status === "complete"){
-			chrome.tabs.onUpdated.removeListener(listener);
-			resolve();
-		}
-	};
-	chrome.tabs.onUpdated.addListener(listener);
-	return promise;
-}
-function urlMatchesPattern(url, pattern){
-	var regexPattern = pattern.replace(/[.+?^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '[\\S]*?');
-	var regex = new RegExp(`^${regexPattern}$`);
-	return !!url.match(regex);
-}
-var pageId = 0;
-class Event{
+class Event extends EventSource{
 	constructor(){
+		super();
 		this.listeners = [];
 	}
 	addListener(listener){
 		this.listeners.push(listener);
+	}
+	removeListener(listener){
+		var index = this.listeners.indexOf(listener);
+		if(index > -1){
+			this.listeners.splice(index, 1)
+		}
 	}
 	dispatch(e){
 		for(let listener of this.listeners){
@@ -88,6 +42,122 @@ class Event{
 		}
 	}
 }
+class CancellationToken extends Event{
+	constructor(){
+		super();
+		this.cancelled = false;
+	}
+	dispatch(){
+		if(this.cancelled){
+			return;
+		}
+		this.cancelled = true;
+		for(let listener of this.listeners){
+			listener();
+		}
+		this.listeners = [];
+	}
+	onCancelled(listener){
+		return this.listen(listener);
+	}
+	cancel(){
+		this.dispatch();
+	}
+}
+class TabsUpdated extends EventSource{
+	addListener(listener){
+		chrome.tabs.onUpdated.addListener(listener);
+	}
+	removeListener(listener){
+		chrome.tabs.onUpdated.removeListener(listener);
+	}
+}
+class TabRemoved extends EventSource{
+	addListener(listener){
+		chrome.tabs.onRemoved.addListener(listener);
+	}
+	removeListener(listener){
+		chrome.tabs.onRemoved.removeListener(listener);
+	}
+}
+class RuntimeMessages extends EventSource{
+	addListener(listener){
+		chrome.runtime.onMessage.addListener(listener);
+	}
+	removeListener(listener){
+		chrome.runtime.onMessage.removeListener(listener);
+	}
+}
+var tabsUpdated = new TabsUpdated();
+var tabRemoved = new TabRemoved();
+var runtimeMessages = new RuntimeMessages();
+
+class Tab{
+	constructor(tabId){
+		this.tabId = tabId;
+	}
+	whenComplete(){
+		return this.whenStatusEquals("complete");
+	}
+	whenLoading(cancellationToken){
+		return this.whenStatusEquals("loading", cancellationToken);
+	}
+	whenRemoved(cancellationToken){
+		return tabRemoved.when(tabId => tabId === this.tabId, cancellationToken);
+	}
+	whenStatusEquals(status, cancellationToken){
+		var resolve, promise = new Promise((res) => {resolve = res;});
+		chrome.tabs.get(this.tabId, (tab) => {
+			if(tab.status === status){
+				resolve();
+			}else{
+				tabsUpdated.when((tabId, changeInfo) => {return tabId === this.tabId && changeInfo.status === status;}, cancellationToken).then(resolve);
+			}
+		});
+		return promise;
+	}
+	focus(){
+		chrome.tabs.update(this.tabId, {active: true})
+	}
+	executeScript(details){
+		var resolve, reject, promise = new Promise((res, rej) => {resolve = res; reject = rej;});
+		chrome.tabs.executeScript(this.tabId, details, () => {
+			var e = chrome.runtime.lastError;
+			if(e !== undefined){
+				reject(e.message);
+			}else{
+				resolve();
+			}
+		});
+		return promise;
+	}
+	sendMessageAsync(msg){
+		var resolve, promise = new Promise((res) => {resolve = res;});
+		chrome.tabs.sendMessage(this.tabId, msg, resp => resolve(resp));
+		return promise;
+	}
+	sendMessage(msg, callback){
+		chrome.tabs.sendMessage(this.tabId, msg, callback);
+	}
+	listenToMessages(listener){
+		return runtimeMessages.listen((msg, sender, sendResponse) => {
+			if(!sender.tab || sender.tab.id !== this.tabId){
+				return;
+			}
+			return listener(msg, (resp) => {
+				sendResponse(resp);
+			});
+		});
+	}
+}
+
+
+function urlMatchesPattern(url, pattern){
+	var regexPattern = pattern.replace(/[.+?^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '[\\S]*?');
+	var regex = new RegExp(`^${regexPattern}$`);
+	return !!url.match(regex);
+}
+var pageId = 0;
 class RuleCollection{
 	constructor(){
 		this.latestRuleId = 0;
@@ -139,23 +209,22 @@ class RuleCollection{
 var rules = new RuleCollection();
 class Page{
 	constructor(tabId){
+		this.pageId = pageId++;
+		this.cancellationToken = new CancellationToken();
 		this.tabId = tabId;
-		this.initialized = true;
+		this.tab = new Tab(tabId);
+		this.tab.whenComplete().then(() => {
+			Promise.any([this.tab.whenLoading(this.cancellationToken), this.tab.whenRemoved(this.cancellationToken)]).then(() => this.disappear());
+		});
 		this.hasDisappeared = false;
 		this.onDisappeared = new Event();
-		this.tabStartLoadingListener = onTabStartsLoading(tabId, () => {
-			if(this.initialized){
-				this.disappear();
-			}
-		});
-		this.tabRemovedListener = onTabRemoved(tabId, () => this.disappear());
-		this.tabMessageListener = listenToMessageFromTab(tabId, (msg, sendResponse) => this.onMessageFromTab(msg, sendResponse));
+		this.tabMessageListener = this.tab.listenToMessages((msg, sendResponse) => this.onMessageFromTab(msg, sendResponse));
 	}
 	onMessageFromTab(msg, sendResponse){
 
 	}
 	focus(){
-		chrome.tabs.update(this.tabId, {active: true})
+		this.tab.focus();
 	}
 	afterDisappeared(){
 
@@ -164,33 +233,16 @@ class Page{
 		if(this.hasDisappeared){
 			return;
 		}
-		this.tabStartLoadingListener.cancel();
-		this.tabRemovedListener.cancel();
+		this.cancellationToken.cancel();
 		this.tabMessageListener.cancel();
 		this.hasDisappeared = true;
 		this.afterDisappeared();
 		this.onDisappeared.dispatch();
 	}
 }
-class NewPage extends Page{
-	constructor(tabId){
-		super(tabId);
-		this.initialized = false;
-		this.initialize();
-	}
-	async initialize(){
-		await tabComplete(this.tabId);
-		this.initialized = true;
-		this.afterInitialize();
-	}
-	afterInitialize(){
-
-	}
-}
 class RegularPage extends Page{
 	constructor(tabId, url){
 		super(tabId);
-		this.pageId = pageId++;
 		this.url = url;
 		this.currentContentScriptId = undefined;
 		this.initialize();
@@ -210,7 +262,7 @@ class RegularPage extends Page{
 		return {url: this.url, pageId: this.pageId, rules: rulesForPage}
 	}
 	executeAction(action){
-		return sendTabMessageAsync(this.tabId, {executeAction: true, contentScriptId: this.currentContentScriptId, action: action});
+		return this.tab.sendMessageAsync({executeAction: true, contentScriptId: this.currentContentScriptId, action: action});
 	}
 	async executeRule(rule){
 		for(var action of rule.actions){
@@ -218,7 +270,7 @@ class RegularPage extends Page{
 		}
 	}
 	findSelectors(req, sendResponse){
-		chrome.tabs.sendMessage(this.tabId, {findSelectors: true, contentScriptId: this.currentContentScriptId, req:req}, (resp) => {
+		this.tab.sendMessage({findSelectors: true, contentScriptId: this.currentContentScriptId, req:req}, (resp) => {
 			sendResponse(resp);
 		});
 	}
@@ -227,11 +279,11 @@ class RegularPage extends Page{
 			console.log(`page ${this.url} has loaded another content script: ${contentScriptId}`);
 		}
 		this.currentContentScriptId = contentScriptId;
-		console.log(`page ${this.url} has loaded content script: ${contentScriptId}`);
+		console.log(`page ${this.url} (pageId ${this.pageId}) has loaded content script: ${contentScriptId}`);
 	}
 	async initialize(){
 		try{
-			await executeScript(this.tabId, 'content-script.js');
+			await this.tab.executeScript({file: 'content-script.js', runAt: 'document_start'});
 			chrome.browserAction.setPopup({
 				tabId: this.tabId,
 				popup:"popup.html"
@@ -246,14 +298,14 @@ class RegularPage extends Page{
 		if(this.currentContentScriptId === undefined){
 			return;
 		}
-		chrome.tabs.sendMessage(this.tabId, {stopContentScript: true, contentScriptId: this.currentContentScriptId});
+		this.tab.sendMessage({stopContentScript: true, contentScriptId: this.currentContentScriptId});
 	}
 }
 class PageCollection{
 	constructor(){
 		this.pages = [];
 		chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-			if(changeInfo.status === "complete"){
+			if(changeInfo.status === "loading"){
 				this.addPage(tab);
 			}
 		});
@@ -281,7 +333,7 @@ class PageCollection{
 }
 var pages = new PageCollection();
 var ruleEditorId = 0;
-class RuleEditor extends NewPage{
+class RuleEditor extends Page{
 	constructor(page, tabId, ruleId){
 		super(tabId);
 		this.ruleEditorId = ruleEditorId++;
@@ -289,10 +341,11 @@ class RuleEditor extends NewPage{
 		page.onDisappeared.addListener(() => this.onPageDestroyed())
 		this.ruleCreated = new Event();
 		this.ruleId = ruleId;
+		this.initialize();
 	}
 	onPageDestroyed(){
 		this.page = undefined;
-		chrome.tabs.sendMessage(this.tabId, {pageDestroyed: true});
+		this.tab.sendMessage({pageDestroyed: true});
 	}
 	onMessageFromTab(msg, sendResponse){
 		if(msg.focusPage){
@@ -315,12 +368,13 @@ class RuleEditor extends NewPage{
 			return true;
 		}
 	}
-	afterInitialize(){
+	async initialize(){
+		await this.tab.whenComplete();
 		var rule = undefined;
 		if(this.ruleId !== undefined){
 			rule = rules.getRule(this.ruleId);
 		}
-		chrome.tabs.sendMessage(this.tabId, {initialize: true, url: this.page.url, ruleId: this.ruleId, rule: rule});
+		this.tab.sendMessage({initialize: true, url: this.page.url, ruleId: this.ruleId, rule: rule});
 	}
 	static create(page, ruleId, callback){
 		chrome.tabs.create({url: 'create-rule.html'}, (tab) => {
@@ -385,10 +439,8 @@ class RuleEditorCollection{
 }
 var ruleEditors = new RuleEditorCollection();
 
-class ManagementPage extends NewPage{
-	afterInitialize(){
-		console.log(`management page loaded`);
-	}
+class ManagementPage extends Page{
+
 	static open(){
 		if(this.instance){
 			this.instance.focus();
