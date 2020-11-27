@@ -10,11 +10,11 @@
 		<div class="row">
 			<div class="row-part left">{{rule.rule.name}}</div>
 			<div class="row-part">
-				<div class="action-button" v-on:click="onExecuteClicked()">
-					<span class="button run-button fa fa-play"></span>
+				<div class="button" v-on:click="onExecuteClicked()">
+					<span class="run-button fa fa-play"></span>
 				</div>
-				<div class="action-button" v-on:click="onEditClicked()" v-if="editable">
-					<span class="button fa fa-edit"></span>
+				<div class="button" v-on:click="onEditClicked()" v-if="editable">
+					<span class="fa fa-edit"></span>
 				</div>
 			</div>
 		</div>

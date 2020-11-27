@@ -32,17 +32,17 @@
 			<select-action v-if="action.type === 'select'" v-bind:action="action"></select-action>
 			<div class="row-part">
 				<div class="action-buttons">
-					<div class="action-button" v-if="isExecuting">
-						<span class="button fa fa-circle-notch fa-spin"></span>
+					<div class="button" v-if="isExecuting">
+						<span class="fa fa-circle-notch fa-spin"></span>
 					</div>
-					<div class="action-button" v-if="canExecute" v-on:click="execute()">
-						<span class="button run-button fa fa-play"></span>
+					<div class="button" v-if="canExecute" v-on:click="execute()">
+						<span class="run-button fa fa-play"></span>
 					</div>
-					<div class="action-button" v-if="otherIsExecuting">
-						<span class="button run-button-disabled fa fa-play"></span>
+					<div class="button" v-if="otherIsExecuting">
+						<span class="run-button-disabled fa fa-play"></span>
 					</div>
-					<div class="action-button">
-						<span class="button fa fa-trash"></span>
+					<div class="button">
+						<span class="fa fa-trash"></span>
 					</div>
 				</div>
 			</div>

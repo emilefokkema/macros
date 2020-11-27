@@ -8,13 +8,11 @@
 }
 .button{
 	cursor: pointer;
+	padding: 5px;
 }
 .run-button{
 	color: #0a0;
 }
 .run-button-disabled{
 	color: #aaa;
-}
-.action-button{
-	padding: 5px;
 }

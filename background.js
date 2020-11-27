@@ -193,6 +193,9 @@ class RuleCollection{
 		record.rule = rule;
 		this.save();
 	}
+	getAll(){
+		return this.records.slice();
+	}
 	getRecord(ruleId){
 		return this.records.find(r => r.ruleId === ruleId);
 	}
@@ -440,6 +443,15 @@ class RuleEditorCollection{
 var ruleEditors = new RuleEditorCollection();
 
 class ManagementPage extends Page{
+	constructor(tabId){
+		super(tabId);
+		this.initialize();
+	}
+	async initialize(){
+		await this.tab.whenComplete();
+		var allRules = rules.getAll();
+		this.tab.sendMessage({initialize: true, rules: allRules});
+	}
 
 	static open(){
 		if(this.instance){
