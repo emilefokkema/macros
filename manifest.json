@@ -16,6 +16,7 @@
 		"default_title":"Macros",
 		"dafault_popup":"popup.html"
 	},
+	"devtools_page": "devtools.html",
 	"content_security_policy": "script-src 'self' 'unsafe-eval' https://cdn.jsdelivr.net; object-src 'self'",
 	"manifest_version":2
 }
