@@ -162,6 +162,7 @@ class RuleCollection{
 	constructor(){
 		this.latestRuleId = 0;
 		this.records = [];
+		this.ruleUpdated = new Event();
 		this.load();
 	}
 	load(){
@@ -179,6 +180,13 @@ class RuleCollection{
 		var rules = this.records.map(r => r.rule);
 		localStorage.setItem('rules', JSON.stringify(rules));
 	}
+	deleteRule(ruleId){
+		var index = this.records.findIndex(r => r.ruleId === ruleId);
+		if(index > -1){
+			this.records.splice(index, 1);
+			this.save();
+		}
+	}
 	saveNewRule(rule){
 		var ruleId = ++this.latestRuleId;
 		this.records.push({ruleId: ruleId, rule: rule});
@@ -192,6 +200,7 @@ class RuleCollection{
 		}
 		record.rule = rule;
 		this.save();
+		this.ruleUpdated.dispatch();
 	}
 	getAll(){
 		return this.records.slice();
@@ -341,7 +350,9 @@ class RuleEditor extends Page{
 		super(tabId);
 		this.ruleEditorId = ruleEditorId++;
 		this.page = page;
-		page.onDisappeared.addListener(() => this.onPageDestroyed())
+		if(this.page){
+			this.page.onDisappeared.addListener(() => this.onPageDestroyed())
+		}
 		this.ruleCreated = new Event();
 		this.ruleId = ruleId;
 		this.initialize();
@@ -377,7 +388,7 @@ class RuleEditor extends Page{
 		if(this.ruleId !== undefined){
 			rule = rules.getRule(this.ruleId);
 		}
-		this.tab.sendMessage({initialize: true, url: this.page.url, ruleId: this.ruleId, rule: rule});
+		this.tab.sendMessage({initialize: true, url: this.page && this.page.url, ruleId: this.ruleId, rule: rule});
 	}
 	static create(page, ruleId, callback){
 		chrome.tabs.create({url: 'create-rule.html'}, (tab) => {
@@ -390,21 +401,43 @@ class RuleEditorCollection{
 	constructor(){
 		this.newRuleEditors = [];
 		this.existingRuleEditors = [];
+		this.editorOpened = new Event();
+		this.editorClosed = new Event();
+		this.newRuleCreated = new Event();
 	}
 	removeEditorFromList(list, editor){
 		var index = list.indexOf(editor);
 		if(index === -1){
-			return;
+			return false;
 		}
 		list.splice(index, 1);
+		return true;
 	}
 	removeRuleEditor(editor){
 		console.log(`removing editor`)
-		this.removeEditorFromList(this.newRuleEditors, editor);
-		this.removeEditorFromList(this.existingRuleEditors, editor);
+		if(this.removeEditorFromList(this.newRuleEditors, editor) || this.removeEditorFromList(this.existingRuleEditors, editor)){
+			this.editorClosed.dispatch();
+		}
 	}
 	getNonEditableRuleIds(pageId){
 		return this.existingRuleEditors.filter(e => !!e.page && e.page.pageId !== pageId).map(e => e.ruleId);
+	}
+	getNonDeletableRuleIds(){
+		return this.existingRuleEditors.map(e => e.ruleId);
+	}
+	editRule(ruleId){
+		var existing = this.existingRuleEditors.find(e => e.ruleId === ruleId);
+		if(existing){
+			existing.focus();
+		}else{
+			RuleEditor.create(undefined, ruleId, editor => {
+				editor.onDisappeared.addListener(() => {
+					this.removeRuleEditor(editor);
+				});
+				this.existingRuleEditors.push(editor);
+				this.editorOpened.dispatch();
+			});
+		}
 	}
 	editRuleForPage(pageId, ruleId){
 		var existing = this.existingRuleEditors.find(e => e.ruleId === ruleId);
@@ -417,6 +450,7 @@ class RuleEditorCollection{
 					this.removeRuleEditor(editor);
 				});
 				this.existingRuleEditors.push(editor);
+				this.editorOpened.dispatch();
 			});
 		}
 	}
@@ -434,8 +468,10 @@ class RuleEditorCollection{
 					console.log(`editor created new rule`)
 					this.removeEditorFromList(this.newRuleEditors, editor);
 					this.existingRuleEditors.push(editor);
+					this.newRuleCreated.dispatch();
 				});
 				this.newRuleEditors.push(editor);
+				this.editorOpened.dispatch();
 			});
 		}
 	}
@@ -445,14 +481,49 @@ var ruleEditors = new RuleEditorCollection();
 class ManagementPage extends Page{
 	constructor(tabId){
 		super(tabId);
+		this.onEditorOpenedSubscription = ruleEditors.editorOpened.listen(() => this.notifyOfDeletableIds());
+		this.onEditorClosedSubscription = ruleEditors.editorClosed.listen(() => this.notifyOfDeletableIds());
+		this.onNewRuleCreatedSubscription = ruleEditors.newRuleCreated.listen(() => this.notifyOfChangedRules());
+		this.onRuleUpdatedSubscription = rules.ruleUpdated.listen(() => this.notifyOfChangedRules());
 		this.initialize();
+	}
+	notifyOfDeletableIds(){
+		var nonDeletable = ruleEditors.getNonDeletableRuleIds();
+		this.tab.sendMessage({deletableRulesChange: true, nonDeletable: nonDeletable});
+	}
+	notifyOfChangedRules(){
+		this.tab.sendMessage({rulesChanged: true, rules: this.getRules()});
+	}
+	onMessageFromTab(msg, sendResponse){
+		if(msg.deleteRule){
+			rules.deleteRule(msg.ruleId);
+			sendResponse({});
+		}else if(msg.editRule){
+			ruleEditors.editRule(msg.ruleId);
+		}
+	}
+	getRules(){
+		var allRules = rules.getAll();
+		var nonDeletable = ruleEditors.getNonDeletableRuleIds();
+		return allRules.map(r => ({
+				ruleId: r.ruleId,
+				rule: r.rule,
+				deletable: !nonDeletable.some(id => id === r.ruleId)
+			}));
 	}
 	async initialize(){
 		await this.tab.whenComplete();
-		var allRules = rules.getAll();
-		this.tab.sendMessage({initialize: true, rules: allRules});
+		this.tab.sendMessage({
+			initialize: true,
+			rules: this.getRules()
+		});
 	}
-
+	afterDisappeared(){
+		this.onEditorOpenedSubscription.cancel();
+		this.onEditorClosedSubscription.cancel();
+		this.onNewRuleCreatedSubscription.cancel();
+		this.onRuleUpdatedSubscription.cancel();
+	}
 	static open(){
 		if(this.instance){
 			this.instance.focus();
@@ -472,6 +543,9 @@ chrome.tabs.query({}, async (tabs) => {
 	console.log(`pages: `, pages)
 });
 chrome.runtime.onMessage.addListener((msg, sender) => {
+	if(sender.tab){
+		return;
+	}
 	if(msg.popupOpened){
 		chrome.tabs.query({lastFocusedWindow: true, active: true}, tabs => {
 			if(tabs.length !== 1){

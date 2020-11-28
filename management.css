@@ -1,0 +1,9 @@
+.rule-data{
+	width: 400px;
+}
+.rule-name{
+	font-weight: bold;
+}
+.url-pattern{
+	color: #aaa;
+}

@@ -4,23 +4,27 @@
 	<script src="https://cdn.jsdelivr.net/npm/vue@2.6.12"></script>
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
 	<link rel="stylesheet" type="text/css" href="shared.css" />
+	<link rel="stylesheet" type="text/css" href="management.css" />
 </head>
 <body>
 	<template id="ruleTemplate">
 		<div class="row">
-			<div class="row-part">{{rule.rule.name}}</div>
+			<div class="row-part rule-data">
+				<div class="rule-name">{{rule.rule.name}}</div>
+				<div class="url-pattern">{{rule.rule.urlPattern}}</div>
+			</div>
 			<div class="row-part">
-				<div class="button">
-					<span class="fa fa-edit"></span>
+				<div class="button row-part">
+					<span class="fa fa-edit" v-on:click="onEditClicked()"></span>
 				</div>
-				<div class="button">
+				<div class="button row-part" v-on:click="onDeleteClicked()" v-if="rule.deletable">
 					<span class="fa fa-trash"></span>
 				</div>
 			</div>
 		</div>
 	</template>
 	<div id="app">
-		<rule v-for="rule of rules" v-bind:rule="rule"></rule>
+		<rule v-for="rule of rules" v-bind:rule="rule" v-on:deleteruleclicked="onDeleteRuleClicked(rule)" v-on:editruleclicked="onEditRuleClicked(rule)"></rule>
 	</div>
 <script src="management.js">
 	
