@@ -106,6 +106,9 @@
 		constructor(definition){
 
 		}
+		getEffectOnNode(node){
+			return 'will delete this element';
+		}
 		execute(node, result){
 			try{
 				node.parentNode.removeChild(node);
@@ -117,6 +120,9 @@
 	class RemoveClassFromSelectedNodeAction{
 		constructor(definition){
 			this.class = definition.class;
+		}
+		getEffectOnNode(node){
+			return `will remove class '${this.class}' from this element`;
 		}
 		execute(node, result){
 			var classes = node.getAttribute('class');
@@ -147,6 +153,12 @@
 			this.selector = definition.selector;
 			this.action = SelectedNodeAction.create(definition.action)
 		}
+		getEffectOnNode(node){
+			if(!node.matches(this.selector)){
+				return null;
+			}
+			return this.action.getEffectOnNode(node);
+		}
 		execute(result){
 			try{
 				var nodes = document.querySelectorAll(this.selector);
@@ -166,6 +178,15 @@
 			switch(definition.type){
 				case "select": return new SelectAction(definition)
 			}
+		}
+	}
+	class Rule{
+		constructor(definition){
+			this.name = definition.name;
+			this.actions = definition.actions.map(d => Action.create(d));
+		}
+		getEffectOnNode(node){
+			return this.actions.map(a => a.getEffectOnNode(node)).filter(a => !!a);
 		}
 	}
 	class ActionExecutionResult{
@@ -261,11 +282,31 @@
 		return result;
 	}
 	var contentScriptId = +new Date() - Math.floor(Math.random() * 1000);
+	var currentRules = [];
+	var currentlySelectedElement = undefined;
+	function setCurrentRules(rules){
+		currentRules = rules.map(r => ({
+			ruleId: r.ruleId,
+			rule: new Rule(r.rule)
+		}))
+		console.log(`current rules: `, currentRules)
+	}
+	function getEffectsOnCurrentlySelectedElement(){
+		return currentRules.map(r => ({
+			ruleId: r.ruleId,
+			effect: r.rule.getEffectOnNode(currentlySelectedElement)
+		}));
+	}
 	console.log(`hello from content script ${contentScriptId}`)
+	elementSelectedInDevtools = function(element){
+		currentlySelectedElement = element;
+		chrome.runtime.sendMessage(undefined, {elementSelectedInDevtools: true, element: summarizeNode(element), effects: getEffectsOnCurrentlySelectedElement()});
+	}
 	chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 		if(msg.contentScriptId !== contentScriptId){
 			return;
 		}
+		console.log(`content script received message`, msg)
 		if(msg.stopContentScript){
 			console.log(`bye from content script ${contentScriptId}`)
 		}else if(msg.findSelectors){
@@ -274,7 +315,14 @@
 		}else if(msg.executeAction){
 			var result = executeAction(msg.action);
 			sendResponse(result);
+		}else if(msg.currentRules){
+			setCurrentRules(msg.currentRules);
+		}else if(msg.requestEffects){
+			console.log(`effects were requested`)
+			sendResponse(getEffectsOnCurrentlySelectedElement())
 		}
 	});
-	chrome.runtime.sendMessage(undefined, {contentScriptLoaded: true, contentScriptId: contentScriptId});
+	chrome.runtime.sendMessage(undefined, {contentScriptLoaded: true, contentScriptId: contentScriptId}, resp => {
+		setCurrentRules(resp.currentRules);
+	});
 })();

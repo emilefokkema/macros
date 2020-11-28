@@ -1,0 +1,24 @@
+<html>
+<head>
+	<title>Macros</title>
+	<script src="https://cdn.jsdelivr.net/npm/vue@2.6.12"></script>
+	<link rel="stylesheet" type="text/css" href="shared.css" />
+	<link rel="stylesheet" type="text/css" href="devtools_sidebar.css" />
+</head>
+<body>
+	<template id="nodeTemplate">
+		<div><pre><span class="node-name">{{node.nodeName}}</span><span v-if="node.id" class="node-id">#{{node.id}}</span><span class="class-name" v-for="className of node.classes">.{{className}}</span></pre></div>
+	</template>
+	<template id="ruleTemplate">
+		<div class="row">
+			{{rule.rule.name}}
+		</div>
+	</template>
+	<div id="app">
+		<node v-bind:node="currentlySelectedElement" v-if="currentlySelectedElement"></node>
+		<rule v-for="rule of currentRules" v-bind:rule="rule"></rule>
+	</div>
+	<script src="devtools_sidebar.js">
+	</script>
+</body>
+</html>

@@ -139,6 +139,20 @@ class Tab{
 	sendMessage(msg, callback){
 		chrome.tabs.sendMessage(this.tabId, msg, callback);
 	}
+	sendMessageToDevtoolsSidebar(msg, callback){
+		chrome.runtime.sendMessage(undefined, {destinationDevtoolsTabId: this.tabId, message: msg}, callback);
+	}
+	listenToDevtoolsSidebarMessages(listener){
+		return runtimeMessages.listen((msg, sender, sendResponse) => {
+			if(msg.devtoolsTabId !== this.tabId){
+				return;
+			}
+			console.log(`message from devtools sidebar, sender = `, sender)
+			return listener(msg, (resp) => {
+				sendResponse(resp);
+			});
+		});
+	}
 	listenToMessages(listener){
 		return runtimeMessages.listen((msg, sender, sendResponse) => {
 			if(!sender.tab || sender.tab.id !== this.tabId){
@@ -235,8 +249,12 @@ class Page{
 		this.hasDisappeared = false;
 		this.onDisappeared = new Event();
 		this.tabMessageListener = this.tab.listenToMessages((msg, sendResponse) => this.onMessageFromTab(msg, sendResponse));
+		this.tabDevtoolsSidebarMessagesListener = this.tab.listenToDevtoolsSidebarMessages((msg, sendResponse) => this.onMessageFromDevtoolsSidebar(msg, sendResponse));
 	}
 	onMessageFromTab(msg, sendResponse){
+
+	}
+	onMessageFromDevtoolsSidebar(msg, sendResponse){
 
 	}
 	focus(){
@@ -251,6 +269,7 @@ class Page{
 		}
 		this.cancellationToken.cancel();
 		this.tabMessageListener.cancel();
+		this.tabDevtoolsSidebarMessagesListener.cancel();
 		this.hasDisappeared = true;
 		this.afterDisappeared();
 		this.onDisappeared.dispatch();
@@ -261,14 +280,29 @@ class RegularPage extends Page{
 		super(tabId);
 		this.url = url;
 		this.currentContentScriptId = undefined;
-		this.ruleUpdatedSubscription = rules.ruleUpdated.listen(() => this.setBadge());
-		this.ruleAddedSubscription = rules.ruleAdded.listen(() => this.setBadge());
-		this.ruleDeletedSubscription = rules.ruleDeleted.listen(() => this.setBadge());
+		this.ruleUpdatedSubscription = rules.ruleUpdated.listen(() => this.setRules());
+		this.ruleAddedSubscription = rules.ruleAdded.listen(() => this.setRules());
+		this.ruleDeletedSubscription = rules.ruleDeleted.listen(() => this.setRules());
+		this.currentlySelectedElementInDevtools = undefined;
 		this.initialize();
 	}
 	onMessageFromTab(msg, sendResponse){
 		if(msg.contentScriptLoaded){
 			this.onContentScriptLoaded(msg.contentScriptId);
+			var rulesForPage = rules.getRulesForUrl(this.url);
+			sendResponse({currentRules: rulesForPage});
+		}else if(msg.elementSelectedInDevtools){
+			this.currentlySelectedElementInDevtools = msg.element;
+			this.tab.sendMessageToDevtoolsSidebar({currentlySelectedElement: this.currentlySelectedElementInDevtools});
+		}
+	}
+	onMessageFromDevtoolsSidebar(msg, sendResponse){
+		if(msg.devtoolsSidebarOpened){
+			var rulesForPage = rules.getRulesForUrl(this.url);
+			this.tab.sendMessage({contentScriptId: this.currentContentScriptId, requestEffects: true}, effects => {
+				sendResponse({currentlySelectedElement: this.currentlySelectedElementInDevtools, currentRules: rulesForPage, effects: effects});
+			});
+			return true;
 		}
 	}
 	getPopupInfo(nonEditableRuleIds){
@@ -307,17 +341,19 @@ class RegularPage extends Page{
 				tabId: this.tabId,
 				popup:"popup.html"
 			});
-			this.setBadge();
+			this.setRules();
 		}catch(e){
 			console.log(`Skipping page: `, e)
 			chrome.browserAction.disable(this.tabId);
 			this.disappear();
 		}
 	}
-	setBadge(){
+	setRules(){
 		var rulesForPage = rules.getRulesForUrl(this.url);
 		chrome.browserAction.setBadgeText({tabId: this.tabId, text: `${(rulesForPage.length ? rulesForPage.length : '')}`});
-		chrome.browserAction.setBadgeBackgroundColor({tabId: this.tabId, color: '#0a0'})
+		chrome.browserAction.setBadgeBackgroundColor({tabId: this.tabId, color: '#0a0'});
+		console.log(`sending message to tab about current rules`)
+		this.tab.sendMessage({contentScriptId: this.currentContentScriptId, currentRules: rulesForPage});
 	}
 	afterDisappeared(){
 		this.ruleUpdatedSubscription.cancel();
