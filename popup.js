@@ -12,18 +12,22 @@
 		data: function(){
 			return {
 				pageId: undefined,
-				rules: []
+				rules: [],
+				executingRule: undefined
 			};
 		},
 		mounted: function(){
 			this.initialize();
 		},
 		methods: {
-			onExecuteClicked: function(ruleId){
-				chrome.runtime.sendMessage(undefined, {executeRule: true, pageId: this.pageId, ruleId: ruleId});
+			onExecuteClicked: function(rule){
+				this.executingRule = rule;
+				chrome.runtime.sendMessage(undefined, {executeRule: true, pageId: this.pageId, ruleId: rule.ruleId}, resp => {
+					this.executingRule = undefined;
+				});
 			},
-			onEditClicked: function(ruleId){
-				chrome.runtime.sendMessage(undefined, {editRule: true, pageId: this.pageId, ruleId: ruleId});
+			onEditClicked: function(rule){
+				chrome.runtime.sendMessage(undefined, {editRule: true, pageId: this.pageId, ruleId: rule.ruleId});
 				window.close();
 			},
 			addRule: function(){
@@ -44,19 +48,29 @@
 			rule: {
 				template: document.getElementById("ruleTemplate").innerHTML,
 				props: {
-					rule: Object
+					rule: Object,
+					executingrule: Object
 				},
 				computed: {
 					editable: function(){
 						return !!this.rule && this.rule.editable
+					},
+					isExecuting: function(){
+						return !!this.executingrule && this.executingrule === this.rule;
+					},
+					canExecute: function(){
+						return !this.executingrule;
+					},
+					otherIsExecuting: function(){
+						return !!this.executingrule && this.executingrule !== this.rule;
 					}
 				},
 				methods: {
 					onExecuteClicked: function(){
-						this.$emit('executeclicked', this.rule.ruleId);
+						this.$emit('executeclicked');
 					},
 					onEditClicked: function(){
-						this.$emit('editclicked', this.rule.ruleId);
+						this.$emit('editclicked');
 					},
 				}
 			}

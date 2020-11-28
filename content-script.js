@@ -273,7 +273,7 @@
 			sendResponse(result)
 		}else if(msg.executeAction){
 			var result = executeAction(msg.action);
-			sendResponse(result)
+			sendResponse(result);
 		}
 	});
 	chrome.runtime.sendMessage(undefined, {contentScriptLoaded: true, contentScriptId: contentScriptId});

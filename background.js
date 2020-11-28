@@ -163,6 +163,8 @@ class RuleCollection{
 		this.latestRuleId = 0;
 		this.records = [];
 		this.ruleUpdated = new Event();
+		this.ruleAdded = new Event();
+		this.ruleDeleted = new Event();
 		this.load();
 	}
 	load(){
@@ -185,12 +187,14 @@ class RuleCollection{
 		if(index > -1){
 			this.records.splice(index, 1);
 			this.save();
+			this.ruleDeleted.dispatch();
 		}
 	}
 	saveNewRule(rule){
 		var ruleId = ++this.latestRuleId;
 		this.records.push({ruleId: ruleId, rule: rule});
 		this.save();
+		this.ruleAdded.dispatch();
 		return ruleId;
 	}
 	updateRule(ruleId, rule){
@@ -257,6 +261,9 @@ class RegularPage extends Page{
 		super(tabId);
 		this.url = url;
 		this.currentContentScriptId = undefined;
+		this.ruleUpdatedSubscription = rules.ruleUpdated.listen(() => this.setBadge());
+		this.ruleAddedSubscription = rules.ruleAdded.listen(() => this.setBadge());
+		this.ruleDeletedSubscription = rules.ruleDeleted.listen(() => this.setBadge());
 		this.initialize();
 	}
 	onMessageFromTab(msg, sendResponse){
@@ -300,13 +307,22 @@ class RegularPage extends Page{
 				tabId: this.tabId,
 				popup:"popup.html"
 			});
+			this.setBadge();
 		}catch(e){
 			console.log(`Skipping page: `, e)
 			chrome.browserAction.disable(this.tabId);
 			this.disappear();
 		}
 	}
+	setBadge(){
+		var rulesForPage = rules.getRulesForUrl(this.url);
+		chrome.browserAction.setBadgeText({tabId: this.tabId, text: `${(rulesForPage.length ? rulesForPage.length : '')}`});
+		chrome.browserAction.setBadgeBackgroundColor({tabId: this.tabId, color: '#0a0'})
+	}
 	afterDisappeared(){
+		this.ruleUpdatedSubscription.cancel();
+		this.ruleAddedSubscription.cancel();
+		this.ruleDeletedSubscription.cancel();
 		if(this.currentContentScriptId === undefined){
 			return;
 		}
@@ -542,7 +558,7 @@ chrome.tabs.query({}, async (tabs) => {
 	await Promise.all(tabs.map(t => pages.addPage(t)));
 	console.log(`pages: `, pages)
 });
-chrome.runtime.onMessage.addListener((msg, sender) => {
+chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 	if(sender.tab){
 		return;
 	}
@@ -564,7 +580,8 @@ chrome.runtime.onMessage.addListener((msg, sender) => {
 	}else if(msg.executeRule){
 		var rule = rules.getRule(msg.ruleId);
 		var page = pages.getPageById(msg.pageId);
-		page.executeRule(rule);
+		page.executeRule(rule).then(() => sendResponse({}));
+		return true;
 	}else if(msg.goToManagementPage){
 		ManagementPage.open();
 	}
