@@ -12,6 +12,7 @@
 	<template id="ruleTemplate">
 		<div class="row">
 			{{rule.rule.name}}
+			<span v-for="effect of rule.effect">{{effect}}</span>
 		</div>
 	</template>
 	<div id="app">

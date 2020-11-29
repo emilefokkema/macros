@@ -293,7 +293,7 @@ class RegularPage extends Page{
 			sendResponse({currentRules: rulesForPage});
 		}else if(msg.elementSelectedInDevtools){
 			this.currentlySelectedElementInDevtools = msg.element;
-			this.tab.sendMessageToDevtoolsSidebar({currentlySelectedElement: this.currentlySelectedElementInDevtools});
+			this.tab.sendMessageToDevtoolsSidebar({currentlySelectedElement: this.currentlySelectedElementInDevtools, effects: msg.effects});
 		}
 	}
 	onMessageFromDevtoolsSidebar(msg, sendResponse){
