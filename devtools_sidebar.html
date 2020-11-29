@@ -18,13 +18,13 @@
 				</div>
 			</div>
 			<div class="row-part" v-if="rule.editable">
-				<div class="add-action-button">add action</div>
+				<div class="add-action-button" v-on:click="onAddActionClicked()">add action</div>
 			</div>
 		</div>
 	</template>
 	<div id="app">
 		<node v-bind:node="currentlySelectedElement" v-if="currentlySelectedElement"></node>
-		<rule v-for="rule of currentRules" v-bind:rule="rule"></rule>
+		<rule v-for="rule of currentRules" v-bind:rule="rule" v-on:addactionclicked="addActionToRule(rule)"></rule>
 		<div class="row">
 			<div class="row-part rule-description">(New macro)</div>
 			<div class="row-part">

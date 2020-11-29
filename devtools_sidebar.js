@@ -29,6 +29,9 @@
 					rule.effect = effect.effect;
 				}
 			},
+			addActionToRule: function(rule){
+				chrome.runtime.sendMessage(undefined, {addActionToRule: true, devtoolsTabId: tabId, ruleId: rule.ruleId});
+			},
 			initialize: async function(){
 				chrome.runtime.sendMessage(undefined, {devtoolsSidebarOpened: true, devtoolsTabId: tabId}, (init) => {
 					this.currentlySelectedElement = init.currentlySelectedElement;
@@ -62,6 +65,11 @@
 				props: {
 					rule: Object
 				},
+				methods: {
+					onAddActionClicked: function(){
+						this.$emit('addactionclicked');
+					}
+				}
 			}
 		}
 	})

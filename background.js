@@ -300,6 +300,7 @@ class RegularPage extends Page{
 		this.currentlySelectedElementInDevtools = undefined;
 		this.startedEditingRule = new Event();
 		this.stoppedEditingRule = new Event();
+		this.editRuleRequested = new Event();
 		this.initialize();
 	}
 	startEditingRule(ruleId){
@@ -335,6 +336,8 @@ class RegularPage extends Page{
 				sendResponse({currentlySelectedElement: this.currentlySelectedElementInDevtools, currentRules: rulesForPage, effects: effects});
 			});
 			return true;
+		}else if(msg.addActionToRule){
+			this.editRuleRequested.dispatch(msg.ruleId, this.currentlySelectedElementInDevtools);
 		}
 	}
 	getRulesAndEditability(){
@@ -419,11 +422,15 @@ class PageCollection{
 		this.pages.push(page);
 		var startedEditingRuleSubscription = page.startedEditingRule.listen((ruleId) => this.pageStartedEditingRule.dispatch(page.pageId, ruleId));
 		var stoppedEditingRuleSubscription = page.stoppedEditingRule.listen((ruleId) => this.pageStoppedEditingRule.dispatch(page.pageId, ruleId));
+		var editRuleRequestedSubscription = page.editRuleRequested.listen((ruleId, element) => {
+			
+		});
 		console.log(`added page. current number of pages: ${this.pages.length}`)
 		page.onDisappeared.addListener(() => {
 			this.removePage(page);
 			startedEditingRuleSubscription.cancel();
 			stoppedEditingRuleSubscription.cancel();
+			editRuleRequestedSubscription.cancel();
 		});
 	}
 	getRulesEditedByPageOtherThan(pageId){
