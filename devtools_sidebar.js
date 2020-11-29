@@ -16,6 +16,7 @@
 				this.currentRules = rules.map(r => ({
 					ruleId: r.ruleId,
 					rule: r.rule,
+					editable: r.editable,
 					effect: []
 				}))
 			},
@@ -38,9 +39,13 @@
 					if(msg.destinationDevtoolsTabId !== tabId){
 						return;
 					}
-					if(msg.message.currentlySelectedElement !== undefined){
-						this.currentlySelectedElement = msg.message.currentlySelectedElement;
-						this.setEffects(msg.message.effects);
+					msg = msg.message;
+					if(msg.currentlySelectedElement !== undefined){
+						this.currentlySelectedElement = msg.currentlySelectedElement;
+						this.setEffects(msg.effects);
+					}else if(msg.currentRules !== undefined){
+						this.setRules(msg.currentRules);
+						this.setEffects(msg.effects);
 					}
 				});
 			}

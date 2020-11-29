@@ -186,6 +186,9 @@
 			this.actions = definition.actions.map(d => Action.create(d));
 		}
 		getEffectOnNode(node){
+			if(!node){
+				return [];
+			}
 			return this.actions.map(a => a.getEffectOnNode(node)).filter(a => !!a);
 		}
 	}
@@ -317,6 +320,7 @@
 			sendResponse(result);
 		}else if(msg.currentRules){
 			setCurrentRules(msg.currentRules);
+			sendResponse(getEffectsOnCurrentlySelectedElement())
 		}else if(msg.requestEffects){
 			console.log(`effects were requested`)
 			sendResponse(getEffectsOnCurrentlySelectedElement())

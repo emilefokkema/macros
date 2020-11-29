@@ -11,13 +11,26 @@
 	</template>
 	<template id="ruleTemplate">
 		<div class="row">
-			{{rule.rule.name}}
-			<span v-for="effect of rule.effect">{{effect}}</span>
+			<div class="row-part rule-description">
+				<div class="rule-name">{{rule.rule.name}}</div>
+				<div>
+					<div v-for="effect of rule.effect" class="effect">{{effect}}</div>
+				</div>
+			</div>
+			<div class="row-part" v-if="rule.editable">
+				<div class="add-action-button">add action</div>
+			</div>
 		</div>
 	</template>
 	<div id="app">
 		<node v-bind:node="currentlySelectedElement" v-if="currentlySelectedElement"></node>
 		<rule v-for="rule of currentRules" v-bind:rule="rule"></rule>
+		<div class="row">
+			<div class="row-part rule-description">(New macro)</div>
+			<div class="row-part">
+				<div class="add-action-button">add action</div>
+			</div>
+		</div>
 	</div>
 	<script src="devtools_sidebar.js">
 	</script>
