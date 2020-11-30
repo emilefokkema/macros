@@ -95,6 +95,7 @@ var runtimeMessages = new RuntimeMessages();
 class Tab{
 	constructor(tabId){
 		this.tabId = tabId;
+		this.onError = new Event();
 	}
 	whenComplete(){
 		return this.whenStatusEquals("complete");
@@ -108,7 +109,11 @@ class Tab{
 	whenStatusEquals(status, cancellationToken){
 		var resolve, promise = new Promise((res) => {resolve = res;});
 		chrome.tabs.get(this.tabId, (tab) => {
-			if(tab.status === status){
+			var e = chrome.runtime.lastError;
+			if(cancellationToken && cancellationToken.cancelled){
+				return;
+			}
+			if(e === undefined && tab && tab.status === status){
 				resolve();
 			}else{
 				tabsUpdated.when((tabId, changeInfo) => {return tabId === this.tabId && changeInfo.status === status;}, cancellationToken).then(resolve);
@@ -132,15 +137,44 @@ class Tab{
 		return promise;
 	}
 	sendMessageAsync(msg){
-		var resolve, promise = new Promise((res) => {resolve = res;});
-		chrome.tabs.sendMessage(this.tabId, msg, resp => resolve(resp));
+		var resolve, reject, promise = new Promise((res, rej) => {resolve = res;reject = rej;});
+		chrome.tabs.sendMessage(this.tabId, msg, resp => {
+			var lastError = chrome.runtime.lastError;
+			if(lastError){
+				reject(`error when sending message to tab. Message: ${JSON.stringify(msg)}. Error: ${lastError.message}`);
+			}else{
+				resolve(resp);
+			}
+		});
 		return promise;
 	}
 	sendMessage(msg, callback){
-		chrome.tabs.sendMessage(this.tabId, msg, callback);
+		if(callback){
+			chrome.tabs.sendMessage(this.tabId, msg, resp => {
+				var lastError = chrome.runtime.lastError;
+				if(lastError){
+					this.onError.dispatch(`error when sending message to tab. Message: ${JSON.stringify(msg)}. Error: ${lastError.message}`);
+				}else{
+					callback(resp);
+				}
+			});
+		}else{
+			chrome.tabs.sendMessage(this.tabId, msg);
+		}
 	}
 	sendMessageToDevtoolsSidebar(msg, callback){
-		chrome.runtime.sendMessage(undefined, {destinationDevtoolsTabId: this.tabId, message: msg}, callback);
+		if(callback){
+			chrome.runtime.sendMessage(undefined, {destinationDevtoolsTabId: this.tabId, message: msg}, resp => {
+				var lastError = chrome.runtime.lastError;
+				if(lastError){
+					this.onError.dispatch(`error when sending message to devtools sidebar. Message: ${JSON.stringify(msg)}. Error: ${lastError.message}. callback is defined: ${!!callback}`);
+				}else{
+					callback(resp);
+				}
+			});
+		}else{
+			chrome.runtime.sendMessage(undefined, {destinationDevtoolsTabId: this.tabId, message: msg});
+		}
 	}
 	listenToDevtoolsSidebarMessages(listener){
 		return runtimeMessages.listen((msg, sender, sendResponse) => {
@@ -301,6 +335,9 @@ class RegularPage extends Page{
 		this.startedEditingRule = new Event();
 		this.stoppedEditingRule = new Event();
 		this.editRuleRequested = new Event();
+		this.tab.onError.listen((e) => {
+			throw new Error(`Error from tab for page at ${this.url}. ${e}`)
+		});
 		this.initialize();
 	}
 	startEditingRule(ruleId){
@@ -382,7 +419,9 @@ class RegularPage extends Page{
 			this.setRules();
 		}catch(e){
 			console.log(`Skipping page: `, e)
-			chrome.browserAction.disable(this.tabId);
+			chrome.browserAction.disable(this.tabId, () => {
+				var e = chrome.runtime.lastError;
+			});
 			this.disappear();
 		}
 	}

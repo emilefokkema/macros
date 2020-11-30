@@ -292,7 +292,7 @@
 			ruleId: r.ruleId,
 			rule: new Rule(r.rule)
 		}))
-		console.log(`current rules: `, currentRules)
+		//console.log(`current rules: `, currentRules)
 	}
 	function getEffectsOnCurrentlySelectedElement(){
 		return currentRules.map(r => ({
@@ -309,7 +309,7 @@
 		if(msg.contentScriptId !== contentScriptId){
 			return;
 		}
-		console.log(`content script received message`, msg)
+		//console.log(`content script received message`, msg)
 		if(msg.stopContentScript){
 			console.log(`bye from content script ${contentScriptId}`)
 		}else if(msg.findSelectors){
@@ -322,7 +322,7 @@
 			setCurrentRules(msg.currentRules);
 			sendResponse(getEffectsOnCurrentlySelectedElement())
 		}else if(msg.requestEffects){
-			console.log(`effects were requested`)
+			//console.log(`effects were requested`)
 			sendResponse(getEffectsOnCurrentlySelectedElement())
 		}
 	});
