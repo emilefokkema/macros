@@ -103,8 +103,14 @@ class Tab{
 	whenLoading(cancellationToken){
 		return this.whenStatusEquals("loading", cancellationToken);
 	}
+	whenStartsLoading(cancellationToken){
+		return this.whenStatusChangesTo("loading", cancellationToken);
+	}
 	whenRemoved(cancellationToken){
 		return tabRemoved.when(tabId => tabId === this.tabId, cancellationToken);
+	}
+	whenStatusChangesTo(status, cancellationToken){
+		return tabsUpdated.when((tabId, changeInfo) => {return tabId === this.tabId && changeInfo.status === status;}, cancellationToken);
 	}
 	whenStatusEquals(status, cancellationToken){
 		var resolve, promise = new Promise((res) => {resolve = res;});
@@ -272,16 +278,17 @@ class RuleCollection{
 }
 var rules = new RuleCollection();
 class Page{
-	constructor(tabId){
+	constructor(tab){
 		this.pageId = pageId++;
 		this.cancellationToken = new CancellationToken();
-		this.tabId = tabId;
-		this.tab = new Tab(tabId);
-		this.tab.whenComplete().then(() => {
-			Promise.any([this.tab.whenLoading(this.cancellationToken), this.tab.whenRemoved(this.cancellationToken)]).then(() => {
-				console.log(`tab ${this.tabId} for page ${this.pageId} has been removed or has started loading`)
-				this.disappear();
-			});
+		this.tabId = tab.tabId;
+		this.tab = tab;
+		Promise.any([
+			this.tab.whenStartsLoading(this.cancellationToken),
+			this.tab.whenRemoved(this.cancellationToken)
+		]).then(() => {
+			console.log(`tab ${this.tabId} for page ${this.pageId} has been removed or has started loading`)
+			this.disappear();
 		});
 		this.hasDisappeared = false;
 		this.onDisappeared = new Event();
@@ -313,8 +320,8 @@ class Page{
 	}
 }
 class RegularPage extends Page{
-	constructor(tabId, url, pageCollection){
-		super(tabId);
+	constructor(tab, url, pageCollection){
+		super(tab);
 		this.url = url;
 		this.pageCollection = pageCollection;
 		this.editingRules = [];
@@ -338,7 +345,7 @@ class RegularPage extends Page{
 		this.startedEditingRule = new Event();
 		this.stoppedEditingRule = new Event();
 		this.editRuleRequested = new Event();
-		this.tab.onError.listen((e) => {
+		this.errorSubscription = this.tab.onError.listen((e) => {
 			throw new Error(`Error from tab for page at ${this.url}. ${e}`)
 		});
 		this.initialize();
@@ -443,6 +450,7 @@ class RegularPage extends Page{
 		this.ruleDeletedSubscription.cancel();
 		this.pageStartedEditingRuleSubscription.cancel();
 		this.pageStoppedEditingRuleSubscription.cancel();
+		this.errorSubscription.cancel();
 		if(this.currentContentScriptId === undefined){
 			return;
 		}
@@ -457,12 +465,12 @@ class PageCollection{
 		chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
 			if(changeInfo.status === "loading"){
 				console.log(`a page has started loading on tab ${tabId}`)
-				this.addPage(tab);
+				this.addPage(tabId, tab.url);
 			}
 		});
 	}
-	async addPage(tab){
-		var page = new RegularPage(tab.id, tab.url, this);
+	async addPage(tabId, url){
+		var page = new RegularPage(new Tab(tabId), url, this);
 		this.pages.push(page);
 		var startedEditingRuleSubscription = page.startedEditingRule.listen((ruleId) => this.pageStartedEditingRule.dispatch(page.pageId, ruleId));
 		var stoppedEditingRuleSubscription = page.stoppedEditingRule.listen((ruleId) => this.pageStoppedEditingRule.dispatch(page.pageId, ruleId));
@@ -499,8 +507,8 @@ class PageCollection{
 var pages = new PageCollection();
 var ruleEditorId = 0;
 class RuleEditor extends Page{
-	constructor(page, tabId, ruleId){
-		super(tabId);
+	constructor(page, tab, ruleId){
+		super(tab);
 		this.ruleEditorId = ruleEditorId++;
 		this.page = page;
 		if(this.page){
@@ -544,9 +552,14 @@ class RuleEditor extends Page{
 		this.tab.sendMessage({initialize: true, url: this.page && this.page.url, ruleId: this.ruleId, rule: rule});
 	}
 	static create(page, ruleId, callback){
-		chrome.tabs.create({url: 'create-rule.html'}, (tab) => {
-			var editor = new RuleEditor(page, tab.id, ruleId);
-			callback(editor);
+		chrome.tabs.create({url: 'create-rule.html'}, (t) => {
+			console.log(`created new tab (${t.id}) for editor, tab status = `, t.status)
+			var tab = new Tab(t.id);
+			tab.whenStartsLoading().then(() => {
+				console.log(`tab ${tab.tabId} has started loading, creating editor`);
+				var editor = new RuleEditor(page, tab, ruleId);
+				callback(editor);
+			});
 		});
 	}
 }
@@ -634,8 +647,8 @@ class RuleEditorCollection{
 var ruleEditors = new RuleEditorCollection();
 
 class ManagementPage extends Page{
-	constructor(tabId){
-		super(tabId);
+	constructor(tab){
+		super(tab);
 		this.onEditorOpenedSubscription = ruleEditors.editorOpened.listen(() => this.notifyOfDeletableIds());
 		this.onEditorClosedSubscription = ruleEditors.editorClosed.listen(() => this.notifyOfDeletableIds());
 		this.onNewRuleCreatedSubscription = ruleEditors.newRuleCreated.listen(() => this.notifyOfChangedRules());
@@ -683,18 +696,24 @@ class ManagementPage extends Page{
 		if(this.instance){
 			this.instance.focus();
 		}else{
-			chrome.tabs.create({url: 'management.html'}, (tab) => {
-				this.instance = new ManagementPage(tab.id);
-				this.instance.onDisappeared.addListener(() => {
-					this.instance = undefined;
-					console.log(`management page gone`)
+			chrome.tabs.create({url: 'management.html'}, (t) => {
+				console.log(`created new tab (${t.id}) for management page`)
+				var tab = new Tab(t.id);
+				tab.whenStartsLoading().then(() => {
+					console.log(`tab ${tab.tabId} for management page has started loading, creating management page`);
+					this.instance = new ManagementPage(tab);
+					this.instance.onDisappeared.addListener(() => {
+						this.instance = undefined;
+						console.log(`management page gone`)
+					});
 				});
+				
 			});
 		}
 	}
 }
 chrome.tabs.query({}, async (tabs) => {
-	await Promise.all(tabs.map(t => pages.addPage(t)));
+	await Promise.all(tabs.map(t => pages.addPage(t.id, t.url)));
 	console.log(`pages: `, pages)
 });
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
