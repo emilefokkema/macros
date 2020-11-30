@@ -1,10 +1,5 @@
 (function(){
-	var resolveInitialized, initializedPromise = new Promise((res) => {resolveInitialized = res;});
-	chrome.runtime.onMessage.addListener((msg, sender) => {
-		if(msg.initialize){
-			resolveInitialized(msg);
-		}
-	});
+
 	new Vue({
 		el: '#app',
 		data: function(){
@@ -16,15 +11,17 @@
 			this.initialize();
 		},
 		methods: {
-			initialize: async function(){
-				var initMsg = await initializedPromise;
-				this.rules = initMsg.rules;
-				chrome.runtime.onMessage.addListener((msg) => {
-					if(msg.deletableRulesChange){
-						this.setNonDeletable(msg.nonDeletable);
-					}else if(msg.rulesChanged){
-						this.rules = msg.rules;
-					}
+			initialize: function(){
+				chrome.runtime.sendMessage(undefined, {initialize: true}, initMsg => {
+					console.log(`got response from initialize message:`, initMsg);
+					this.rules = initMsg.rules;
+					chrome.runtime.onMessage.addListener((msg) => {
+						if(msg.deletableRulesChange){
+							this.setNonDeletable(msg.nonDeletable);
+						}else if(msg.rulesChanged){
+							this.rules = msg.rules;
+						}
+					});
 				});
 			},
 			setNonDeletable: function(nonDeletableRuleIds){

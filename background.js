@@ -97,12 +97,6 @@ class Tab{
 		this.tabId = tabId;
 		this.onError = new Event();
 	}
-	whenComplete(){
-		return this.whenStatusEquals("complete");
-	}
-	whenLoading(cancellationToken){
-		return this.whenStatusEquals("loading", cancellationToken);
-	}
 	whenStartsLoading(cancellationToken){
 		return this.whenStatusChangesTo("loading", cancellationToken);
 	}
@@ -516,14 +510,19 @@ class RuleEditor extends Page{
 		}
 		this.ruleCreated = new Event();
 		this.ruleId = ruleId;
-		this.initialize();
 	}
 	onPageDestroyed(){
 		this.page = undefined;
 		this.tab.sendMessage({pageDestroyed: true});
 	}
 	onMessageFromTab(msg, sendResponse){
-		if(msg.focusPage){
+		if(msg.initialize){
+			var rule = undefined;
+			if(this.ruleId !== undefined){
+				rule = rules.getRule(this.ruleId);
+			}
+			sendResponse({url: this.page && this.page.url, ruleId: this.ruleId, rule: rule});
+		}else if(msg.focusPage){
 			this.page.focus();
 		}else if(msg.createdRule){
 			var ruleId = rules.saveNewRule(msg.createdRule);
@@ -542,14 +541,6 @@ class RuleEditor extends Page{
 			this.page.executeAction(msg.action).then(resp => sendResponse(resp));
 			return true;
 		}
-	}
-	async initialize(){
-		await this.tab.whenComplete();
-		var rule = undefined;
-		if(this.ruleId !== undefined){
-			rule = rules.getRule(this.ruleId);
-		}
-		this.tab.sendMessage({initialize: true, url: this.page && this.page.url, ruleId: this.ruleId, rule: rule});
 	}
 	static create(page, ruleId, callback){
 		chrome.tabs.create({url: 'create-rule.html'}, (t) => {
@@ -653,7 +644,6 @@ class ManagementPage extends Page{
 		this.onEditorClosedSubscription = ruleEditors.editorClosed.listen(() => this.notifyOfDeletableIds());
 		this.onNewRuleCreatedSubscription = ruleEditors.newRuleCreated.listen(() => this.notifyOfChangedRules());
 		this.onRuleUpdatedSubscription = rules.ruleUpdated.listen(() => this.notifyOfChangedRules());
-		this.initialize();
 	}
 	notifyOfDeletableIds(){
 		var nonDeletable = ruleEditors.getNonDeletableRuleIds();
@@ -663,7 +653,10 @@ class ManagementPage extends Page{
 		this.tab.sendMessage({rulesChanged: true, rules: this.getRules()});
 	}
 	onMessageFromTab(msg, sendResponse){
-		if(msg.deleteRule){
+		if(msg.initialize){
+			console.log(`management page requests initialization`);
+			sendResponse({rules: this.getRules()});
+		}else if(msg.deleteRule){
 			rules.deleteRule(msg.ruleId);
 			sendResponse({});
 		}else if(msg.editRule){
@@ -678,13 +671,6 @@ class ManagementPage extends Page{
 				rule: r.rule,
 				deletable: !nonDeletable.some(id => id === r.ruleId)
 			}));
-	}
-	async initialize(){
-		await this.tab.whenComplete();
-		this.tab.sendMessage({
-			initialize: true,
-			rules: this.getRules()
-		});
 	}
 	afterDisappeared(){
 		this.onEditorOpenedSubscription.cancel();

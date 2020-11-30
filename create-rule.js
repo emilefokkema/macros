@@ -1,10 +1,4 @@
 (function(){
-		var resolveInitialized, initializedPromise = new Promise((res) => {resolveInitialized = res;});
-		chrome.runtime.onMessage.addListener((msg, sender) => {
-			if(msg.initialize){
-				resolveInitialized(msg);
-			}
-		});
 		new Vue({
 			el: '#app',
 			data: function(){
@@ -44,18 +38,19 @@
 						action: {type: "delete"}
 					});
 				},
-				initialize: async function(){
-					var initMsg = await initializedPromise;
-					if(initMsg.url){
-						this.url = initMsg.url;
-						this.hasPage = true;
-					}
-					if(initMsg.ruleId){
-						this.ruleId = initMsg.ruleId;
-						this.setRule(initMsg.rule);
-					}else{
-						this.urlPattern = this.url;
-					}
+				initialize: function(){
+					chrome.runtime.sendMessage(undefined, {initialize: true}, initMsg => {
+						if(initMsg.url){
+							this.url = initMsg.url;
+							this.hasPage = true;
+						}
+						if(initMsg.ruleId){
+							this.ruleId = initMsg.ruleId;
+							this.setRule(initMsg.rule);
+						}else{
+							this.urlPattern = this.url;
+						}
+					});
 				},
 				setRule: function(rule){
 					this.name = rule.name;
