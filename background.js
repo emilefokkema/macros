@@ -278,7 +278,10 @@ class Page{
 		this.tabId = tabId;
 		this.tab = new Tab(tabId);
 		this.tab.whenComplete().then(() => {
-			Promise.any([this.tab.whenLoading(this.cancellationToken), this.tab.whenRemoved(this.cancellationToken)]).then(() => this.disappear());
+			Promise.any([this.tab.whenLoading(this.cancellationToken), this.tab.whenRemoved(this.cancellationToken)]).then(() => {
+				console.log(`tab ${this.tabId} for page ${this.pageId} has been removed or has started loading`)
+				this.disappear();
+			});
 		});
 		this.hasDisappeared = false;
 		this.onDisappeared = new Event();
@@ -411,6 +414,7 @@ class RegularPage extends Page{
 	}
 	async initialize(){
 		try{
+			console.log(`page ${this.pageId} on tab ${this.tabId} going to load content script`)
 			await this.tab.executeScript({file: 'content-script.js', runAt: 'document_start'});
 			chrome.browserAction.setPopup({
 				tabId: this.tabId,
@@ -452,6 +456,7 @@ class PageCollection{
 		this.pageStoppedEditingRule = new Event();
 		chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
 			if(changeInfo.status === "loading"){
+				console.log(`a page has started loading on tab ${tabId}`)
 				this.addPage(tab);
 			}
 		});
@@ -466,6 +471,7 @@ class PageCollection{
 		});
 		console.log(`added page. current number of pages: ${this.pages.length}`)
 		page.onDisappeared.addListener(() => {
+			console.log(`page ${page.pageId} on tab ${page.tabId} has disappeared`)
 			this.removePage(page);
 			startedEditingRuleSubscription.cancel();
 			stoppedEditingRuleSubscription.cancel();
