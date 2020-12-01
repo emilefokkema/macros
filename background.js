@@ -459,6 +459,7 @@ class PageCollection{
 		this.pages = [];
 		this.pageStartedEditingRule = new Event();
 		this.pageStoppedEditingRule = new Event();
+		this.editRuleRequested = new Event();
 		chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
 			if(changeInfo.status === "loading"){
 				console.log(`a page has started loading on tab ${tabId}`)
@@ -471,9 +472,7 @@ class PageCollection{
 		this.pages.push(page);
 		var startedEditingRuleSubscription = page.startedEditingRule.listen((ruleId) => this.pageStartedEditingRule.dispatch(page.pageId, ruleId));
 		var stoppedEditingRuleSubscription = page.stoppedEditingRule.listen((ruleId) => this.pageStoppedEditingRule.dispatch(page.pageId, ruleId));
-		var editRuleRequestedSubscription = page.editRuleRequested.listen((ruleId, element) => {
-			
-		});
+		var editRuleRequestedSubscription = page.editRuleRequested.listen((ruleId, element) => this.editRuleRequested.dispatch(page.pageId, ruleId, element));
 		console.log(`added page. current number of pages: ${this.pages.length}`)
 		page.onDisappeared.addListener(() => {
 			console.log(`page ${page.pageId} on tab ${page.tabId} has disappeared`)
@@ -564,6 +563,9 @@ class RuleEditorCollection{
 		this.editorOpened = new Event();
 		this.editorClosed = new Event();
 		this.newRuleCreated = new Event();
+		pages.editRuleRequested.listen((pageId, ruleId, element) => {
+			console.log(`page ${pageId} requests to edit rule ${ruleId} and add an action for`, element);
+		});
 	}
 	removeEditorFromList(list, editor){
 		var index = list.indexOf(editor);
