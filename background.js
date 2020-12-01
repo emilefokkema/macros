@@ -407,11 +407,10 @@ class RegularPage extends Page{
 		});
 	}
 	onContentScriptLoaded(contentScriptId){
-		if(this.currentContentScriptId !== undefined){
-			console.log(`page ${this.url} has loaded another content script: ${contentScriptId}`);
-		}
-		this.currentContentScriptId = contentScriptId;
+		this.stopCurrentContentScript();
 		console.log(`page ${this.url} (pageId ${this.pageId}) has loaded content script: ${contentScriptId}`);
+		this.currentContentScriptId = contentScriptId;
+		
 	}
 	async initialize(){
 		try{
@@ -438,6 +437,13 @@ class RegularPage extends Page{
 			this.tab.sendMessageToDevtoolsSidebar({currentRules: rulesForPage, effects: effects});
 		});
 	}
+	stopCurrentContentScript(){
+		if(this.currentContentScriptId === undefined){
+			return;
+		}
+		console.log(`stopping content script ${this.currentContentScriptId} for page ${this.pageId}`);
+		this.tab.sendMessage({stopContentScript: true, contentScriptId: this.currentContentScriptId});
+	}
 	afterDisappeared(){
 		this.ruleUpdatedSubscription.cancel();
 		this.ruleAddedSubscription.cancel();
@@ -445,10 +451,7 @@ class RegularPage extends Page{
 		this.pageStartedEditingRuleSubscription.cancel();
 		this.pageStoppedEditingRuleSubscription.cancel();
 		this.errorSubscription.cancel();
-		if(this.currentContentScriptId === undefined){
-			return;
-		}
-		this.tab.sendMessage({stopContentScript: true, contentScriptId: this.currentContentScriptId});
+		this.stopCurrentContentScript();
 	}
 }
 class PageCollection{
