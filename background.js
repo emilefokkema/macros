@@ -36,9 +36,27 @@ class Event extends EventSource{
 			this.listeners.splice(index, 1)
 		}
 	}
-	dispatch(){
+	dispatch(event){
 		for(let listener of this.listeners){
-			listener.apply(null, arguments);
+			listener(event);
+		}
+	}
+}
+class MessageSender extends Event{
+	sendMessage(message, responseCallback){
+		var responseGiven = false;
+		for(let listener of this.listeners){
+			listener(message, sendResponse);
+		}
+		function sendResponse(resp){
+			if(responseGiven){
+				console.log(`a response was already given, so ignoring`)
+				return;
+			}
+			responseGiven = true;
+			if(responseCallback){
+				responseCallback(resp);
+			}
 		}
 	}
 }
@@ -205,7 +223,6 @@ function urlMatchesPattern(url, pattern){
 	var regex = new RegExp(`^${regexPattern}$`);
 	return !!url.match(regex);
 }
-var pageId = 0;
 class RuleCollection{
 	constructor(){
 		this.latestRuleId = 0;
@@ -271,6 +288,22 @@ class RuleCollection{
 	}
 }
 var rules = new RuleCollection();
+
+class NodeModel{
+	constructor(summary){
+		this.summary = summary;
+		this.nodeName = summary.nodeName;
+		this.classes = summary.classes;
+		this.id = summary.id;
+	}
+	getSelector(){
+		if(this.id){
+			return `#${this.id}`;
+		}
+		return `${this.nodeName}${this.classes.map(c => `.${c}`).join('')}`;
+	}
+}
+var pageId = 0;
 class Page{
 	constructor(tab){
 		this.pageId = pageId++;
@@ -318,6 +351,7 @@ class EditedRules{
 		this.records = [];
 		this.startedEditingRule = new Event();
 		this.stoppedEditingRule = new Event();
+		this.onMessage = new MessageSender();
 	}
 	ruleIsBeingEdited(ruleId){
 		return this.records.some(r => r.ruleId === ruleId);
@@ -331,6 +365,9 @@ class EditedRules{
 	getRulesBeingEditedByPage(pageId){
 		return this.records.filter(r => r.pageId === pageId).map(r => r.ruleId);
 	}
+	requestRuleEditor(ruleId, pageId, editorCallback){
+		this.onMessage.sendMessage({requestRuleEditor: true, ruleId, pageId}, editorCallback);
+	}
 	startEditingRule(ruleId, pageId){
 		var record = this.records.find(r => r.ruleId === ruleId);
 		if(record){
@@ -338,7 +375,7 @@ class EditedRules{
 		}else{
 			this.records.push({ruleId, pageId});
 		}
-		this.startedEditingRule.dispatch(ruleId, pageId);
+		this.startedEditingRule.dispatch({ruleId, pageId});
 	}
 	stopEditingRule(ruleId){
 		var index = this.records.findIndex(r => r.ruleId === ruleId);
@@ -361,7 +398,6 @@ class RegularPage extends Page{
 		this.onStartedEditingRuleSubscription = editedRules.startedEditingRule.listen(() => this.setRules());
 		this.onStoppedEditingRuleSubscription = editedRules.stoppedEditingRule.listen(() => this.setRules());
 		this.currentlySelectedElementInDevtools = undefined;
-		this.editRuleRequested = new Event();
 		this.errorSubscription = this.tab.onError.listen((e) => {
 			throw new Error(`Error from tab for page at ${this.url}. ${e}`)
 		});
@@ -373,19 +409,27 @@ class RegularPage extends Page{
 			var rulesForPage = this.getRulesAndEditability();
 			sendResponse({currentRules: rulesForPage});
 		}else if(msg.elementSelectedInDevtools){
-			this.currentlySelectedElementInDevtools = msg.element;
-			this.tab.sendMessageToDevtoolsSidebar({currentlySelectedElement: this.currentlySelectedElementInDevtools, effects: msg.effects});
+			this.currentlySelectedElementInDevtools = new NodeModel(msg.element);
+			this.tab.sendMessageToDevtoolsSidebar({currentlySelectedElement: msg.element, effects: msg.effects});
 		}
 	}
 	onMessageFromDevtoolsSidebar(msg, sendResponse){
 		if(msg.devtoolsSidebarOpened){
 			var rulesForPage = this.getRulesAndEditability();
 			this.tab.sendMessage({contentScriptId: this.currentContentScriptId, requestEffects: true}, effects => {
-				sendResponse({currentlySelectedElement: this.currentlySelectedElementInDevtools, currentRules: rulesForPage, effects: effects});
+				sendResponse({
+					currentlySelectedElement: this.currentlySelectedElementInDevtools && this.currentlySelectedElementInDevtools.summary,
+					currentRules: rulesForPage,
+					effects: effects
+				});
 			});
 			return true;
 		}else if(msg.addActionToRule){
-			this.editRuleRequested.dispatch(msg.ruleId, this.currentlySelectedElementInDevtools);
+			editedRules.requestRuleEditor(msg.ruleId, this.pageId, editor => {
+				if(this.currentlySelectedElementInDevtools){
+					editor.addActionForSelector(this.currentlySelectedElementInDevtools.getSelector());
+				}
+			});
 		}
 	}
 	getRulesAndEditability(){
@@ -463,7 +507,6 @@ class RegularPage extends Page{
 class PageCollection{
 	constructor(){
 		this.pages = [];
-		this.editRuleRequested = new Event();
 		chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
 			if(changeInfo.status === "loading"){
 				console.log(`a page has started loading on tab ${tabId}`)
@@ -474,12 +517,10 @@ class PageCollection{
 	async addPage(tabId, url){
 		var page = new RegularPage(new Tab(tabId), url, this);
 		this.pages.push(page);
-		var editRuleRequestedSubscription = page.editRuleRequested.listen((ruleId, element) => this.editRuleRequested.dispatch(page.pageId, ruleId, element));
 		console.log(`added page. current number of pages: ${this.pages.length}`)
 		page.onDisappeared.addListener(() => {
 			console.log(`page ${page.pageId} on tab ${page.tabId} has disappeared`)
 			this.removePage(page);
-			editRuleRequestedSubscription.cancel();
 		});
 	}
 	getPageByTabId(tabId){
@@ -509,10 +550,19 @@ class RuleEditor extends Page{
 		}
 		this.ruleCreated = new Event();
 		this.ruleId = ruleId;
+		this.initialized = false;
+		this.selectorsForWhichToAddRules = [];
 	}
 	onPageDestroyed(){
 		this.page = undefined;
 		this.tab.sendMessage({pageDestroyed: true});
+	}
+	addActionForSelector(selector){
+		if(!this.initialized){
+			this.selectorsForWhichToAddRules.push(selector);
+		}else{
+
+		}
 	}
 	onMessageFromTab(msg, sendResponse){
 		if(msg.initialize){
@@ -520,7 +570,13 @@ class RuleEditor extends Page{
 			if(this.ruleId !== undefined){
 				rule = rules.getRule(this.ruleId);
 			}
-			sendResponse({url: this.page && this.page.url, ruleId: this.ruleId, rule: rule});
+			sendResponse({
+				url: this.page && this.page.url,
+				ruleId: this.ruleId,
+				rule: rule,
+				selectorsForWhichToAddRules: this.selectorsForWhichToAddRules
+			});
+			this.initialized = true;
 		}else if(msg.focusPage){
 			this.page.focus();
 		}else if(msg.createdRule){
@@ -558,9 +614,13 @@ class RuleEditorCollection{
 		this.newRuleEditors = [];
 		this.existingRuleEditors = [];
 		this.newRuleCreated = new Event();
-		pages.editRuleRequested.listen((pageId, ruleId, element) => {
-			console.log(`page ${pageId} requests to edit rule ${ruleId} and add an action for`, element);
-		});
+		editedRules.onMessage.listen((msg, sendResponse) => this.onMessageFromEditedRules(msg, sendResponse));
+	}
+	onMessageFromEditedRules(msg, sendResponse){
+		if(msg.requestRuleEditor){
+			const {pageId, ruleId} = msg;
+			this.editRuleForPage(pageId, ruleId, sendResponse);
+		}
 	}
 	removeEditorFromList(list, editor){
 		var index = list.indexOf(editor);
@@ -577,9 +637,6 @@ class RuleEditorCollection{
 			editedRules.stopEditingRule(editor.ruleId);
 		}
 	}
-	getNonDeletableRuleIds(){
-		return this.existingRuleEditors.map(e => e.ruleId);
-	}
 	editRule(ruleId){
 		var existing = this.existingRuleEditors.find(e => e.ruleId === ruleId);
 		if(existing){
@@ -594,10 +651,13 @@ class RuleEditorCollection{
 			});
 		}
 	}
-	editRuleForPage(pageId, ruleId){
+	editRuleForPage(pageId, ruleId, editorCallback){
 		var existing = this.existingRuleEditors.find(e => e.ruleId === ruleId);
 		if(existing){
 			existing.focus();
+			if(editorCallback){
+				editorCallback(existing);
+			}
 		}else{
 			var page = pages.getPageById(pageId);
 			RuleEditor.create(page, ruleId, editor => {
@@ -606,6 +666,9 @@ class RuleEditorCollection{
 				});
 				this.existingRuleEditors.push(editor);
 				editedRules.startEditingRule(ruleId, pageId);
+				if(editorCallback){
+					editorCallback(editor);
+				}
 			});
 		}
 	}

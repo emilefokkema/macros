@@ -50,6 +50,7 @@
 						}else{
 							this.urlPattern = this.url;
 						}
+						console.log(`selectors for which to add rules: `, initMsg.selectorsForWhichToAddRules)
 					});
 				},
 				setRule: function(rule){
