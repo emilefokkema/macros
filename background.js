@@ -295,12 +295,10 @@ class NodeModel{
 		this.nodeName = summary.nodeName;
 		this.classes = summary.classes;
 		this.id = summary.id;
+		this.attributes = summary.attributes;
 	}
 	getSelector(){
-		if(this.id){
-			return `#${this.id}`;
-		}
-		return `${this.nodeName}${this.classes.map(c => `.${c}`).join('')}`;
+		return `${this.nodeName}${(this.id ? `#${this.id}`: '')}${this.classes.map(c => `.${c}`).join('')}${this.attributes.map(a => `[${a.attributeName}="${a.attributeValue}"]`).join('')}`;
 	}
 }
 var pageId = 0;

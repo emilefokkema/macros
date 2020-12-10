@@ -241,10 +241,12 @@
 		var nodeName = node.nodeName.toLowerCase();
 		var classAttributeValue = node.getAttribute("class");
 		var classes = classAttributeValue ? classAttributeValue.match(/\S+/g) : [];
+		var attributes = node.getAttributeNames().filter(n => n !== "id" && n !== "class").map(n => ({attributeName: n, attributeValue: node.getAttribute(n)}));
 		return {
 			nodeName: nodeName,
 			classes: classes,
-			id: node.getAttribute("id")
+			id: node.getAttribute("id"),
+			attributes: attributes
 		};
 	}
 	function prettifyCssText(cssText){

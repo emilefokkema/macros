@@ -7,7 +7,9 @@
 </head>
 <body>
 	<template id="nodeTemplate">
-		<div><pre><span class="node-name">{{node.nodeName}}</span><span v-if="node.id" class="node-id">#{{node.id}}</span><span class="class-name" v-for="className of node.classes">.{{className}}</span></pre></div>
+		<div>
+			<pre><span class="node-name">{{node.nodeName}}</span><span v-if="node.id" class="node-id">#{{node.id}}</span><span class="class-name" v-for="className of node.classes">.{{className}}</span><span class="attribute" v-for="attribute of node.attributes">[{{attribute.attributeName}}=&quot;{{attribute.attributeValue}}&quot;]</span></pre>
+		</div>
 	</template>
 	<template id="ruleTemplate">
 		<div class="row">
