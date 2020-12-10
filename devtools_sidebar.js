@@ -32,6 +32,9 @@
 			addActionToRule: function(rule){
 				chrome.runtime.sendMessage(undefined, {addActionToRule: true, devtoolsTabId: tabId, ruleId: rule.ruleId});
 			},
+			addActionToNewRule: function(){
+				chrome.runtime.sendMessage(undefined, {addActionToNewRule: true, devtoolsTabId: tabId});
+			},
 			initialize: async function(){
 				chrome.runtime.sendMessage(undefined, {devtoolsSidebarOpened: true, devtoolsTabId: tabId}, (init) => {
 					this.currentlySelectedElement = init.currentlySelectedElement;

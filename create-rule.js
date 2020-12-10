@@ -17,6 +17,8 @@
 				chrome.runtime.onMessage.addListener((msg, sender) => {
 					if(msg.pageDestroyed){
 						this.hasPage = false;
+					}else if(msg.addActionForSelector){
+						this.addActionsForSelectors([msg.selector]);
 					}
 				});
 			},
@@ -50,8 +52,19 @@
 						}else{
 							this.urlPattern = this.url;
 						}
-						console.log(`selectors for which to add rules: `, initMsg.selectorsForWhichToAddRules)
+						this.addActionsForSelectors(initMsg.selectorsForWhichToAddActions);
 					});
+				},
+				addActionsForSelectors(selectors){
+					for(let selector of selectors){
+						this.actions.push({
+							type: "select",
+							selector: selector,
+							action: {
+								type: "delete"
+							}
+						});
+					}
 				},
 				setRule: function(rule){
 					this.name = rule.name;

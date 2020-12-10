@@ -368,6 +368,9 @@ class EditedRules{
 	requestRuleEditor(ruleId, pageId, editorCallback){
 		this.onMessage.sendMessage({requestRuleEditor: true, ruleId, pageId}, editorCallback);
 	}
+	requestNewRuleEditor(pageId, editorCallback){
+		this.onMessage.sendMessage({requestNewRuleEditor: true, pageId}, editorCallback);
+	}
 	startEditingRule(ruleId, pageId){
 		var record = this.records.find(r => r.ruleId === ruleId);
 		if(record){
@@ -426,6 +429,12 @@ class RegularPage extends Page{
 			return true;
 		}else if(msg.addActionToRule){
 			editedRules.requestRuleEditor(msg.ruleId, this.pageId, editor => {
+				if(this.currentlySelectedElementInDevtools){
+					editor.addActionForSelector(this.currentlySelectedElementInDevtools.getSelector());
+				}
+			});
+		}else if(msg.addActionToNewRule){
+			editedRules.requestNewRuleEditor(this.pageId, editor => {
 				if(this.currentlySelectedElementInDevtools){
 					editor.addActionForSelector(this.currentlySelectedElementInDevtools.getSelector());
 				}
@@ -551,7 +560,7 @@ class RuleEditor extends Page{
 		this.ruleCreated = new Event();
 		this.ruleId = ruleId;
 		this.initialized = false;
-		this.selectorsForWhichToAddRules = [];
+		this.selectorsForWhichToAddActions = [];
 	}
 	onPageDestroyed(){
 		this.page = undefined;
@@ -559,9 +568,9 @@ class RuleEditor extends Page{
 	}
 	addActionForSelector(selector){
 		if(!this.initialized){
-			this.selectorsForWhichToAddRules.push(selector);
+			this.selectorsForWhichToAddActions.push(selector);
 		}else{
-
+			this.tab.sendMessage({addActionForSelector: true, selector: selector});
 		}
 	}
 	onMessageFromTab(msg, sendResponse){
@@ -574,7 +583,7 @@ class RuleEditor extends Page{
 				url: this.page && this.page.url,
 				ruleId: this.ruleId,
 				rule: rule,
-				selectorsForWhichToAddRules: this.selectorsForWhichToAddRules
+				selectorsForWhichToAddActions: this.selectorsForWhichToAddActions
 			});
 			this.initialized = true;
 		}else if(msg.focusPage){
@@ -620,6 +629,8 @@ class RuleEditorCollection{
 		if(msg.requestRuleEditor){
 			const {pageId, ruleId} = msg;
 			this.editRuleForPage(pageId, ruleId, sendResponse);
+		}else if(msg.requestNewRuleEditor){
+			this.createRuleForPage(msg.pageId, sendResponse);
 		}
 	}
 	removeEditorFromList(list, editor){
@@ -672,10 +683,13 @@ class RuleEditorCollection{
 			});
 		}
 	}
-	createRuleForPage(pageId){
+	createRuleForPage(pageId, editorCallback){
 		var existing = this.newRuleEditors.find(e => e.page.pageId === pageId);
 		if(existing){
 			existing.focus();
+			if(editorCallback){
+				editorCallback(existing);
+			}
 		}else{
 			var page = pages.getPageById(pageId);
 			RuleEditor.create(page, undefined, editor => {
@@ -689,6 +703,9 @@ class RuleEditorCollection{
 					this.newRuleCreated.dispatch();
 				});
 				this.newRuleEditors.push(editor);
+				if(editorCallback){
+					editorCallback(editor);
+				}
 			});
 		}
 	}
