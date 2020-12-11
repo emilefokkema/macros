@@ -95,6 +95,12 @@
 						});
 					}
 				},
+				deleteAction: function(action){
+					var index = this.actions.indexOf(action);
+					if(index > -1){
+						this.actions.splice(index, 1);
+					}
+				},
 				executeAction: function(action){
 					this.runningAction = action;
 					console.log(`going to execute action`)
@@ -175,7 +181,10 @@
 					},
 					methods: {
 						execute: function(){
-							this.$emit('executeclicked', this.action);
+							this.$emit('executeclicked');
+						},
+						deleteClicked: function(){
+							this.$emit('deleteclicked');
 						}
 					},
 					computed: {
