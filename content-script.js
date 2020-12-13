@@ -153,6 +153,26 @@
 			}
 		}
 	}
+	class RemoveStylePropertyFromSelectedNodeAction{
+		constructor(definition){
+			this.property = definition.property;
+		}
+		getEffectOnNode(node){
+			return `will remove property '${this.property}' from this element's style declaration`;
+		}
+		execute(node, result){
+			node.style.removeProperty(this.property);
+			//console.log(`removing property '${this.property}' from style declaration of node`, node)
+		}
+		hasEffectOnNode(node){
+			for(var i = 0; i < node.style.length; i++){
+				if(node.style[i] === this.property){
+					return true;
+				}
+			}
+			return false;
+		}
+	}
 	class RemoveClassFromSelectedNodeAction{
 		constructor(definition){
 			this.class = definition.class;
@@ -194,6 +214,7 @@
 			switch(definition.type){
 				case "delete": return new DeleteSelectedNodeAction(definition);
 				case "removeClass": return new RemoveClassFromSelectedNodeAction(definition);
+				case "removeStyleProperty": return new RemoveStylePropertyFromSelectedNodeAction(definition);
 			}
 		}
 	}

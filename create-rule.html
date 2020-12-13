@@ -7,6 +7,9 @@
 	<link rel="stylesheet" type="text/css" href="create-rule.css" />
 </head>
 <body>
+	<template id="removeStylePropertyActionTemplate">
+		<input class="text-input" type="text" v-model="action.property"/>
+	</template>
 	<template id="removeClassActionTemplate">
 		<input class="text-input" type="text" v-model="action.class"/>
 	</template>
@@ -21,8 +24,10 @@
 				<select class="text-input" v-model="actionType">
 					<option value="delete">delete them</option>
 					<option value="removeClass">remove class</option>
+					<option value="removeStyleProperty">remove style property</option>
 				</select>
 				<remove-class-action v-if="actionType === 'removeClass'" v-bind:action="action.action"></remove-class-action>
+				<remove-style-property-action v-if="actionType === 'removeStyleProperty'" v-bind:action="action.action"></remove-style-property-action>
 			</div>
 		</div>
 		
