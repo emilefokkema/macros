@@ -1,4 +1,47 @@
 (async function(){
+	class ExecutionContext{
+		constructor(logPrefix){
+			this.error = undefined;
+			this.logPrefix = logPrefix;
+		}
+		reportError(e){
+			this.error = e && e.message;
+		}
+		logInfo(msg, ...rest){
+			if(this.logPrefix){
+				console.log.apply(console, [`${this.logPrefix} ${msg}`].concat(rest));
+			}else{
+				console.log(msg, ...rest);
+			}
+		}
+	}
+	class RuleExecutionContext extends ExecutionContext{
+		constructor(rule){
+			super();
+			this.rule = rule;
+			this.logPrefix = `[${this.rule.name}]`;
+		}
+		getActionExecutionContext(action){
+			return new ExecutionContext(`${this.logPrefix} [${action.getLogSummary()}]`);
+		}
+	}
+	class ExecutionLog{
+		constructor(){
+			this.ruleExecutions = [];
+			this.actionExecutions = [];
+		}
+		getActionExecutionContext(action){
+			var context = new ExecutionContext(`[${action.getLogSummary()}]`);
+			this.actionExecutions.push(context);
+			return context;
+		}
+		getRuleExecutionContext(rule){
+			var context = new RuleExecutionContext(rule);
+			this.ruleExecutions.push(context);
+			return context;
+		}
+	}
+	var executionLog = new ExecutionLog();
 	function* getAttributesInSelector(selector){
 		var rgx = /\[([^=]+)(?:=(?:"[^"]*"|[^\]]+))?\]/g;
 		var match;
@@ -142,14 +185,15 @@
 		hasEffectOnNode(node){
 			return true;
 		}
-		execute(node, result){
+		execute(node, executionContext){
 			if(!node || !node.parentNode){
 				return;
 			}
 			try{
 				node.parentNode.removeChild(node);
+				executionContext.logInfo('removed node', node)
 			}catch(e){
-				result.reportError(e);
+				executionContext.reportError(e);
 			}
 		}
 	}
@@ -160,17 +204,24 @@
 		getEffectOnNode(node){
 			return `will remove property '${this.property}' from this element's style declaration`;
 		}
-		execute(node, result){
-			node.style.removeProperty(this.property);
-			//console.log(`removing property '${this.property}' from style declaration of node`, node)
-		}
-		hasEffectOnNode(node){
+		nodeStyleDeclarationContainsProperty(node){
 			for(var i = 0; i < node.style.length; i++){
 				if(node.style[i] === this.property){
 					return true;
 				}
 			}
 			return false;
+		}
+		execute(node, executionContext){
+			if(!this.nodeStyleDeclarationContainsProperty(node)){
+				executionContext.logInfo(`no property '${this.property}' found on style declaration for node`, node)
+				return;
+			}
+			node.style.removeProperty(this.property);
+			executionContext.logInfo(`removed property '${this.property}' from style declaration for node`, node);
+		}
+		hasEffectOnNode(node){
+			return this.nodeStyleDeclarationContainsProperty(node);
 		}
 	}
 	class RemoveClassFromSelectedNodeAction{
@@ -193,20 +244,28 @@
 			}
 			return false;
 		}
-		execute(node, result){
+		execute(node, executionContext){
 			var classes = node.getAttribute('class');
 			if(!classes){
+				executionContext.logInfo(`no class '${this.class}' found on node`, node)
 				return;
 			}
 			var matches = classes.match(/\S+/g);
 			var newClasses = [];
+			var removedClass = false;
 			for(var match of matches){
 				if(match === this.class){
+					removedClass = true;
 					continue;
 				}
 				newClasses.push(match);
 			}
 			node.setAttribute('class', newClasses.join(' '));
+			if(removedClass){
+				executionContext.logInfo(`removed class '${this.class}' from node`, node)
+			}else{
+				executionContext.logInfo(`no class '${this.class}' found on node`, node)
+			}
 		}
 	}
 	class SelectedNodeAction{
@@ -223,6 +282,9 @@
 			this.selector = new Selector(definition.selector);
 			this.action = SelectedNodeAction.create(definition.action);
 			this.observer = undefined;
+		}
+		getLogSummary(){
+			return `matching '${this.selector.text}'`;
 		}
 		getEffectOnNode(node){
 			if(!node.matches(this.selector.text)){
@@ -267,17 +329,18 @@
 			}
 			this.observer.disconnect();
 		}
-		execute(result){
+		execute(executionContext){
 			try{
 				var nodes = document.querySelectorAll(this.selector.text);
 				if(nodes.length === 0){
+					executionContext.logInfo(`no nodes found to modify`)
 					return;
 				}
 				for(var i = 0; i < nodes.length; i++){
-					this.action.execute(nodes[i], result);
+					this.action.execute(nodes[i], executionContext);
 				}
 			}catch(e){
-				result.reportError(e);
+				executionContext.reportError(e);
 			}
 		}
 	}
@@ -297,7 +360,8 @@
 		}
 	}
 	class Rule{
-		constructor(definition){
+		constructor(definition, ruleId){
+			this.ruleId = ruleId;
 			this.name = definition.name;
 			this.automatic = true;
 			this.actions = definition.actions.map(d => Action.create(d));
@@ -341,12 +405,13 @@
 			return this.actions.map(a => a.getEffectOnNode(node)).filter(a => !!a);
 		}
 		execute(){
-			console.log(`executing rule '${this.name}'`)
-			var result = new ExecutionResult();
+			var executionContext = executionLog.getRuleExecutionContext(this);
+			executionContext.logInfo('begin executing macro');
 			for(let action of this.actions){
-				action.execute(result);
+				var actionExecutionContext = executionContext.getActionExecutionContext(action);
+				action.execute(actionExecutionContext);
 			}
-			return result;
+			executionContext.logInfo('finished executing macro')
 		}
 	}
 	function* findCssRulesInSheet(cssStyleSheet){
@@ -430,36 +495,32 @@
 		return matches;
 	}
 	function executeAction(actionDefinition){
-		var result = new ExecutionResult();
 		var action = Action.create(actionDefinition);
-		action.execute(result);
-		return result;
+		var executionContext = executionLog.getActionExecutionContext(action);
+		action.execute(executionContext);
 	}
 	var contentScriptId = +new Date() - Math.floor(Math.random() * 1000);
 	var currentRules = [];
 	function executeRule(ruleId){
-		var ruleRecord = currentRules.find(r => r.ruleId === ruleId);
-		if(!ruleRecord){
+		var rule = currentRules.find(r => r.ruleId === ruleId);
+		if(!rule){
 			return;
 		}
-		return ruleRecord.rule.execute();
+		rule.execute();
 	}
 	var currentlySelectedElement = undefined;
-	function setCurrentRules(rules){
+	function setCurrentRules(ruleRecords){
 		if(currentRules && currentRules.length > 0){
 			for(let rule of currentRules){
-				rule.rule.destroy();
+				rule.destroy();
 			}
 		}
-		currentRules = rules.map(r => ({
-			ruleId: r.ruleId,
-			rule: new Rule(r.rule)
-		}))
+		currentRules = ruleRecords.map(r => new Rule(r.rule, r.ruleId));
 	}
 	function getEffectsOnCurrentlySelectedElement(){
 		return currentRules.map(r => ({
 			ruleId: r.ruleId,
-			effect: r.rule.getEffectOnNode(currentlySelectedElement)
+			effect: r.getEffectOnNode(currentlySelectedElement)
 		}));
 	}
 	console.log(`hello from content script ${contentScriptId}`)
@@ -477,11 +538,11 @@
 			var result = findSelectors(msg.req);
 			sendResponse(result)
 		}else if(msg.executeAction){
-			var result = executeAction(msg.action);
-			sendResponse(result);
+			executeAction(msg.action);
+			sendResponse({});
 		}else if(msg.executeRule){
-			var result = executeRule(msg.ruleId);
-			sendResponse(result);
+			executeRule(msg.ruleId);
+			sendResponse({});
 		}else if(msg.currentRules){
 			setCurrentRules(msg.currentRules);
 			sendResponse(getEffectsOnCurrentlySelectedElement())
