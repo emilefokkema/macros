@@ -210,6 +210,9 @@
 								},
 								setRemoveClassAction: function(){
 									this.action.action = {type: "removeClass", class: undefined}
+								},
+								setRemoveStylePropertyAction: function(){
+									this.action.action = {type: "removeStyleProperty", property: undefined};
 								}
 							},
 							computed: {
@@ -224,6 +227,7 @@
 										switch(type){
 											case "delete": return this.setDeleteAction();
 											case "removeClass": return this.setRemoveClassAction();
+											case "removeStyleProperty": return this.setRemoveStylePropertyAction();
 										}
 									}
 								}
@@ -231,6 +235,12 @@
 							components: {
 								'remove-class-action': {
 									template: document.getElementById("removeClassActionTemplate").innerHTML,
+									props: {
+										action: Object
+									},
+								},
+								'remove-style-property-action': {
+									template: document.getElementById("removeStylePropertyActionTemplate").innerHTML,
 									props: {
 										action: Object
 									},
