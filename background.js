@@ -298,7 +298,10 @@ class NodeModel{
 		this.attributes = summary.attributes;
 	}
 	getSelector(){
-		return `${this.nodeName}${(this.id ? `#${this.id}`: '')}${this.classes.map(c => `.${c}`).join('')}${this.attributes.map(a => `[${a.attributeName}="${a.attributeValue}"]`).join('')}`;
+		var id = this.id ? `#${this.id}`: '';
+		var classes = this.classes.map(c => `.${c}`).join('');
+		var attributes = this.attributes.map(a => `[${a.attributeName}${(a.attributeValue ? `="${a.attributeValue}"` : '')}]`).join('');
+		return `${this.nodeName}${id}${classes}${attributes}`;
 	}
 }
 var pageId = 0;
