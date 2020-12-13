@@ -319,15 +319,12 @@
 			}
 		}
 		hasSomethingToDo(){
-			var count = this.actions.filter(a => a.hasSomethingToDo()).length;
-			console.log(`${count} of ${this.actions.length} actions for rule ${this.name} have something to do`)
-			// for(let action of this.actions){
-			// 	if(action.hasSomethingToDo()){
-			// 		return true;
-			// 	}
-			// }
-			return count === this.actions.length;
-			//return false;
+			for(let action of this.actions){
+				if(action.hasSomethingToDo()){
+					return true;
+				}
+			}
+			return false;
 		}
 		destroy(){
 			if(!this.automatic){
