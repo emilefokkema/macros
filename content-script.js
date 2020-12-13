@@ -1,4 +1,34 @@
 (async function(){
+	function* getAttributesInSelector(selector){
+		var rgx = /\[([^=]+)(?:=(?:"[^"]*"|[^\]]+))?\]/g;
+		var match;
+		while((match = rgx.exec(selector)) !== null){
+			console.log(match);
+			yield match[1];
+		}
+	}
+	class Selector{
+		constructor(text){
+			this.text = text;
+			this.attributeNames = [];
+			this.id = undefined;
+			this.classes = [];
+			this.getParts();
+		}
+		getParts(){
+			var rgx = /(?:#([^\.\[]+))|(?:\.([^#\.\[]+))|\[([^=]+)(?:=(?:"[^"]*"|[^\]]+))?\]/g;
+			var match;
+			while((match = rgx.exec(this.text)) !== null){
+				if(match[1]){
+					this.id = match[1];
+				}else if(match[2]){
+					this.classes.push(match[2]);
+				}else if(match[3]){
+					this.attributeNames.push(match[3])
+				}
+			}
+		}
+	}
 	class CssPropertyMatcher{
 		constructor(propertyName, referent){
 			this.propertyName = propertyName;
@@ -109,7 +139,13 @@
 		getEffectOnNode(node){
 			return 'will delete this element';
 		}
+		hasEffectOnNode(node){
+			return true;
+		}
 		execute(node, result){
+			if(!node || !node.parentNode){
+				return;
+			}
 			try{
 				node.parentNode.removeChild(node);
 			}catch(e){
@@ -123,6 +159,19 @@
 		}
 		getEffectOnNode(node){
 			return `will remove class '${this.class}' from this element`;
+		}
+		hasEffectOnNode(node){
+			var classes = node.getAttribute('class');
+			if(!classes){
+				return false;
+			}
+			var matches = classes.match(/\S+/g);
+			for(var match of matches){
+				if(match === this.class){
+					return true;
+				}
+			}
+			return false;
 		}
 		execute(node, result){
 			var classes = node.getAttribute('class');
@@ -150,18 +199,56 @@
 	}
 	class SelectAction{
 		constructor(definition){
-			this.selector = definition.selector;
-			this.action = SelectedNodeAction.create(definition.action)
+			this.selector = new Selector(definition.selector);
+			this.action = SelectedNodeAction.create(definition.action);
+			this.observer = undefined;
 		}
 		getEffectOnNode(node){
-			if(!node.matches(this.selector)){
+			if(!node.matches(this.selector.text)){
 				return null;
 			}
 			return this.action.getEffectOnNode(node);
 		}
+		hasSomethingToDo(){
+			var nodes = document.querySelectorAll(this.selector.text);
+			if(nodes.length === 0){
+				return false;
+			}
+			for(var i = 0; i < nodes.length; i++){
+				if(this.action.hasEffectOnNode(nodes[i])){
+					return true;
+				}
+			}
+			return false;
+		}
+		onSomethingToDo(callback){
+			var attributesToWatch = this.selector.attributeNames.slice();
+			if(this.selector.id && attributesToWatch.indexOf("id") === -1){
+				attributesToWatch.push("id");
+			}
+			if(this.selector.classes.length > 0 && attributesToWatch.indexOf("class") === -1){
+				attributesToWatch.push("class");
+			}
+			this.observer = new MutationObserver(() => {
+				if(this.hasSomethingToDo()){
+					callback();
+				}
+			});
+			this.observer.observe(document, {
+				childList: true,
+				subtree: true,
+				attributeFilter: attributesToWatch
+			});
+		}
+		destroy(){
+			if(!this.observer){
+				return;
+			}
+			this.observer.disconnect();
+		}
 		execute(result){
 			try{
-				var nodes = document.querySelectorAll(this.selector);
+				var nodes = document.querySelectorAll(this.selector.text);
 				if(nodes.length === 0){
 					return;
 				}
@@ -180,10 +267,54 @@
 			}
 		}
 	}
+	class ExecutionResult{
+		constructor(){
+			this.error = undefined;
+		}
+		reportError(e){
+			this.error = e.message;
+		}
+	}
 	class Rule{
 		constructor(definition){
 			this.name = definition.name;
+			this.automatic = true;
 			this.actions = definition.actions.map(d => Action.create(d));
+			this.initialize();
+		}
+		initialize(){
+			if(!this.automatic){
+				return;
+			}
+			for(let action of this.actions){
+				action.onSomethingToDo(() => {
+					if(this.hasSomethingToDo()){
+						this.execute();
+					}
+				});
+			}
+			if(this.hasSomethingToDo()){
+				this.execute();
+			}
+		}
+		hasSomethingToDo(){
+			var count = this.actions.filter(a => a.hasSomethingToDo()).length;
+			console.log(`${count} of ${this.actions.length} actions for rule ${this.name} have something to do`)
+			// for(let action of this.actions){
+			// 	if(action.hasSomethingToDo()){
+			// 		return true;
+			// 	}
+			// }
+			return count === this.actions.length;
+			//return false;
+		}
+		destroy(){
+			if(!this.automatic){
+				return;
+			}
+			for(let action of this.actions){
+				action.destroy();
+			}
 		}
 		getEffectOnNode(node){
 			if(!node){
@@ -191,13 +322,13 @@
 			}
 			return this.actions.map(a => a.getEffectOnNode(node)).filter(a => !!a);
 		}
-	}
-	class ActionExecutionResult{
-		constructor(){
-			this.error = undefined;
-		}
-		reportError(e){
-			this.error = e.message;
+		execute(){
+			console.log(`executing rule '${this.name}'`)
+			var result = new ExecutionResult();
+			for(let action of this.actions){
+				action.execute(result);
+			}
+			return result;
 		}
 	}
 	function* findCssRulesInSheet(cssStyleSheet){
@@ -281,20 +412,31 @@
 		return matches;
 	}
 	function executeAction(actionDefinition){
-		var result = new ActionExecutionResult();
+		var result = new ExecutionResult();
 		var action = Action.create(actionDefinition);
 		action.execute(result);
 		return result;
 	}
 	var contentScriptId = +new Date() - Math.floor(Math.random() * 1000);
 	var currentRules = [];
+	function executeRule(ruleId){
+		var ruleRecord = currentRules.find(r => r.ruleId === ruleId);
+		if(!ruleRecord){
+			return;
+		}
+		return ruleRecord.rule.execute();
+	}
 	var currentlySelectedElement = undefined;
 	function setCurrentRules(rules){
+		if(currentRules && currentRules.length > 0){
+			for(let rule of currentRules){
+				rule.rule.destroy();
+			}
+		}
 		currentRules = rules.map(r => ({
 			ruleId: r.ruleId,
 			rule: new Rule(r.rule)
 		}))
-		//console.log(`current rules: `, currentRules)
 	}
 	function getEffectsOnCurrentlySelectedElement(){
 		return currentRules.map(r => ({
@@ -311,7 +453,6 @@
 		if(msg.contentScriptId !== contentScriptId){
 			return;
 		}
-		//console.log(`content script received message`, msg)
 		if(msg.stopContentScript){
 			console.log(`bye from content script ${contentScriptId}`)
 		}else if(msg.findSelectors){
@@ -320,11 +461,13 @@
 		}else if(msg.executeAction){
 			var result = executeAction(msg.action);
 			sendResponse(result);
+		}else if(msg.executeRule){
+			var result = executeRule(msg.ruleId);
+			sendResponse(result);
 		}else if(msg.currentRules){
 			setCurrentRules(msg.currentRules);
 			sendResponse(getEffectsOnCurrentlySelectedElement())
 		}else if(msg.requestEffects){
-			//console.log(`effects were requested`)
 			sendResponse(getEffectsOnCurrentlySelectedElement())
 		}
 	});

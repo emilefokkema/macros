@@ -456,10 +456,11 @@ class RegularPage extends Page{
 	executeAction(action){
 		return this.tab.sendMessageAsync({executeAction: true, contentScriptId: this.currentContentScriptId, action: action});
 	}
-	async executeRule(rule){
-		for(var action of rule.actions){
-			await this.executeAction(action);
-		}
+	executeRule(ruleId){
+		return this.tab.sendMessageAsync({executeRule: true, ruleId, contentScriptId: this.currentContentScriptId})
+		// for(var action of rule.actions){
+		// 	await this.executeAction(action);
+		// }
 	}
 	findSelectors(req, sendResponse){
 		this.tab.sendMessage({findSelectors: true, contentScriptId: this.currentContentScriptId, req:req}, (resp) => {
@@ -797,9 +798,9 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 	}else if(msg.editRule){
 		ruleEditors.editRuleForPage(msg.pageId, msg.ruleId);
 	}else if(msg.executeRule){
-		var rule = rules.getRule(msg.ruleId);
+		//var rule = rules.getRule(msg.ruleId);
 		var page = pages.getPageById(msg.pageId);
-		page.executeRule(rule).then(() => sendResponse({}));
+		page.executeRule(msg.ruleId).then(() => sendResponse({}));
 		return true;
 	}else if(msg.goToManagementPage){
 		ManagementPage.open();
