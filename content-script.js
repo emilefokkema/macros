@@ -24,6 +24,12 @@
 		getActionExecutionContext(action){
 			return new ExecutionContext(`${this.logPrefix} [${action.getLogSummary()}]`);
 		}
+		start(){
+			this.logInfo(`begin execution`);
+		}
+		finish(){
+			this.logInfo(`execution finished`);
+		}
 	}
 	class ExecutionLog{
 		constructor(){
@@ -373,13 +379,11 @@
 			}
 			for(let action of this.actions){
 				action.onSomethingToDo(() => {
-					if(this.hasSomethingToDo()){
-						this.execute();
-					}
+					this.executeAutomatic();
 				});
 			}
 			if(this.hasSomethingToDo()){
-				this.execute();
+				this.executeAutomatic();
 			}
 		}
 		hasSomethingToDo(){
@@ -404,14 +408,23 @@
 			}
 			return this.actions.map(a => a.getEffectOnNode(node)).filter(a => !!a);
 		}
-		execute(){
+		executeManual(){
 			var executionContext = executionLog.getRuleExecutionContext(this);
-			executionContext.logInfo('begin executing macro');
+			executionContext.start();
+			this.execute(executionContext);
+			executionContext.finish();
+		}
+		executeAutomatic(){
+			var executionContext = executionLog.getRuleExecutionContext(this);
+			executionContext.start();
+			this.execute(executionContext);
+			executionContext.finish();
+		}
+		execute(executionContext){
 			for(let action of this.actions){
 				var actionExecutionContext = executionContext.getActionExecutionContext(action);
 				action.execute(actionExecutionContext);
 			}
-			executionContext.logInfo('finished executing macro')
 		}
 	}
 	function* findCssRulesInSheet(cssStyleSheet){
@@ -506,7 +519,7 @@
 		if(!rule){
 			return;
 		}
-		rule.execute();
+		rule.executeManual();
 	}
 	var currentlySelectedElement = undefined;
 	function setCurrentRules(ruleRecords){
