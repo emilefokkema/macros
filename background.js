@@ -415,6 +415,8 @@ class RegularPage extends Page{
 		}else if(msg.elementSelectedInDevtools){
 			this.currentlySelectedElementInDevtools = new NodeModel(msg.element);
 			this.tab.sendMessageToDevtoolsSidebar({currentlySelectedElement: msg.element, effects: msg.effects});
+		}else if(msg.ruleExecuted){
+			console.log(`rule executed. executionStates:`, msg.executionStates)
 		}
 	}
 	onMessageFromDevtoolsSidebar(msg, sendResponse){
@@ -450,17 +452,15 @@ class RegularPage extends Page{
 			editable: !editedRules.ruleIsBeingEdited(r.ruleId) || editedRules.ruleIsBeingEditedByPage(r.ruleId, this.pageId)
 		}));
 	}
-	getPopupInfo(){
-		return {url: this.url, pageId: this.pageId, rules: this.getRulesAndEditability()}
+	async getPopupInfo(){
+		var executionStates = await this.tab.sendMessageAsync({requestExecutionStates: true, contentScriptId: this.currentContentScriptId});
+		return {url: this.url, pageId: this.pageId, tabId: this.tabId, rules: this.getRulesAndEditability(), executionStates: executionStates}
 	}
 	executeAction(action){
 		return this.tab.sendMessageAsync({executeAction: true, contentScriptId: this.currentContentScriptId, action: action});
 	}
 	executeRule(ruleId){
 		return this.tab.sendMessageAsync({executeRule: true, ruleId, contentScriptId: this.currentContentScriptId})
-		// for(var action of rule.actions){
-		// 	await this.executeAction(action);
-		// }
 	}
 	findSelectors(req, sendResponse){
 		this.tab.sendMessage({findSelectors: true, contentScriptId: this.currentContentScriptId, req:req}, (resp) => {
@@ -783,16 +783,17 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 	if(sender.tab){
 		return;
 	}
-	if(msg.popupOpened){
-		chrome.tabs.query({lastFocusedWindow: true, active: true}, tabs => {
+	if(msg.initializePopup){
+		chrome.tabs.query({lastFocusedWindow: true, active: true}, async (tabs) => {
 			if(tabs.length !== 1){
-				return;
+				throw new Error(`looked for tab from which popup was opened, but found ${tabs.length} tabs`);
 			}
 			var tab = tabs[0];
 			var page = pages.getPageByTabId(tab.id);
-			var info = page.getPopupInfo();
-			chrome.runtime.sendMessage(undefined, {popupInfo: info})
+			var info = await page.getPopupInfo();
+			sendResponse(info);
 		});
+		return true;
 	}else if(msg.createRuleForPage){
 		ruleEditors.createRuleForPage(msg.pageId);
 	}else if(msg.editRule){

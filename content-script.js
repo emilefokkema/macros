@@ -29,6 +29,7 @@
 		}
 		finish(){
 			this.logInfo(`execution finished`);
+			chrome.runtime.sendMessage(undefined, {ruleExecuted: true, executionStates: getExecutionStates()})
 		}
 	}
 	class ExecutionLog{
@@ -45,6 +46,9 @@
 			var context = new RuleExecutionContext(rule);
 			this.ruleExecutions.push(context);
 			return context;
+		}
+		getExecutionHistory(){
+			return this.ruleExecutions.map(r => r.rule.ruleId);
 		}
 	}
 	var executionLog = new ExecutionLog();
@@ -536,6 +540,14 @@
 			effect: r.getEffectOnNode(currentlySelectedElement)
 		}));
 	}
+	function getExecutionStates(){
+		var executedRules = executionLog.getExecutionHistory();
+		return currentRules.map(r => ({
+			ruleId: r.ruleId,
+			hasExecuted: executedRules.some(ruleId => ruleId === r.ruleId),
+			hasSomethingToDo: r.hasSomethingToDo()
+		}));
+	}
 	console.log(`hello from content script ${contentScriptId}`)
 	elementSelectedInDevtools = function(element){
 		currentlySelectedElement = element;
@@ -561,6 +573,8 @@
 			sendResponse(getEffectsOnCurrentlySelectedElement())
 		}else if(msg.requestEffects){
 			sendResponse(getEffectsOnCurrentlySelectedElement())
+		}else if(msg.requestExecutionStates){
+			sendResponse(getExecutionStates());
 		}
 	});
 	chrome.runtime.sendMessage(undefined, {contentScriptLoaded: true, contentScriptId: contentScriptId}, resp => {

@@ -6,6 +6,9 @@
 	display: inline-block;
 	vertical-align: top;
 }
+.padding-5{
+	padding: 5px;
+}
 .button{
 	cursor: pointer;
 	padding: 5px;

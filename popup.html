@@ -13,8 +13,11 @@
 				<div class="button" v-on:click="onExecuteClicked()" v-if="canExecute">
 					<span class="run-button fa fa-play"></span>
 				</div>
-				<div class="button" v-if="otherIsExecuting">
+				<div class="padding-5" v-if="!canExecute && !isExecuting && !hasExecuted">
 					<span class="run-button-disabled fa fa-play"></span>
+				</div>
+				<div class="padding-5" v-if="hasExecuted">
+					<span class="run-button fa fa-check"></span>
 				</div>
 				<div class="button" v-if="isExecuting">
 					<span class="fa fa-circle-notch fa-spin"></span>

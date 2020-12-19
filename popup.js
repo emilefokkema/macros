@@ -1,17 +1,11 @@
 (function(){
-	var resolveInitialized, initializedPromise = new Promise((res) => {resolveInitialized = res;});
-	chrome.runtime.onMessage.addListener((msg, sender) => {
-		if(msg.popupInfo){
-			resolveInitialized(msg.popupInfo);
-		}
-	});
-	chrome.runtime.sendMessage(undefined, {popupOpened: true});
 
 	new Vue({
 		el: '#app',
 		data: function(){
 			return {
 				pageId: undefined,
+				tabId: undefined,
 				rules: [],
 				executingRule: undefined
 			};
@@ -39,9 +33,19 @@
 				window.close();
 			},
 			initialize: async function(){
-				var info = await initializedPromise;
-				this.pageId = info.pageId;
-				this.rules = info.rules;
+				chrome.runtime.sendMessage(undefined, {initializePopup: true}, resp => {
+					this.pageId = resp.pageId;
+					this.tabId = resp.tabId;
+					this.rules = resp.rules.map(r => {
+						return {
+							ruleId: r.ruleId,
+							rule: r.rule,
+							editable: r.editable,
+							hasExecuted: resp.executionStates.some(s => s.ruleId === r.ruleId && s.hasExecuted),
+							hasSomethingToDo: resp.executionStates.some(s => s.ruleId === r.ruleId && s.hasSomethingToDo)
+						};
+					});
+				});
 			}
 		},
 		components: {
@@ -59,10 +63,10 @@
 						return !!this.executingrule && this.executingrule === this.rule;
 					},
 					canExecute: function(){
-						return !this.executingrule;
+						return !this.executingrule && !!this.rule && this.rule.hasSomethingToDo;
 					},
-					otherIsExecuting: function(){
-						return !!this.executingrule && this.executingrule !== this.rule;
+					hasExecuted: function(){
+						return !!this.rule && this.rule.hasExecuted;
 					}
 				},
 				methods: {
