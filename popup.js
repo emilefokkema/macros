@@ -32,6 +32,16 @@
 				chrome.runtime.sendMessage(undefined, {goToManagementPage: true});
 				window.close();
 			},
+			setExecutionStates: function(executionStates){
+				for(let state of executionStates){
+					const rule = this.rules.find(r => r.ruleId === state.ruleId);
+					if(!rule){
+						continue;
+					}
+					rule.hasExecuted = state.hasExecuted;
+					rule.hasSomethingToDo = state.hasSomethingToDo;
+				}
+			},
 			initialize: async function(){
 				chrome.runtime.sendMessage(undefined, {initializePopup: true}, resp => {
 					this.pageId = resp.pageId;
@@ -45,6 +55,11 @@
 							hasSomethingToDo: resp.executionStates.some(s => s.ruleId === r.ruleId && s.hasSomethingToDo)
 						};
 					});
+				});
+				chrome.runtime.onMessage.addListener((msg) => {
+					if(msg.pageExecutedRule && msg.pageId === this.pageId){
+						this.setExecutionStates(msg.executionStates);
+					}
 				});
 			}
 		},

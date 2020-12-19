@@ -333,7 +333,7 @@
 				attributeFilter: attributesToWatch
 			});
 		}
-		destroy(){
+		stopLookingForSomethingToDo(){
 			if(!this.observer){
 				return;
 			}
@@ -398,12 +398,12 @@
 			}
 			return false;
 		}
-		destroy(){
+		stopLookingForSomethingToDo(){
 			if(!this.automatic){
 				return;
 			}
 			for(let action of this.actions){
-				action.destroy();
+				action.stopLookingForSomethingToDo();
 			}
 		}
 		getEffectOnNode(node){
@@ -529,7 +529,7 @@
 	function setCurrentRules(ruleRecords){
 		if(currentRules && currentRules.length > 0){
 			for(let rule of currentRules){
-				rule.destroy();
+				rule.stopLookingForSomethingToDo();
 			}
 		}
 		currentRules = ruleRecords.map(r => new Rule(r.rule, r.ruleId));

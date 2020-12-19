@@ -416,7 +416,8 @@ class RegularPage extends Page{
 			this.currentlySelectedElementInDevtools = new NodeModel(msg.element);
 			this.tab.sendMessageToDevtoolsSidebar({currentlySelectedElement: msg.element, effects: msg.effects});
 		}else if(msg.ruleExecuted){
-			console.log(`rule executed. executionStates:`, msg.executionStates)
+			chrome.runtime.sendMessage(undefined, {pageExecutedRule: true, pageId: this.pageId, executionStates: msg.executionStates});
+			chrome.browserAction.setBadgeBackgroundColor({tabId: this.tabId, color: '#0a0'});
 		}
 	}
 	onMessageFromDevtoolsSidebar(msg, sendResponse){
@@ -493,7 +494,7 @@ class RegularPage extends Page{
 	setRules(){
 		var rulesForPage = this.getRulesAndEditability();
 		chrome.browserAction.setBadgeText({tabId: this.tabId, text: `${(rulesForPage.length ? rulesForPage.length : '')}`});
-		chrome.browserAction.setBadgeBackgroundColor({tabId: this.tabId, color: '#0a0'});
+		chrome.browserAction.setBadgeBackgroundColor({tabId: this.tabId, color: '#aaa'});
 		this.tab.sendMessage({contentScriptId: this.currentContentScriptId, currentRules: rulesForPage}, effects => {
 			this.tab.sendMessageToDevtoolsSidebar({currentRules: rulesForPage, effects: effects});
 		});
