@@ -9,7 +9,8 @@
 					ruleId: undefined,
 					urlPattern: undefined,
 					actions: [],
-					runningAction: undefined
+					runningAction: undefined,
+					automatic: false
 				};
 			},
 			mounted: function(){
@@ -71,6 +72,7 @@
 					this.urlPattern = rule.urlPattern;
 					this.setTitle();
 					this.actions = rule.actions;
+					this.automatic = !!rule.automatic;
 				},
 				setTitle: function(){
 					document.title = `Edit '${this.name}'`
@@ -82,7 +84,8 @@
 					var rule = {
 						name: this.name,
 						urlPattern: this.urlPattern,
-						actions: this.actions
+						actions: this.actions,
+						automatic: this.automatic
 					};
 					if(this.isNew){
 						chrome.runtime.sendMessage(undefined, {createdRule: rule}, (msg) => {

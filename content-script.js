@@ -373,7 +373,7 @@
 		constructor(definition, ruleId){
 			this.ruleId = ruleId;
 			this.name = definition.name;
-			this.automatic = true;
+			this.automatic = !!definition.automatic;
 			this.actions = definition.actions.map(d => Action.create(d));
 			this.initialize();
 		}

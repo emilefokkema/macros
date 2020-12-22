@@ -134,6 +134,10 @@
 			</div>
 		</div>
 		<div class="row">
+			<label class="label" for="automatic-input">Automatic</label>
+			<input type="checkbox" id="automatic-input" v-model="automatic"/>	
+		</div>
+		<div class="row">
 			<input type="button" v-on:click="saveRule()" value="Save"/>
 		</div>
 		<class-finder v-if="hasPage"></class-finder>
