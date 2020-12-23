@@ -4,6 +4,7 @@
   "description": "define modifications to a page",
   "main": "background.js",
   "scripts": {
+    "build:macros": "npx webpack --config ./webpack.config.macros.js"
   },
   "repository": {
     "type": "git",
@@ -19,5 +20,9 @@
   "bugs": {
     "url": "https://github.com/emilefokkema/macros/issues"
   },
-  "homepage": "https://github.com/emilefokkema/macros#readme"
+  "homepage": "https://github.com/emilefokkema/macros#readme",
+  "devDependencies": {
+    "webpack": "^5.11.0",
+    "webpack-cli": "^4.2.0"
+  }
 }
