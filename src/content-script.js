@@ -548,7 +548,7 @@ function getExecutionStates(){
 	}));
 }
 console.log(`hello from content script ${contentScriptId}`)
-elementSelectedInDevtools = function(element){
+var elementSelectedInDevtools = function(element){
 	currentlySelectedElement = element;
 	chrome.runtime.sendMessage(undefined, {elementSelectedInDevtools: true, element: summarizeNode(element), effects: getEffectsOnCurrentlySelectedElement()});
 }
@@ -579,3 +579,4 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 chrome.runtime.sendMessage(undefined, {contentScriptLoaded: true, contentScriptId: contentScriptId}, resp => {
 	setCurrentRules(resp.currentRules);
 });
+export {elementSelectedInDevtools};

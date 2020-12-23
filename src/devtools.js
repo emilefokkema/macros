@@ -5,7 +5,7 @@
 		});
 	
 	chrome.devtools.panels.elements.onSelectionChanged.addListener(() => {
-		chrome.devtools.inspectedWindow.eval("elementSelectedInDevtools($0)",
+		chrome.devtools.inspectedWindow.eval("contentScript.elementSelectedInDevtools($0)",
 		    { useContentScriptContext: true }, (result, exceptionInfo) => {
 		    	if(exceptionInfo){
 		    		console.log(`there was an exception calling eval:`, exceptionInfo)
