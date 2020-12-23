@@ -1,0 +1,23 @@
+{
+  "name": "macros",
+  "version": "1.0.0",
+  "description": "define modifications to a page",
+  "main": "background.js",
+  "scripts": {
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/emilefokkema/macros.git"
+  },
+  "keywords": [
+    "chrome",
+    "extension",
+    "macro"
+  ],
+  "author": "Emile Fokkema",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/emilefokkema/macros/issues"
+  },
+  "homepage": "https://github.com/emilefokkema/macros#readme"
+}
