@@ -9,7 +9,7 @@
         "https://*/"
 	],
 	"background":{
-		"scripts":["background.js"],
+		"scripts":["dist/background.js"],
 		"persistent":false
 	},
 	"browser_action":{

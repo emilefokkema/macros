@@ -4,7 +4,8 @@
   "description": "define modifications to a page",
   "main": "background.js",
   "scripts": {
-    "build:macros": "npx webpack --config ./webpack.config.macros.js"
+    "build:macros": "npx webpack --config ./webpack.config.macros.js",
+    "build:background": "npx webpack --config ./webpack.config.background.js"
   },
   "repository": {
     "type": "git",
