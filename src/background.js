@@ -1,4 +1,4 @@
-import {EventSource, Event} from './events';
+import {EventSource, Event} from './shared/events';
 
 class MessageSender extends Event{
 	sendMessage(message, responseCallback){

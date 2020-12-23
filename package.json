@@ -4,9 +4,10 @@
   "description": "define modifications to a page",
   "main": "background.js",
   "scripts": {
-    "build": "npm run build:macros && npm run build:background",
+    "build": "node ./copy-files.js && npm run build:macros && npm run build:background && npm run build:content-script",
     "build:macros": "npx webpack --config ./webpack.config.macros.js",
-    "build:background": "npx webpack --config ./webpack.config.background.js"
+    "build:background": "npx webpack --config ./webpack.config.background.js",
+    "build:content-script": "npx webpack --config ./webpack.config.content-script.js"
   },
   "repository": {
     "type": "git",

@@ -1,14 +1,14 @@
 const path = require('path');
 
 module.exports = {
-	entry: './src/shared/macros-main.js',
+	entry: './src/content-script.js',
 	resolve: {
 	  extensions: [ '.js' ]
 	},
 	output: {
-	  filename: 'macros.js',
+	  filename: 'content-script.js',
 	  path: path.resolve(__dirname, 'dist'),
-	  library: 'macros',
+	  library: 'contentScript',
 	  libraryTarget: 'umd',
 	  globalObject: 'this'
 	}
