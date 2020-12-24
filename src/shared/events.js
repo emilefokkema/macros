@@ -22,6 +22,22 @@ class EventSource{
 		return promise;
 	}
 }
+class FilteredEventSource extends EventSource{
+	constructor(eventSource){
+		super();
+		this.eventSource = eventSource;
+	}
+	listen(listener){
+		var self = this;
+		return this.eventSource.listen(function(){
+			var args = Array.prototype.slice.apply(arguments);
+			if(!self.filter.apply(self, args)){
+				return;
+			}
+			return listener.apply(null, args);
+		});
+	}
+}
 class Event extends EventSource{
 	constructor(){
 		super();
@@ -42,5 +58,27 @@ class Event extends EventSource{
 		}
 	}
 }
+class CancellationToken extends Event{
+	constructor(){
+		super();
+		this.cancelled = false;
+	}
+	dispatch(){
+		if(this.cancelled){
+			return;
+		}
+		this.cancelled = true;
+		for(let listener of this.listeners){
+			listener();
+		}
+		this.listeners = [];
+	}
+	onCancelled(listener){
+		return this.listen(listener);
+	}
+	cancel(){
+		this.dispatch();
+	}
+}
 
-export {EventSource, Event};
+export {EventSource, Event, CancellationToken, FilteredEventSource};

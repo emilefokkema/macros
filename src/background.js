@@ -1,4 +1,4 @@
-import {EventSource, Event} from './shared/events';
+import {EventSource, Event, CancellationToken} from './shared/events';
 
 class MessageSender extends Event{
 	sendMessage(message, responseCallback){
@@ -18,28 +18,7 @@ class MessageSender extends Event{
 		}
 	}
 }
-class CancellationToken extends Event{
-	constructor(){
-		super();
-		this.cancelled = false;
-	}
-	dispatch(){
-		if(this.cancelled){
-			return;
-		}
-		this.cancelled = true;
-		for(let listener of this.listeners){
-			listener();
-		}
-		this.listeners = [];
-	}
-	onCancelled(listener){
-		return this.listen(listener);
-	}
-	cancel(){
-		this.dispatch();
-	}
-}
+
 class TabsUpdated extends EventSource{
 	addListener(listener){
 		chrome.tabs.onUpdated.addListener(listener);
