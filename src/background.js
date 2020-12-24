@@ -1,24 +1,7 @@
-import {EventSource, Event, CancellationToken} from './shared/events';
+import {EventSource, Event, CancellationToken, MessageSender} from './shared/events';
 import {macros} from './shared/macros';
 
-class MessageSender extends Event{
-	sendMessage(message, responseCallback){
-		var responseGiven = false;
-		for(let listener of this.listeners){
-			listener(message, sendResponse);
-		}
-		function sendResponse(resp){
-			if(responseGiven){
-				console.log(`a response was already given, so ignoring`)
-				return;
-			}
-			responseGiven = true;
-			if(responseCallback){
-				responseCallback(resp);
-			}
-		}
-	}
-}
+
 
 class TabsUpdated extends EventSource{
 	addListener(listener){

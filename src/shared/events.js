@@ -90,6 +90,24 @@ class Event extends EventSource{
 		}
 	}
 }
+class MessageSender extends Event{
+	sendMessage(message, responseCallback){
+		var responseGiven = false;
+		for(let listener of this.listeners){
+			listener(message, sendResponse);
+		}
+		function sendResponse(resp){
+			if(responseGiven){
+				console.log(`a response was already given, so ignoring`)
+				return;
+			}
+			responseGiven = true;
+			if(responseCallback){
+				responseCallback(resp);
+			}
+		}
+	}
+}
 class CancellationToken extends Event{
 	constructor(){
 		super();
@@ -112,5 +130,22 @@ class CancellationToken extends Event{
 		this.dispatch();
 	}
 }
+class MessageType{
+	constructor(type){
+		this.type = type;
+	}
+	filterMessage(msg){
+		return msg.type === this.type;
+	}
+	unpackMessage(msg){
+		return msg.message;
+	}
+	packMessage(msg){
+		return {
+			type: this.type,
+			message: msg
+		};
+	}
+}
 
-export {EventSource, Event, CancellationToken, FilteredEventSource};
+export {EventSource, Event, CancellationToken, FilteredEventSource, MessageSender, MessageType};
