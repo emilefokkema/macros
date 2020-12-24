@@ -7,6 +7,12 @@ class EventSource{
 			}
 		};
 	}
+	filter(filter){
+		return new FilteredEventSourceWithDelegate(this, filter);
+	}
+	map(map){
+		return new MappedEventSourceWithDelegate(this, map);
+	}
 	when(predicate, cancellationToken){
 		var resolve;
 		var promise = new Promise((res) => {resolve = res;});
@@ -22,6 +28,20 @@ class EventSource{
 		return promise;
 	}
 }
+class MappedEventSource extends EventSource{
+	constructor(eventSource){
+		super();
+		this.eventSource = eventSource;
+	}
+	listen(listener){
+		var self = this;
+		return this.eventSource.listen(function(){
+			var args = Array.prototype.slice.apply(arguments);
+			var mapped = self.map(...args);
+			return listener(...mapped);
+		});
+	}
+}
 class FilteredEventSource extends EventSource{
 	constructor(eventSource){
 		super();
@@ -31,11 +51,23 @@ class FilteredEventSource extends EventSource{
 		var self = this;
 		return this.eventSource.listen(function(){
 			var args = Array.prototype.slice.apply(arguments);
-			if(!self.filter.apply(self, args)){
+			if(!self.filter(...args)){
 				return;
 			}
-			return listener.apply(null, args);
+			return listener(...args);
 		});
+	}
+}
+class FilteredEventSourceWithDelegate extends FilteredEventSource{
+	constructor(eventSource, filter){
+		super(eventSource);
+		this.filter = filter;
+	}
+}
+class MappedEventSourceWithDelegate extends MappedEventSource{
+	constructor(eventSource, map){
+		super(eventSource);
+		this.map = map;
 	}
 }
 class Event extends EventSource{

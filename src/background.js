@@ -1,4 +1,5 @@
 import {EventSource, Event, CancellationToken} from './shared/events';
+import {macros} from './shared/macros';
 
 class MessageSender extends Event{
 	sendMessage(message, responseCallback){
@@ -60,21 +61,6 @@ class Tab{
 	}
 	whenStatusChangesTo(status, cancellationToken){
 		return tabsUpdated.when((tabId, changeInfo) => {return tabId === this.tabId && changeInfo.status === status;}, cancellationToken);
-	}
-	whenStatusEquals(status, cancellationToken){
-		var resolve, promise = new Promise((res) => {resolve = res;});
-		chrome.tabs.get(this.tabId, (tab) => {
-			var e = chrome.runtime.lastError;
-			if(cancellationToken && cancellationToken.cancelled){
-				return;
-			}
-			if(e === undefined && tab && tab.status === status){
-				resolve();
-			}else{
-				tabsUpdated.when((tabId, changeInfo) => {return tabId === this.tabId && changeInfo.status === status;}, cancellationToken).then(resolve);
-			}
-		});
-		return promise;
 	}
 	focus(){
 		chrome.tabs.update(this.tabId, {active: true})
@@ -456,6 +442,9 @@ class RegularPage extends Page{
 class PageCollection{
 	constructor(){
 		this.pages = [];
+		macros.tabs.onTabStartedLoading.listen((tab, url) => {
+			console.log(`macros says this tab just started loading '${url}':`, tab)
+		});
 		chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
 			if(changeInfo.status === "loading"){
 				console.log(`a page has started loading on tab ${tabId}`)

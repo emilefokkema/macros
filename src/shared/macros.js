@@ -1,7 +1,10 @@
-import {EventSource, Event} from './events';
+import { tabs } from './tabs';
+
 
 class Macros{
-	
+	constructor(){
+		this.tabs = tabs;
+	}
 }
 
 var macros = new Macros();
