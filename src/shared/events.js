@@ -1,4 +1,30 @@
-class EventSource{
+/*
+interface Cancelable {
+	cancel(): void;
+}
+
+interface EventSource{
+	listen(listener: (...args: any[]) => any): Cancelable;
+	filter(filter: (...args: any[]) => boolean): EventSource;
+	map(map: (...args: any[]) => any[]): EventSource;
+	when(predicate: (...args: any[]) => boolean, cancellationToken: CancellationToken): Promise<void>
+}
+
+type MessageListener = (msg: any, sendResponse: (resp: any) => void) => any;
+
+interface MessageSource extends EventSource{
+	listenToMessages(listener: MessageListener): Cancelable;
+}
+
+interface MessageTarget{
+	sendMessageAsync(msg: any): Promise<any>;
+}
+
+interface MessagePort extends MessageSource, MessageTarget{
+	
+}
+*/
+class EventSource /* implements EventSource*/{
 	listen(listener){
 		this.addListener(listener);
 		return {
