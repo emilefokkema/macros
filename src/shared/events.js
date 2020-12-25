@@ -1,30 +1,4 @@
-/*
-interface Cancelable {
-	cancel(): void;
-}
-
-interface EventSource{
-	listen(listener: (...args: any[]) => any): Cancelable;
-	filter(filter: (...args: any[]) => boolean): EventSource;
-	map(map: (...args: any[]) => any[]): EventSource;
-	when(predicate: (...args: any[]) => boolean, cancellationToken: CancellationToken): Promise<void>
-}
-
-type MessageListener = (msg: any, sendResponse: (resp: any) => void) => any;
-
-interface MessageSource extends EventSource{
-	listenToMessages(listener: MessageListener): Cancelable;
-}
-
-interface MessageTarget{
-	sendMessageAsync(msg: any): Promise<any>;
-}
-
-interface MessagePort extends MessageSource, MessageTarget{
-	
-}
-*/
-class EventSource /* implements EventSource*/{
+class EventSource {
 	listen(listener){
 		this.addListener(listener);
 		return {
@@ -80,7 +54,8 @@ class FilteredEventSource extends EventSource{
 			if(!self.filter(...args)){
 				return;
 			}
-			return listener(...args);
+
+			var result = listener(...args);
 		});
 	}
 }
@@ -173,5 +148,22 @@ class MessageType{
 		};
 	}
 }
+class MessagesOfType{
+	constructor(messages, messageType){
+		this.messages = messages;
+		this.messageType = messageType;
+	}
+	sendMessageAsync(msg){
+		return this.messages.sendMessageAsync(this.messageType.packMessage(msg));
+	}
+	onMessage(listener){
+		return this.messages.onMessage((msg, sendResponse) => {
+			if(!this.messageType.filterMessage(msg)){
+				return;
+			}
+			return listener(this.messageType.unpackMessage(msg), sendResponse);
+		});
+	}
+}
 
-export {EventSource, Event, CancellationToken, FilteredEventSource, MessageSender, MessageType};
+export {EventSource, Event, CancellationToken, FilteredEventSource, MessageSender, MessageType, MessagesOfType};

@@ -1,5 +1,6 @@
 import { EventSource, FilteredEventSource, MessageType } from './events';
-import { runtimeMessages } from './runtime-messages';
+import { runtimeMessagesSource, runtimeMessages } from './runtime-messages';
+import { PromiseResolver } from './promise-resolver';
 
 class TabUpdated extends EventSource{
 	addListener(listener){
@@ -21,14 +22,46 @@ class TabRemoved extends EventSource{
 var tabUpdated = new TabUpdated();
 var tabRemoved = new TabRemoved();
 
+class MessagesToTab{
+	constructor(tabId){
+		this.tabId = tabId;
+		this.messageSource = runtimeMessagesSource.map((msg, sender, sendResponse) => [msg, sendResponse]);
+	}
+	sendMessageAsync(msg){
+		var resolver = new PromiseResolver();
+		chrome.tabs.sendMessage(this.tabId, msg, resp => {
+			var lastError = chrome.runtime.lastError;
+			if(lastError){
+				resolver.reject(`error when sending message to tab. Message: ${JSON.stringify(msg)}. Error: ${lastError.message}`);
+			}else{
+				resolver.resolve(resp);
+			}
+		});
+		return resolver.promise;
+	}
+	onMessage(listener){
+		return runtimeMessages.listen(listener);
+	}
+}
+
+class MessagesFromTab{
+	constructor(tabId){
+		this.tabId = tabId;
+		this.messageSource = runtimeMessagesSource.filter((msg, sender) => !!sender.tab && sender.tab.id === tabId).map((msg, sender, sendResponse) => [msg, sendResponse]);
+	}
+	sendMessageAsync(msg){
+		return runtimeMessages.sendMessageAsync(msg);
+	}
+	onMessage(listener){
+		return this.messageSource.listen(listener);
+	}
+}
+
 class Tab{
 	constructor(tabId){
 		this.tabId = tabId;
-		this.onMessage = runtimeMessages.filter((msg, sender) => !!sender.tab && sender.tab.tabId === tabId).map((msg, sender, sendResponse) => [msg, sendResponse]);
-	}
-	onMessageOfType(type){
-		var messageType = new MessageType(type);
-		return this.onMessage.filter((msg) => messageType.filterMessage(msg)).map((msg, sendResponse) => [messageType.unpackMessage(msg), sendResponse]);
+		this.incomingMessages = new MessagesToTab(tabId);
+		this.outgoingMessages = new MessagesFromTab(tabId);
 	}
 	whenRemoved(cancellationToken){
 		return tabRemoved.when((tabId) => tabId === this.tabId, cancellationToken);
@@ -37,16 +70,16 @@ class Tab{
 		return tabUpdated.when((tabId, changeInfo) => tabId === this.tabId && changeInfo.status === "loading", cancellationToken);
 	}
 	executeScriptAsync(scriptUrl){
-		var resolve, reject, promise = new Promise((res, rej) => {resolve = res;reject = rej;});
+		var resolver = new PromiseResolver();
 		chrome.tabs.executeScript(this.tabId, {file: scriptUrl, runAt: 'document_start'}, () => {
 			var e = chrome.runtime.lastError;
 			if(e !== undefined){
-				reject(e.message);
+				resolver.reject(e.message);
 			}else{
-				resolve();
+				resolver.resolve();
 			}
 		});
-		return promise;
+		return resolver.promise;
 	}
 }
 

@@ -1,6 +1,7 @@
 import { EventSource } from './events';
+import { PromiseResolver } from './promise-resolver';
 
-class RuntimeMessages extends EventSource{
+class RuntimeMessagesSource extends EventSource{
 	addListener(listener){
 		chrome.runtime.onMessage.addListener(listener);
 	}
@@ -9,13 +10,29 @@ class RuntimeMessages extends EventSource{
 	}
 }
 
-class RuntimeMessageSender{
-	sendMessage(msg, responseCallback){
-		chrome.runtime.sendMessage(undefined, msg, responseCallback);
+var runtimeMessagesSource = new RuntimeMessagesSource();
+
+class RuntimeMessages{
+	constructor(){
+		this.source = runtimeMessagesSource.map((msg, sender, sendResponse) => [msg, sendResponse]);
+	}
+	onMessage(listener){
+		return this.source.listen(listener);
+	}
+	sendMessageAsync(msg){
+		var resolver = new PromiseResolver();
+		chrome.runtime.sendMessage(undefined, msg, resp => {
+			var lastError = chrome.runtime.lastError;
+			if(lastError){
+				resolver.reject(`error when sending message. Message: ${JSON.stringify(msg)}. Error: ${lastError.message}`);
+			}else{
+				resolver.resolve(resp);
+			}
+		});
+		return resolver.promise;
 	}
 }
 
 var runtimeMessages = new RuntimeMessages();
-var runtimeMessageSender = new RuntimeMessageSender();
 
-export { runtimeMessages, runtimeMessageSender };
+export { runtimeMessagesSource, runtimeMessages };
