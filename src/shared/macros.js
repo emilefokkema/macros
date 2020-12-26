@@ -7,17 +7,14 @@ class Macros{
 		this.tabs = tabs;
 	}
 	getContentScriptInterface(){
-		console.log(`going to create content script interface`);
+		var contentScriptId = +new Date() - Math.floor(Math.random() * 1000);
 		var contentScriptLoaded = new MessagesOfType(runtimeMessages, new MessageType('contentScriptLoaded'));
-		contentScriptLoaded.sendMessageAsync({});
+		contentScriptLoaded.sendMessageAsync({contentScriptId: contentScriptId});
 	}
 	async getContentScriptOnTab(tab){
 		var contentScriptLoaded = new MessagesOfType(tab.outgoingMessages, new MessageType('contentScriptLoaded'));
-		contentScriptLoaded.onMessage((msg, sendResponse) => {
+		contentScriptLoaded.onMessage((msg) => {
 			console.log(`content script loaded message received:`, msg)
-			
-			//maybe this here shouldn't be necessary
-			sendResponse({});
 		});
 		try{
 			var executeScriptPromise = tab.executeScriptAsync('content-script.js');

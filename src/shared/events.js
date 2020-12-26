@@ -1,5 +1,6 @@
 class EventSource {
 	listen(listener){
+		listener = this.convertListener(listener);
 		this.addListener(listener);
 		return {
 			cancel: () => {
@@ -26,6 +27,9 @@ class EventSource {
 			cancellationToken.onCancelled(() => listener.cancel());
 		}
 		return promise;
+	}
+	convertListener(listener){
+		return listener;
 	}
 }
 class MappedEventSource extends EventSource{
@@ -55,7 +59,7 @@ class FilteredEventSource extends EventSource{
 				return;
 			}
 
-			var result = listener(...args);
+			return listener(...args);
 		});
 	}
 }

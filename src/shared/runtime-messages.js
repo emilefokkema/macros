@@ -1,12 +1,32 @@
 import { EventSource } from './events';
 import { PromiseResolver } from './promise-resolver';
 
+var responseTimeout = 4000;
+
 class RuntimeMessagesSource extends EventSource{
 	addListener(listener){
 		chrome.runtime.onMessage.addListener(listener);
 	}
 	removeListener(listener){
 		chrome.runtime.onMessage.removeListener(listener);
+	}
+	convertListener(listener){
+		return (msg, sender, sendResponse) => {
+			var responseSent = false;
+			var sendResponseTimeout = setTimeout(() => {
+				console.log(`response wat not sent, so sending undefined in response to ${JSON.stringify(msg)}`)
+				sendResponse(undefined);
+			}, responseTimeout);
+			var result = listener(msg, sender, (resp) => {
+				clearTimeout(sendResponseTimeout);
+				responseSent = true;
+				sendResponse(resp);
+			});
+			if(!responseSent && result !== true){
+				result = true;
+			}
+			return result;
+		};
 	}
 }
 
