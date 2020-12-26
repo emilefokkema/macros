@@ -1,5 +1,5 @@
-import { EventSource, FilteredEventSource, MessageType } from './events';
-import { runtimeMessagesSource, runtimeMessages } from './runtime-messages';
+import { EventSource, Messages } from './events';
+import { runtimeMessagesSource } from './runtime-messages';
 import { PromiseResolver } from './promise-resolver';
 
 class TabUpdated extends EventSource{
@@ -19,13 +19,14 @@ class TabRemoved extends EventSource{
 	}
 }
 
-var tabUpdated = new TabUpdated();
-var tabRemoved = new TabRemoved();
-
-class MessagesToTab{
+class TabMessages extends Messages{
 	constructor(tabId){
+		super();
 		this.tabId = tabId;
-		this.messageSource = runtimeMessagesSource.map((msg, sender, sendResponse) => [msg, sendResponse]);
+		this.messageSource = runtimeMessagesSource.filter((msg, sender) => !!sender.tab && sender.tab.id === tabId).map((msg, sender, sendResponse) => [msg, sendResponse]);
+	}
+	onMessage(listener){
+		return this.messageSource.listen(listener);
 	}
 	sendMessageAsync(msg){
 		var resolver = new PromiseResolver();
@@ -39,29 +40,15 @@ class MessagesToTab{
 		});
 		return resolver.promise;
 	}
-	onMessage(listener){
-		return runtimeMessages.listen(listener);
-	}
 }
 
-class MessagesFromTab{
-	constructor(tabId){
-		this.tabId = tabId;
-		this.messageSource = runtimeMessagesSource.filter((msg, sender) => !!sender.tab && sender.tab.id === tabId).map((msg, sender, sendResponse) => [msg, sendResponse]);
-	}
-	sendMessageAsync(msg){
-		return runtimeMessages.sendMessageAsync(msg);
-	}
-	onMessage(listener){
-		return this.messageSource.listen(listener);
-	}
-}
+var tabUpdated = new TabUpdated();
+var tabRemoved = new TabRemoved();
 
 class Tab{
 	constructor(tabId){
 		this.tabId = tabId;
-		this.incomingMessages = new MessagesToTab(tabId);
-		this.outgoingMessages = new MessagesFromTab(tabId);
+		this.messages = new TabMessages(tabId);
 	}
 	whenRemoved(cancellationToken){
 		return tabRemoved.when((tabId) => tabId === this.tabId, cancellationToken);

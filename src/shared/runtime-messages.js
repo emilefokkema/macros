@@ -1,4 +1,4 @@
-import { EventSource } from './events';
+import { EventSource, Messages } from './events';
 import { PromiseResolver } from './promise-resolver';
 
 var responseTimeout = 4000;
@@ -14,7 +14,7 @@ class RuntimeMessagesSource extends EventSource{
 		return (msg, sender, sendResponse) => {
 			var responseSent = false;
 			var sendResponseTimeout = setTimeout(() => {
-				console.log(`response wat not sent, so sending undefined in response to ${JSON.stringify(msg)}`)
+				console.log(`no response was sent, so sending undefined in response to ${JSON.stringify(msg)}`)
 				sendResponse(undefined);
 			}, responseTimeout);
 			var result = listener(msg, sender, (resp) => {
@@ -32,8 +32,9 @@ class RuntimeMessagesSource extends EventSource{
 
 var runtimeMessagesSource = new RuntimeMessagesSource();
 
-class RuntimeMessages{
+class RuntimeMessages extends Messages{
 	constructor(){
+		super();
 		this.source = runtimeMessagesSource.map((msg, sender, sendResponse) => [msg, sendResponse]);
 	}
 	onMessage(listener){

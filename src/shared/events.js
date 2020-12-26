@@ -1,3 +1,5 @@
+import { PromiseResolver } from './promise-resolver';
+
 class EventSource {
 	listen(listener){
 		listener = this.convertListener(listener);
@@ -152,8 +154,26 @@ class MessageType{
 		};
 	}
 }
-class MessagesOfType{
+class Messages{
+	async sendMessageAsync(msg){}
+	onMessage(listener){
+		return {cancel(){}};
+	}
+	ofType(messageType){
+		return new MessagesOfType(this, messageType);
+	}
+	nextMessage(){
+		var resolver = new PromiseResolver();
+		var listener = this.onMessage((msg) => {
+			listener.cancel();
+			resolver.resolve(msg);
+		});
+		return resolver.promise;
+	}
+}
+class MessagesOfType extends Messages{
 	constructor(messages, messageType){
+		super();
 		this.messages = messages;
 		this.messageType = messageType;
 	}
@@ -170,4 +190,4 @@ class MessagesOfType{
 	}
 }
 
-export {EventSource, Event, CancellationToken, FilteredEventSource, MessageSender, MessageType, MessagesOfType};
+export {EventSource, Event, CancellationToken, FilteredEventSource, MessageSender, MessageType, MessagesOfType, Messages};
