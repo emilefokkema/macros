@@ -24,8 +24,8 @@ class TabMessagesSource extends MessagesSource{
 		super();
 		this.messageSource = runtimeMessagesEventSource.filter((msg, sender) => !!sender.tab && sender.tab.id === tabId).map((msg, sender, sendResponse) => [msg, sendResponse]);
 	}
-	onMessage(listener){
-		return this.messageSource.listen(listener);
+	onMessage(listener, cancellationToken){
+		return this.messageSource.listen(listener, cancellationToken);
 	}
 }
 

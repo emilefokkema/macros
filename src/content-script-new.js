@@ -6,6 +6,12 @@ var elementSelectedInDevtools = function(element){
 	currentlySelectedElement = element;
 }
 
-macros.contentScripts.getInterface();
+var load = async function(){
+	var contentScriptInterface = macros.contentScripts.getInterface();
+	
+};
+
+load();
+
 
 export {elementSelectedInDevtools};

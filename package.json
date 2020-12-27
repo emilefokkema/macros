@@ -5,7 +5,7 @@
   "main": "background.js",
   "scripts": {
     "build": "node ./copy-files.js && npm run build:macros && npm run build:background && npm run build:content-script",
-    "build-new": "node ./copy-files.js && npm run build:macros && npm run build:background-new && npm run build:content-script-new",
+    "build-new": "node ./copy-files-new.js && npm run build:macros && npm run build:background-new && npm run build:content-script-new",
     "build:macros": "npx webpack --config ./webpack.config.macros.js",
     "build:background": "npx webpack --config ./webpack.config.background.js",
     "build:content-script": "npx webpack --config ./webpack.config.content-script.js",

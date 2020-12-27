@@ -19,8 +19,8 @@ class RuntimeMessagesSource extends MessagesSource{
 		super();
 		this.source = runtimeMessagesEventSource.map((msg, sender, sendResponse) => [msg, sendResponse]);
 	}
-	onMessage(listener){
-		return this.source.listen(listener);
+	onMessage(listener, cancellationToken){
+		return this.source.listen(listener, cancellationToken);
 	}
 }
 

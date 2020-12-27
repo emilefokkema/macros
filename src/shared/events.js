@@ -1,13 +1,13 @@
 import { PromiseResolver } from './promise-resolver';
 
 class EventSource {
-	listen(listener){
+	listen(listener, cancellationToken){
 		this.addListener(listener);
-		return {
-			cancel: () => {
-				this.removeListener(listener)
-			}
-		};
+		var cancel = () => this.removeListener(listener);
+		if(cancellationToken){
+			cancellationToken.onCancelled(cancel);
+		}
+		return { cancel };
 	}
 	filter(filter){
 		return new FilteredEventSourceWithDelegate(this, filter);
@@ -23,10 +23,7 @@ class EventSource {
 				listener.cancel();
 				resolve();
 			}
-		});
-		if(cancellationToken){
-			cancellationToken.onCancelled(() => listener.cancel());
-		}
+		}, cancellationToken);
 		return promise;
 	}
 }
@@ -35,13 +32,13 @@ class MappedEventSource extends EventSource{
 		super();
 		this.eventSource = eventSource;
 	}
-	listen(listener){
+	listen(listener, cancellationToken){
 		var self = this;
 		return this.eventSource.listen(function(){
 			var args = Array.prototype.slice.apply(arguments);
 			var mapped = self.map(...args);
 			return listener(...mapped);
-		});
+		}, cancellationToken);
 	}
 }
 class FilteredEventSource extends EventSource{
@@ -49,7 +46,7 @@ class FilteredEventSource extends EventSource{
 		super();
 		this.eventSource = eventSource;
 	}
-	listen(listener){
+	listen(listener, cancellationToken){
 		var self = this;
 		return this.eventSource.listen(function(){
 			var args = Array.prototype.slice.apply(arguments);
@@ -58,7 +55,7 @@ class FilteredEventSource extends EventSource{
 			}
 
 			return listener(...args);
-		});
+		}, cancellationToken);
 	}
 }
 class FilteredEventSourceWithDelegate extends FilteredEventSource{
@@ -151,15 +148,15 @@ class MessageType{
 	}
 }
 class MessagesSource{
-	onMessage(listener){
+	onMessage(listener, cancellationToken){
 		return {cancel(){}};
 	}
-	nextMessage(){
+	nextMessage(cancellationToken){
 		var resolver = new PromiseResolver();
 		var listener = this.onMessage((msg) => {
 			listener.cancel();
 			resolver.resolve(msg);
-		});
+		}, cancellationToken);
 		return resolver.promise;
 	}
 	ofType(messageType){
@@ -179,13 +176,13 @@ class MessagesSourceOfType extends MessagesSource{
 		this.messagesSource = messagesSource;
 		this.messageType = messageType;
 	}
-	onMessage(listener){
+	onMessage(listener, cancellationToken){
 		return this.messagesSource.onMessage((msg, sendResponse) => {
 			if(!this.messageType.filterMessage(msg)){
 				return;
 			}
 			return listener(this.messageType.unpackMessage(msg), sendResponse);
-		});
+		}, cancellationToken);
 	}
 }
 class MessagesTargetOfType extends MessagesTarget{
