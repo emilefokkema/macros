@@ -4,11 +4,22 @@ import { MessageType } from './events';
 
 var contentScriptLoaded = new MessageType('contentScriptLoaded');
 
+class ContentScriptInterface{
+
+}
+
+class ContentScriptOnTab{
+	constructor(){
+
+	}
+}
+
 class ContentScriptLoader{
 	
 	getInterface(){
 		var contentScriptId = +new Date() - Math.floor(Math.random() * 1000);
 		runtimeMessagesTarget.ofType(contentScriptLoaded).sendMessage({contentScriptId: contentScriptId});
+		
 	}
 	async getOnTab(tab){
 		try{
@@ -16,9 +27,10 @@ class ContentScriptLoader{
 				tab.outgoingMessages.ofType(contentScriptLoaded).nextMessage(),
 				tab.executeScriptAsync('content-script.js')
 			])
-			console.log(`content script was loaded: `, contentScriptId);
+			return new ContentScriptOnTab();
 		}catch(e){
-			console.log(`there was an error executing the script: `, e)
+			console.log(`there was an error executing the script: `, e);
+			return undefined;
 		}
 		
 	}
