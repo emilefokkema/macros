@@ -1,19 +1,19 @@
 import { tabs } from './tabs';
-import { runtimeMessages } from './runtime-messages';
+import { runtimeMessagesTarget } from './runtime-messages';
 import { MessageType } from './events';
 
 var contentScriptLoaded = new MessageType('contentScriptLoaded');
 
 class ContentScriptLoader{
-
+	
 	getInterface(){
 		var contentScriptId = +new Date() - Math.floor(Math.random() * 1000);
-		runtimeMessages.ofType(contentScriptLoaded).sendMessageAsync({contentScriptId: contentScriptId});
+		runtimeMessagesTarget.ofType(contentScriptLoaded).sendMessage({contentScriptId: contentScriptId});
 	}
 	async getOnTab(tab){
 		try{
 			const [{contentScriptId}] = await Promise.all([
-				tab.messages.ofType(contentScriptLoaded).nextMessage(),
+				tab.outgoingMessages.ofType(contentScriptLoaded).nextMessage(),
 				tab.executeScriptAsync('content-script.js')
 			])
 			console.log(`content script was loaded: `, contentScriptId);

@@ -1,45 +1,30 @@
-import { EventSource, Messages } from './events';
+import { EventSource, MessagesSource, MessagesTarget } from './events';
 import { PromiseResolver } from './promise-resolver';
 
 var responseTimeout = 4000;
 
-class RuntimeMessagesSource extends EventSource{
+class RuntimeMessagesEventSource extends EventSource{
 	addListener(listener){
 		chrome.runtime.onMessage.addListener(listener);
 	}
 	removeListener(listener){
 		chrome.runtime.onMessage.removeListener(listener);
 	}
-	convertListener(listener){
-		return (msg, sender, sendResponse) => {
-			var responseSent = false;
-			var sendResponseTimeout = setTimeout(() => {
-				console.log(`no response was sent, so sending undefined in response to ${JSON.stringify(msg)}`)
-				sendResponse(undefined);
-			}, responseTimeout);
-			var result = listener(msg, sender, (resp) => {
-				clearTimeout(sendResponseTimeout);
-				responseSent = true;
-				sendResponse(resp);
-			});
-			if(!responseSent && result !== true){
-				result = true;
-			}
-			return result;
-		};
-	}
 }
 
-var runtimeMessagesSource = new RuntimeMessagesSource();
+var runtimeMessagesEventSource = new RuntimeMessagesEventSource();
 
-class RuntimeMessages extends Messages{
+class RuntimeMessagesSource extends MessagesSource{
 	constructor(){
 		super();
-		this.source = runtimeMessagesSource.map((msg, sender, sendResponse) => [msg, sendResponse]);
+		this.source = runtimeMessagesEventSource.map((msg, sender, sendResponse) => [msg, sendResponse]);
 	}
 	onMessage(listener){
 		return this.source.listen(listener);
 	}
+}
+
+class RuntimeMessagesTarget extends MessagesTarget{
 	sendMessageAsync(msg){
 		var resolver = new PromiseResolver();
 		chrome.runtime.sendMessage(undefined, msg, resp => {
@@ -52,8 +37,12 @@ class RuntimeMessages extends Messages{
 		});
 		return resolver.promise;
 	}
+	sendMessage(msg){
+		chrome.runtime.sendMessage(undefined, msg);
+	}
 }
 
-var runtimeMessages = new RuntimeMessages();
+var runtimeMessagesSource = new RuntimeMessagesSource();
+var runtimeMessagesTarget = new RuntimeMessagesTarget();
 
-export { runtimeMessagesSource, runtimeMessages };
+export { runtimeMessagesEventSource, runtimeMessagesSource, runtimeMessagesTarget };

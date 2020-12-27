@@ -2,7 +2,6 @@ import { PromiseResolver } from './promise-resolver';
 
 class EventSource {
 	listen(listener){
-		listener = this.convertListener(listener);
 		this.addListener(listener);
 		return {
 			cancel: () => {
@@ -29,9 +28,6 @@ class EventSource {
 			cancellationToken.onCancelled(() => listener.cancel());
 		}
 		return promise;
-	}
-	convertListener(listener){
-		return listener;
 	}
 }
 class MappedEventSource extends EventSource{
@@ -154,13 +150,9 @@ class MessageType{
 		};
 	}
 }
-class Messages{
-	async sendMessageAsync(msg){}
+class MessagesSource{
 	onMessage(listener){
 		return {cancel(){}};
-	}
-	ofType(messageType){
-		return new MessagesOfType(this, messageType);
 	}
 	nextMessage(){
 		var resolver = new PromiseResolver();
@@ -170,18 +162,25 @@ class Messages{
 		});
 		return resolver.promise;
 	}
+	ofType(messageType){
+		return new MessagesSourceOfType(this, messageType);
+	}
 }
-class MessagesOfType extends Messages{
-	constructor(messages, messageType){
+class MessagesTarget{
+	async sendMessageAsync(msg){}
+	sendMessage(msg){}
+	ofType(messageType){
+		return new MessagesTargetOfType(this, messageType);
+	}
+}
+class MessagesSourceOfType extends MessagesSource{
+	constructor(messagesSource, messageType){
 		super();
-		this.messages = messages;
+		this.messagesSource = messagesSource;
 		this.messageType = messageType;
 	}
-	sendMessageAsync(msg){
-		return this.messages.sendMessageAsync(this.messageType.packMessage(msg));
-	}
 	onMessage(listener){
-		return this.messages.onMessage((msg, sendResponse) => {
+		return this.messagesSource.onMessage((msg, sendResponse) => {
 			if(!this.messageType.filterMessage(msg)){
 				return;
 			}
@@ -189,5 +188,18 @@ class MessagesOfType extends Messages{
 		});
 	}
 }
+class MessagesTargetOfType extends MessagesTarget{
+	constructor(messagesTarget, messageType){
+		super();
+		this.messagesTarget = messagesTarget;
+		this.messageType = messageType;
+	}
+	sendMessage(msg){
+		this.messagesTarget.sendMessage(this.messageType.packMessage(msg));
+	}
+	sendMessageAsync(msg){
+		return this.messagesTarget.sendMessageAsync(this.messageType.packMessage(msg));
+	}
+}
 
-export {EventSource, Event, CancellationToken, FilteredEventSource, MessageSender, MessageType, MessagesOfType, Messages};
+export {EventSource, Event, CancellationToken, FilteredEventSource, MessageSender, MessageType, MessagesSource, MessagesTarget};

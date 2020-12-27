@@ -1,5 +1,5 @@
-import { EventSource, Messages } from './events';
-import { runtimeMessagesSource } from './runtime-messages';
+import { EventSource, MessagesSource, MessagesTarget } from './events';
+import { runtimeMessagesEventSource } from './runtime-messages';
 import { PromiseResolver } from './promise-resolver';
 
 class TabUpdated extends EventSource{
@@ -19,14 +19,20 @@ class TabRemoved extends EventSource{
 	}
 }
 
-class TabMessages extends Messages{
+class TabMessagesSource extends MessagesSource{
 	constructor(tabId){
 		super();
-		this.tabId = tabId;
-		this.messageSource = runtimeMessagesSource.filter((msg, sender) => !!sender.tab && sender.tab.id === tabId).map((msg, sender, sendResponse) => [msg, sendResponse]);
+		this.messageSource = runtimeMessagesEventSource.filter((msg, sender) => !!sender.tab && sender.tab.id === tabId).map((msg, sender, sendResponse) => [msg, sendResponse]);
 	}
 	onMessage(listener){
 		return this.messageSource.listen(listener);
+	}
+}
+
+class TabMessagesTarget extends MessagesTarget{
+	constructor(tabId){
+		super();
+		this.tabId = tabId;
 	}
 	sendMessageAsync(msg){
 		var resolver = new PromiseResolver();
@@ -40,6 +46,9 @@ class TabMessages extends Messages{
 		});
 		return resolver.promise;
 	}
+	sendMessage(msg){
+		chrome.tabs.sendMessage(this.tabId, msg);
+	}
 }
 
 var tabUpdated = new TabUpdated();
@@ -48,7 +57,8 @@ var tabRemoved = new TabRemoved();
 class Tab{
 	constructor(tabId){
 		this.tabId = tabId;
-		this.messages = new TabMessages(tabId);
+		this.incomingMessages = new TabMessagesTarget(tabId);
+		this.outgoingMessages = new TabMessagesSource(tabId);
 	}
 	whenRemoved(cancellationToken){
 		return tabRemoved.when((tabId) => tabId === this.tabId, cancellationToken);
