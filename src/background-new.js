@@ -33,6 +33,13 @@ class ModifyablePage extends Page{
 		super(tab);
 		this.contentScript = contentScript;
 		this.url = url;
+		this.initialize();
+	}
+	initialize(){
+		this.contentScript.onPageInfoRequest((req, sendResponse) => {
+			sendResponse({pageId: this.pageId});
+		}, this.cancellationToken);
+		this.contentScript.acknowledge();
 	}
 }
 

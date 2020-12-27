@@ -7,8 +7,9 @@ var elementSelectedInDevtools = function(element){
 }
 
 var load = async function(){
-	var contentScriptInterface = macros.contentScripts.getInterface();
-	
+	var contentScriptInterface = await macros.contentScripts.getInterface();
+	var pageInfo = await contentScriptInterface.getPageInfo();
+	console.log(`got page info: `, pageInfo);
 };
 
 load();
