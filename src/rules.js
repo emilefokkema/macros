@@ -1,4 +1,5 @@
 import { Event } from './shared/events';
+import { macros } from './shared/macros';
 
 function urlMatchesPattern(url, pattern){
 	var regexPattern = pattern.replace(/[.+?^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '[\\S]*?');
@@ -71,5 +72,7 @@ class RuleCollection{
 	}
 }
 var rules = new RuleCollection();
+
+macros.setRuleCollection(rules);
 
 export { rules };

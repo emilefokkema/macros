@@ -8,8 +8,11 @@ var elementSelectedInDevtools = function(element){
 
 var load = async function(){
 	var contentScriptInterface = await macros.contentScripts.getInterface();
-	var pageInfo = await contentScriptInterface.getPageInfo();
-	console.log(`got page info: `, pageInfo);
+	var pageId = await contentScriptInterface.getPageId();
+	console.log(`got page id: `, pageId);
+	contentScriptInterface.onRulesChanged((rules) => {
+		console.log(`received rules:`, rules)
+	});
 };
 
 load();

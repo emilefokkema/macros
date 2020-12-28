@@ -36,10 +36,17 @@ class ModifyablePage extends Page{
 		this.initialize();
 	}
 	initialize(){
-		this.contentScript.onPageInfoRequest((req, sendResponse) => {
-			sendResponse({pageId: this.pageId});
+		this.contentScript.onPageIdRequest((req, sendResponse) => {
+			sendResponse(this.pageId);
 		}, this.cancellationToken);
+		this.contentScript.onPageRulesRequest((req, sendResponse) => {
+			sendResponse(rules.getRulesForUrl(this.url));
+		});
 		this.contentScript.acknowledge();
+		macros.rulesChanged.listen(() => {
+			this.contentScript.setRules(rules.getRulesForUrl(this.url));
+		});
+		
 	}
 }
 

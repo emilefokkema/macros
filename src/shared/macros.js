@@ -1,6 +1,6 @@
 import { tabs } from './tabs';
 import { runtimeMessagesTarget, runtimeMessagesSource } from './runtime-messages';
-import { MessageType } from './events';
+import { MessageType, Event } from './events';
 
 class ContentScriptMessageType{
 	constructor(type, contentScriptId){
@@ -63,7 +63,9 @@ class ContentScript{
 	constructor(contentScriptId){
 		this.contentScriptId = contentScriptId;
 		this.acknowledgeContentScript = new ContentScriptInterfaceEvent('acknowledgeContentScript', contentScriptId);
-		this.pageInfoRequest = new RequestFromContentScript('getPageInfo', contentScriptId);
+		this.pageRulesChanged = new ContentScriptInterfaceEvent('pageRulesChanged', contentScriptId);
+		this.pageRulesRequest = new RequestFromContentScript('getPageRules', contentScriptId);
+		this.pageIdRequest = new RequestFromContentScript('getPageId', contentScriptId);
 	}
 }
 
@@ -75,8 +77,17 @@ class ContentScriptInterface extends ContentScript {
 	whenAcknowledged(){
 		return this.acknowledgeContentScript.messagesSource.nextMessage();
 	}
-	getPageInfo(){
-		return this.pageInfoRequest.sendAsync({});
+	getPageId(){
+		return this.pageIdRequest.sendAsync({});
+	}
+	onRulesChanged(listener, cancellationToken){
+		this.pageRulesRequest.sendAsync({}).then(rules => {
+			if(cancellationToken && cancellationToken.cancelled){
+				return;
+			}
+			listener(rules);
+		});
+		return this.pageRulesChanged.messagesSource.onMessage(listener, cancellationToken);
 	}
 }
 
@@ -85,12 +96,17 @@ class ContentScriptOnTab extends ContentScript{
 		super(contentScriptId);
 		this.tab = tab;
 	}
-	onPageInfoRequest(listener, cancellationToken){
-		return this.pageInfoRequest.onRequestFromTab(this.tab, listener, cancellationToken);
+	onPageIdRequest(listener, cancellationToken){
+		return this.pageIdRequest.onRequestFromTab(this.tab, listener, cancellationToken);
+	}
+	onPageRulesRequest(listener, cancellationToken){
+		this.pageRulesRequest.onRequestFromTab(this.tab, listener, cancellationToken);
 	}
 	acknowledge(){
-		console.log(`going to acknowledge content script ${this.contentScriptId}`)
 		this.acknowledgeContentScript.dispatchToTab(this.tab, {});
+	}
+	setRules(rules){
+		this.pageRulesChanged.dispatchToTab(this.tab, rules);
 	}
 }
 
@@ -124,6 +140,21 @@ class Macros{
 	constructor(){
 		this.tabs = tabs;
 		this.contentScripts = new ContentScriptLoader();
+		this.rulesChanged = new Event();
+	}
+	onRuleAdded(){
+		this.rulesChanged.dispatch();
+	}
+	onRuleDeleted(){
+		this.rulesChanged.dispatch();
+	}
+	onRuleUpdated(){
+		this.rulesChanged.dispatch();
+	}
+	setRuleCollection(ruleCollection){
+		ruleCollection.ruleUpdated.listen(() => this.onRuleUpdated());
+		ruleCollection.ruleAdded.listen(() => this.onRuleAdded());
+		ruleCollection.ruleDeleted.listen(() => this.onRuleDeleted());
 	}
 }
 
