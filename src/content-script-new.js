@@ -10,9 +10,8 @@ var load = async function(){
 	var contentScriptInterface = await macros.contentScripts.getInterface();
 	var pageId = await contentScriptInterface.getPageId();
 	console.log(`got page id: `, pageId);
-	contentScriptInterface.onRulesChanged((rules) => {
-		console.log(`received rules:`, rules)
-	});
+	var rules = await contentScriptInterface.getRulesForPage(pageId);
+	console.log(`got rules: `, rules)
 };
 
 load();

@@ -84,9 +84,10 @@ class Event extends EventSource{
 			this.listeners.splice(index, 1)
 		}
 	}
-	dispatch(event){
+	dispatch(){
+		var args = Array.prototype.slice.apply(arguments);
 		for(let listener of this.listeners){
-			listener(event);
+			listener(...args);
 		}
 	}
 }
@@ -170,6 +171,44 @@ class MessagesTarget{
 		return new MessagesTargetOfType(this, messageType);
 	}
 }
+class EventMessagesSource extends MessagesSource{
+	constructor(event){
+		super();
+		this.event = event;
+	}
+	onMessage(listener, cancellationToken){
+		return this.event.listen(listener, cancellationToken);
+	}
+}
+class EventMessagesTarget extends MessagesTarget{
+	constructor(event){
+		super();
+		this.event = event;
+	}
+	async sendMessageAsync(msg){
+		var resolver = new PromiseResolver();
+		var responseSent = false;
+		this.event.dispatch(msg, sendResponse);
+		function sendResponse(response){
+			if(responseSent){
+				return;
+			}
+			responseSent = true;
+			resolver.resolve(response);
+		}
+		return resolver.promise;
+	}
+	sendMessage(msg){
+		this.event.dispatch(msg);
+	}
+}
+class MessagesSourceAndTarget{
+	constructor(){
+		var dispatcher = new Event();
+		this.source = new EventMessagesSource(dispatcher);
+		this.target = new EventMessagesTarget(dispatcher);
+	}
+}
 class MessagesSourceOfType extends MessagesSource{
 	constructor(messagesSource, messageType){
 		super();
@@ -199,4 +238,4 @@ class MessagesTargetOfType extends MessagesTarget{
 	}
 }
 
-export {EventSource, Event, CancellationToken, FilteredEventSource, MessageSender, MessageType, MessagesSource, MessagesTarget};
+export {EventSource, Event, CancellationToken, FilteredEventSource, MessageSender, MessageType, MessagesSource, MessagesTarget, MessagesSourceAndTarget};

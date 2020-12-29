@@ -32,6 +32,7 @@ class ModifyablePage extends Page{
 	constructor(tab, contentScript, url){
 		super(tab);
 		this.contentScript = contentScript;
+		this.cancellationToken.onCancelled(() => contentScript.discard());
 		this.url = url;
 		this.initialize();
 	}
@@ -39,14 +40,7 @@ class ModifyablePage extends Page{
 		this.contentScript.onPageIdRequest((req, sendResponse) => {
 			sendResponse(this.pageId);
 		}, this.cancellationToken);
-		this.contentScript.onPageRulesRequest((req, sendResponse) => {
-			sendResponse(rules.getRulesForUrl(this.url));
-		});
 		this.contentScript.acknowledge();
-		macros.rulesChanged.listen(() => {
-			this.contentScript.setRules(rules.getRulesForUrl(this.url));
-		});
-		
 	}
 }
 
@@ -83,6 +77,15 @@ class PageCollection{
 			console.log(`removed page (page id ${page.pageId}). current number of pages: ${this.pages.length}`)
 		}
 	}
+	getPageById(pageId){
+		return this.pages.find(p => p.pageId === pageId);
+	}
 }
 
 var pages = new PageCollection();
+
+macros.onPageRuleRequest((pageId, sendResponse) => {
+	console.log(`macros requests rules for page ${pageId}`);
+	var page = pages.getPageById(pageId);
+	sendResponse(rules.getRulesForUrl(page.url));
+});

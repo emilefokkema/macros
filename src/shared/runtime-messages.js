@@ -1,8 +1,6 @@
 import { EventSource, MessagesSource, MessagesTarget } from './events';
 import { PromiseResolver } from './promise-resolver';
 
-var responseTimeout = 4000;
-
 class RuntimeMessagesEventSource extends EventSource{
 	addListener(listener){
 		chrome.runtime.onMessage.addListener(listener);

@@ -1,6 +1,6 @@
 import { tabs } from './tabs';
 import { runtimeMessagesTarget, runtimeMessagesSource } from './runtime-messages';
-import { MessageType, Event } from './events';
+import { MessageType, Event, MessagesSourceAndTarget } from './events';
 
 class ContentScriptMessageType{
 	constructor(type, contentScriptId){
@@ -63,9 +63,8 @@ class ContentScript{
 	constructor(contentScriptId){
 		this.contentScriptId = contentScriptId;
 		this.acknowledgeContentScript = new ContentScriptInterfaceEvent('acknowledgeContentScript', contentScriptId);
-		this.pageRulesChanged = new ContentScriptInterfaceEvent('pageRulesChanged', contentScriptId);
-		this.pageRulesRequest = new RequestFromContentScript('getPageRules', contentScriptId);
 		this.pageIdRequest = new RequestFromContentScript('getPageId', contentScriptId);
+		this.pageRulesRequest = new RequestFromContentScript('getRulesForPage', contentScriptId);
 	}
 }
 
@@ -80,14 +79,8 @@ class ContentScriptInterface extends ContentScript {
 	getPageId(){
 		return this.pageIdRequest.sendAsync({});
 	}
-	onRulesChanged(listener, cancellationToken){
-		this.pageRulesRequest.sendAsync({}).then(rules => {
-			if(cancellationToken && cancellationToken.cancelled){
-				return;
-			}
-			listener(rules);
-		});
-		return this.pageRulesChanged.messagesSource.onMessage(listener, cancellationToken);
+	getRulesForPage(pageId){
+		return this.pageRulesRequest.sendAsync(pageId);
 	}
 }
 
@@ -95,22 +88,27 @@ class ContentScriptOnTab extends ContentScript{
 	constructor(tab, contentScriptId){
 		super(contentScriptId);
 		this.tab = tab;
+		this.discarded = new Event();
 	}
 	onPageIdRequest(listener, cancellationToken){
 		return this.pageIdRequest.onRequestFromTab(this.tab, listener, cancellationToken);
 	}
-	onPageRulesRequest(listener, cancellationToken){
-		this.pageRulesRequest.onRequestFromTab(this.tab, listener, cancellationToken);
+	onPageRuleRequest(listener, cancellationToken){
+		return this.pageRulesRequest.onRequestFromTab(this.tab, listener, cancellationToken);
 	}
 	acknowledge(){
 		this.acknowledgeContentScript.dispatchToTab(this.tab, {});
 	}
-	setRules(rules){
-		this.pageRulesChanged.dispatchToTab(this.tab, rules);
+	discard(){
+		this.discarded.dispatch();
 	}
 }
 
 class ContentScriptLoader{
+	constructor(){
+		this.contentScriptsOnTabs = [];
+		this.pageRuleRequest = new MessagesSourceAndTarget();
+	}
 	
 	async getInterface(){
 		var contentScriptId = +new Date() - Math.floor(Math.random() * 1000);
@@ -127,34 +125,43 @@ class ContentScriptLoader{
 				tab.executeScriptAsync('content-script.js')
 			])
 			console.log(`loaded content script ${contentScriptId}`)
-			return new ContentScriptOnTab(tab, contentScriptId);
+			var result = new ContentScriptOnTab(tab, contentScriptId);
+			this.addContentScriptOnTab(result);
+			return result;
 		}catch(e){
 			console.log(`there was an error executing the script: `, e);
 			return undefined;
 		}
-		
+	}
+	addContentScriptOnTab(contentScriptOnTab){
+		this.contentScriptsOnTabs.push(contentScriptOnTab);
+		contentScriptOnTab.onPageRuleRequest((pageId, sendResponse) => {
+			this.pageRuleRequest.target.sendMessageAsync(pageId).then(rules => sendResponse(rules));
+			return true;
+		});
+		contentScriptOnTab.discarded.listen(() => this.removeContentScriptOnTab(contentScriptOnTab));
+	}
+	removeContentScriptOnTab(contentScriptOnTab){
+		var index = this.contentScriptsOnTabs.indexOf(contentScriptOnTab);
+		if(index > -1){
+			this.contentScriptsOnTabs.splice(index, 1);
+			console.log(`removed content script on tab. Current number of content scripts: ${this.contentScriptsOnTabs.length}`);
+		}
 	}
 }
 
 class Macros{
 	constructor(){
 		this.tabs = tabs;
+		this.pageRuleRequest = new MessagesSourceAndTarget();
 		this.contentScripts = new ContentScriptLoader();
-		this.rulesChanged = new Event();
+		this.contentScripts.pageRuleRequest.source.onMessage((pageId, sendResponse) => {
+			this.pageRuleRequest.target.sendMessageAsync(pageId).then(rules => sendResponse(rules));
+			return true;
+		});
 	}
-	onRuleAdded(){
-		this.rulesChanged.dispatch();
-	}
-	onRuleDeleted(){
-		this.rulesChanged.dispatch();
-	}
-	onRuleUpdated(){
-		this.rulesChanged.dispatch();
-	}
-	setRuleCollection(ruleCollection){
-		ruleCollection.ruleUpdated.listen(() => this.onRuleUpdated());
-		ruleCollection.ruleAdded.listen(() => this.onRuleAdded());
-		ruleCollection.ruleDeleted.listen(() => this.onRuleDeleted());
+	onPageRuleRequest(listener){
+		this.pageRuleRequest.source.onMessage(listener);
 	}
 }
 
