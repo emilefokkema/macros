@@ -7,11 +7,13 @@ var elementSelectedInDevtools = function(element){
 }
 
 var load = async function(){
-	var contentScriptInterface = await macros.contentScripts.getInterface();
-	var pageId = await contentScriptInterface.getPageId();
+	var pageId = await macros.getPageId();
 	console.log(`got page id: `, pageId);
-	var rules = await contentScriptInterface.getRulesForPage(pageId);
+	var rules = await macros.getRulesForPage(pageId);
 	console.log(`got rules: `, rules)
+	macros.onRulesChanged(() => {
+		console.log(`rules changed!`)
+	});
 };
 
 load();

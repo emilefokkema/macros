@@ -8,6 +8,7 @@ class Page{
 	constructor(tab){
 		this.pageId = pageId++;
 		this.tab = tab;
+		this.tabId = tab.tabId;
 		this.cancellationToken = new CancellationToken();
 		this.hasDisappeared = false;
 		this.onDisappeared = new Event();
@@ -29,43 +30,18 @@ class Page{
 }
 
 class ModifyablePage extends Page{
-	constructor(tab, contentScript, url){
+	constructor(tab, url){
 		super(tab);
-		this.contentScript = contentScript;
-		this.cancellationToken.onCancelled(() => contentScript.discard());
 		this.url = url;
-		this.initialize();
-	}
-	initialize(){
-		this.contentScript.onPageIdRequest((req, sendResponse) => {
-			sendResponse(this.pageId);
-		}, this.cancellationToken);
-		this.contentScript.acknowledge();
 	}
 }
 
 class PageCollection{
 	constructor(){
 		this.pages = [];
-		macros.tabs.getAll(tabs => {
-			for(let tabInfo of tabs){
-				this.addPage(tabInfo.tab, tabInfo.url);
-			}
-		});
-		macros.tabs.onTabStartedLoading.listen((tab, url) => {
-			this.addPage(tab, url);
-		});
 	}
 	async addPage(tab, url){
-		var cancellationToken1 = new CancellationToken();
-		var cancellationToken2 = new CancellationToken();
-		tab.whenStartsLoading(cancellationToken2).then(() => cancellationToken1.cancel());
-		var contentScript = await macros.contentScripts.getOnTab(tab, cancellationToken1);
-		cancellationToken2.cancel();
-		if(!contentScript || cancellationToken1.cancelled){
-			return;
-		}
-		var page = new ModifyablePage(tab, contentScript, url);
+		var page = new ModifyablePage(tab, url);
 		this.pages.push(page);
 		console.log(`added page at ${url} (page id ${page.pageId}). Current number of pages: ${this.pages.length}`)
 		page.onDisappeared.listen(() => this.removePage(page));
@@ -80,12 +56,43 @@ class PageCollection{
 	getPageById(pageId){
 		return this.pages.find(p => p.pageId === pageId);
 	}
+	getPageByTabId(tabId){
+		return this.pages.find(p => p.tabId === tabId);
+	}
 }
 
 var pages = new PageCollection();
 
+async function tryExecuteContentScriptOnTab(tab){
+	try{
+		await tab.executeScriptAsync('content-script.js');
+	}catch(e){
+		console.log(`could not execute content script on tab: `, e);
+	}
+}
+
+macros.tabs.getAll(tabs => {
+	for(let tabInfo of tabs){
+		pages.addPage(tabInfo.tab, tabInfo.url);
+		tryExecuteContentScriptOnTab(tabInfo.tab);
+	}
+});
+macros.tabs.onTabStartedLoading.listen((tab, url) => {
+	pages.addPage(tab, url);
+	tryExecuteContentScriptOnTab(tab);
+});
 macros.onPageRuleRequest((pageId, sendResponse) => {
 	console.log(`macros requests rules for page ${pageId}`);
 	var page = pages.getPageById(pageId);
 	sendResponse(rules.getRulesForUrl(page.url));
+});
+macros.onPageIdRequest(({tabId}, sendResponse) => {
+	if(tabId === undefined){
+		return;
+	}
+	var page = pages.getPageByTabId(tabId);
+	if(!page){
+		return;
+	}
+	sendResponse(page.pageId);
 });
