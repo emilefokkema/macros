@@ -16,7 +16,7 @@ copyFile('./src/management/management.html', './dist/management.html');
 
 copyFile('./src/popup/popup.css', './dist/popup.css');
 copyFile('./src/popup/popup-new.js', './dist/popup.js');
-copyFile('./src/popup/popup.html', './dist/popup.html');
+copyFile('./src/popup/popup-new.html', './dist/popup.html');
 
 copyFile('./src/devtools-sidebar/devtools_sidebar.css', './dist/devtools_sidebar.css');
 copyFile('./src/devtools-sidebar/devtools_sidebar-new.js', './dist/devtools_sidebar.js');

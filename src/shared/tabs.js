@@ -90,6 +90,17 @@ var tabs = {
 			}));
 			callback(mapped);
 		});
+	},
+	getTabIdWherePopupWasClicked(){
+		var resolver = new PromiseResolver();
+		chrome.tabs.query({lastFocusedWindow: true, active: true}, async (tabs) => {
+			if(tabs.length !== 1){
+				resolver.reject(new Error(`looked for tab from which popup was opened, but found ${tabs.length} tabs`));
+				return;
+			}
+			resolver.resolve(tabs[0].id);
+		});
+		return resolver.promise;
 	}
 };
 

@@ -1,8 +1,11 @@
 import { macros } from './shared/macros';
 import { CancellationToken, Event } from './shared/events';
 import { rules } from './rules';
+import { setPopup } from './shared/set-popup';
 
 var pageId = 0;
+
+setPopup('popup.html');
 
 class Page{
 	constructor(tab){
@@ -86,10 +89,17 @@ macros.onPageRuleRequest((pageId, sendResponse) => {
 	var page = pages.getPageById(pageId);
 	sendResponse(rules.getRulesForUrl(page.url));
 });
-macros.onPageIdRequest(({tabId}, sendResponse) => {
+macros.onPageIdForContentScriptRequest(({tabId}, sendResponse) => {
 	if(tabId === undefined){
 		return;
 	}
+	var page = pages.getPageByTabId(tabId);
+	if(!page){
+		return;
+	}
+	sendResponse(page.pageId);
+});
+macros.onPageIdForTabIdRequest((tabId, sendResponse) => {
 	var page = pages.getPageByTabId(tabId);
 	if(!page){
 		return;
