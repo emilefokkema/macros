@@ -6,7 +6,8 @@
 		"activeTab",
 		"tabs",
         "http://*/",
-        "https://*/"
+		"https://*/",
+		"webNavigation"
 	],
 	"background":{
 		"scripts":["background.js"],

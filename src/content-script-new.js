@@ -7,13 +7,9 @@ var elementSelectedInDevtools = function(element){
 }
 
 var load = async function(){
-	var pageId = await macros.getPageIdForContentScript();
-	console.log(`got page id: `, pageId);
-	var rules = await macros.getRulesForPage(pageId);
-	console.log(`got rules: `, rules)
-	macros.onRulesChanged(() => {
-		console.log(`rules changed!`)
-	});
+	var url = location.href;
+	console.log(`hello from content script on url ${url}`)
+	macros.notifyContentScriptForUrl(url);
 };
 
 load();

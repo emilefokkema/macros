@@ -68,7 +68,7 @@ class Tab{
 	}
 	executeScriptAsync(scriptUrl){
 		var resolver = new PromiseResolver();
-		chrome.tabs.executeScript(this.tabId, {file: scriptUrl, runAt: 'document_start'}, () => {
+		chrome.tabs.executeScript(this.tabId, {file: scriptUrl, runAt: 'document_start', allFrames: true}, () => {
 			var e = chrome.runtime.lastError;
 			if(e !== undefined){
 				resolver.reject(e.message);
@@ -85,11 +85,33 @@ var tabs = {
 	getAll(callback){
 		chrome.tabs.query({}, tabs => {
 			var mapped = tabs.map(t => ({
+				tabId: t.id,
 				tab: new Tab(t.id),
 				url: t.url
 			}));
 			callback(mapped);
 		});
+	},
+	executeScriptAsync(url, tabId, frameId){
+		var resolver = new PromiseResolver();
+		var details = {
+			file: url,
+			runAt: 'document_start'
+		};
+		if(frameId === undefined){
+			details.allFrames = true;
+		}else{
+			details.frameId = frameId;
+		}
+		chrome.tabs.executeScript(tabId, details, () => {
+			var e = chrome.runtime.lastError;
+			if(e !== undefined){
+				resolver.reject(e.message);
+			}else{
+				resolver.resolve();
+			}
+		});
+		return resolver.promise;
 	},
 	getTabIdWherePopupWasClicked(){
 		var resolver = new PromiseResolver();
