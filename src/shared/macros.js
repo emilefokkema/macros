@@ -1,17 +1,17 @@
-import { tabs } from './tabs';
+import { navigation } from './navigation';
 import { crossBoundaryEventFactory } from './cross-boundary-events';
 
 
 class Macros{
 	constructor(){
-		this.tabs = tabs;
-		this.notifyContentScriptForUrlMessage = crossBoundaryEventFactory.create('notifyContentScriptForUrl');
+		this.navigation = navigation;
+		this.rulesForUrlRequest = crossBoundaryEventFactory.create('requestRulesForUrl');
 	}
-	notifyContentScriptForUrl(url){
-		this.notifyContentScriptForUrlMessage.target.sendMessage(url);
+	getRulesForUrl(url){
+		return this.rulesForUrlRequest.target.sendMessageAsync(url);
 	}
-	onNotifyContentScriptForUrl(listener, cancellationToken){
-		return this.notifyContentScriptForUrlMessage.source.onMessage(listener, cancellationToken);
+	onRequestRulesForUrl(listener, cancellationToken){
+		return this.rulesForUrlRequest.source.onMessage(listener, cancellationToken);
 	}
 }
 

@@ -1,5 +1,4 @@
 import {EventSource, Event, CancellationToken, MessageSender} from './shared/events';
-import {macros} from './shared/macros';
 import { rules } from './rules';
 
 
@@ -353,9 +352,6 @@ class RegularPage extends Page{
 class PageCollection{
 	constructor(){
 		this.pages = [];
-		macros.tabs.onTabStartedLoading.listen((tab, url) => {
-			console.log(`macros says this tab just started loading '${url}':`, tab)
-		});
 		chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
 			if(changeInfo.status === "loading"){
 				console.log(`a page has started loading on tab ${tabId}`)

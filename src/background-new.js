@@ -1,24 +1,22 @@
 import { macros } from './shared/macros';
+import { rules } from './rules';
 
-async function tryExecuteContentScript(tabId, frameId){
+async function tryExecuteContentScript(navigation){
+	if(navigation.url === 'about:blank'){
+		console.log('url is about:blank, not loading content script');
+		return;
+	}
 	try{
-		await macros.tabs.executeScriptAsync('content-script.js', tabId, frameId);
+		await navigation.executeScriptAsync('content-script.js');
 	}catch(e){
-		console.log(`could not execute content script on ${(frameId === undefined ? `all frames`: `frame ${frameId}`)} of tab ${tabId}: `, e);
+		console.log(`could not execute content script for navigation at ${navigation.url}: `, e);
 	}
 }
 
-chrome.webNavigation.onCommitted.addListener(({tabId, frameId, url}) => {
-	if(url === 'about:blank'){
-		return;
-	}
-	tryExecuteContentScript(tabId, frameId);
+macros.navigation.getAll().then(all => all.map(navigation => tryExecuteContentScript(navigation)));
+macros.navigation.onCreated(navigation => {
+	tryExecuteContentScript(navigation);
 });
-macros.tabs.getAll(tabs => {
-	for(let tabInfo of tabs){
-		tryExecuteContentScript(tabInfo.tabId);
-	}
-});
-macros.onNotifyContentScriptForUrl((url) => {
-	console.log(`content script loaded on url ${url}`)
+macros.onRequestRulesForUrl((url, sendResponse) => {
+	sendResponse(rules.getRulesForUrl(url));
 });

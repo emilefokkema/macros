@@ -8,8 +8,9 @@ var elementSelectedInDevtools = function(element){
 
 var load = async function(){
 	var url = location.href;
-	console.log(`hello from content script on url ${url}`)
-	macros.notifyContentScriptForUrl(url);
+	var rules = await macros.getRulesForUrl(url);
+	console.log(`hello from content script on url ${url} with rules`, rules)
+	
 };
 
 load();
