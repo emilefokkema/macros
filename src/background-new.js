@@ -1,5 +1,6 @@
 import { macros } from './shared/macros';
 import { rules } from './rules';
+import { buttons } from './shared/button';
 
 async function tryExecuteContentScript(navigation){
 	if(navigation.url === 'about:blank'){
@@ -19,4 +20,7 @@ macros.navigation.onCreated(navigation => {
 });
 macros.onRequestRulesForUrl((url, sendResponse) => {
 	sendResponse(rules.getRulesForUrl(url));
+});
+macros.onNumberOfRulesNotification(notification => {
+	buttons.setNumberOfRules(notification);
 });

@@ -1,5 +1,17 @@
 import { PromiseResolver } from './promise-resolver';
-import { EventSource } from './events';
+import { EventSource, MessageType } from './events';
+import { runtimeMessagesEventSource, runtimeMessagesTarget } from './runtime-messages';
+
+function getNavigationId(tabId, frameId){
+    return `${tabId}:${frameId}`;
+}
+
+var getNavigationIdMessageType = new MessageType('getNavigationId');
+var getNavigationIdMessageTarget = runtimeMessagesTarget.ofType(getNavigationIdMessageType);
+
+runtimeMessagesEventSource.filter((msg, sender) => !!sender.tab && getNavigationIdMessageType.filterMessage(msg)).listen((msg, sender, sendResponse) => {
+    sendResponse(getNavigationId(sender.tab.id, sender.frameId));
+});
 
 class Navigation{
     constructor(tabId, frameId, url){
@@ -30,26 +42,43 @@ class WebNavigationCommitted extends EventSource{
     }
 }
 
-var webNavigationCommitted = new WebNavigationCommitted().map(({tabId, frameId, url}) => [new Navigation(tabId, frameId, url)]);
-
-function getAllFramesForTab(tabId){
-    var resolver = new PromiseResolver();
-    chrome.webNavigation.getAllFrames({tabId}, info => {
-        resolver.resolve(info.map(i => ({frameId: i.frameId, url: i.url})));
-    });
-    return resolver.promise;
-}
+var navigationCreated = new WebNavigationCommitted().map(({tabId, frameId, url}) => [new Navigation(tabId, frameId, url)]);
 
 var navigation = {
+    getId(){
+        return getNavigationIdMessageTarget.sendMessageAsync({});
+    },
+    getAllForTab(tabId){
+        var resolver = new PromiseResolver();
+        chrome.webNavigation.getAllFrames({tabId}, info => {
+            resolver.resolve(info.map(i => new Navigation(tabId, i.frameId, i.url)));
+        });
+        return resolver.promise;
+    },
+    getTabIdForNavigation(navigationId){
+        var resolver = new PromiseResolver();
+        chrome.tabs.query({}, tabs => {
+            for(let tab of tabs){
+                chrome.webNavigation.getAllFrames({tabId: tab.id}, info => {
+                    for(let frameInfo of info){
+                        if(getNavigationId(tab.id, frameInfo.frameId) === navigationId){
+                            resolver.resolve(tab.id);
+                        }
+                    }
+                });
+            }
+        });
+        return resolver.promise;
+    },
     getAll(){
         var resolver = new PromiseResolver();
         chrome.tabs.query({}, tabs => {
-            Promise.all(tabs.map(async t => (await getAllFramesForTab(t.id)).map(({frameId, url}) => new Navigation(t.id, frameId, url)))).then(all => resolver.resolve(all.reduce((a, b) => a.concat(b), [])));
+            Promise.all(tabs.map(t => this.getAllForTab(t.id))).then(all => resolver.resolve(all.reduce((a, b) => a.concat(b), [])));
         });
         return resolver.promise;
     },
     onCreated(listener, cancellationToken){
-        return webNavigationCommitted.listen(listener, cancellationToken);
+        return navigationCreated.listen(listener, cancellationToken);
     }
 };
 

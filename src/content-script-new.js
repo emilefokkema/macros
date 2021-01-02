@@ -8,9 +8,14 @@ var elementSelectedInDevtools = function(element){
 
 var load = async function(){
 	var url = location.href;
+	var navigationId = await macros.navigation.getId();
+	console.log(`hello from content script on url ${url} with id ${navigationId}`)
 	var rules = await macros.getRulesForUrl(url);
 	console.log(`hello from content script on url ${url} with rules`, rules)
-	
+	macros.notifyNumberOfRules({
+		navigationId: navigationId,
+		numberOfRules: rules.length
+	});
 };
 
 load();
