@@ -15,6 +15,9 @@ class EventSource {
 	map(map){
 		return new MappedEventSourceWithDelegate(this, map);
 	}
+	mapAsync(mapAsync){
+		return new AsyncMappedEventSource(this, mapAsync);
+	}
 	when(predicate, cancellationToken){
 		var resolve;
 		var promise = new Promise((res) => {resolve = res;});
@@ -25,6 +28,20 @@ class EventSource {
 			}
 		}, cancellationToken);
 		return promise;
+	}
+}
+class AsyncMappedEventSource extends EventSource{
+	constructor(eventSource, mapAsync){
+		super();
+		this.eventSource = eventSource;
+		this.mapAsync = mapAsync;
+	}
+	listen(listener, cancellationToken){
+		var self = this;
+		return this.eventSource.listen(function(){
+			var args = Array.prototype.slice.apply(arguments);
+			self.mapAsync(...args).then(mapped => listener(...mapped));
+		}, cancellationToken)
 	}
 }
 class MappedEventSource extends EventSource{
