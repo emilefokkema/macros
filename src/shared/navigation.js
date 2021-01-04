@@ -1,5 +1,5 @@
 import { PromiseResolver } from './promise-resolver';
-import { EventSource, MessageType, Event } from './events';
+import { EventSource, MessageType, Event, CancellationToken } from './events';
 import { runtimeMessagesEventSource, runtimeMessagesTarget } from './runtime-messages';
 
 function getFrame(tabId, frameId){
@@ -32,7 +32,17 @@ class WebNavigationCommitted extends EventSource{
     }
 }
 
+class TabRemoved extends EventSource{
+    addListener(listener){
+        chrome.tabs.onRemoved.addListener(listener);
+    }
+    removeListener(listener){
+        chrome.tabs.onRemoved.removeListener(listener);
+    }
+}
+
 var webNavigationCommitted = new WebNavigationCommitted();
+var tabRemoved = new TabRemoved();
 
 class Navigation{
     constructor(tabId, frameId, parentFrameIds, url){
@@ -41,14 +51,19 @@ class Navigation{
         this.frameId = frameId;
         this.parentFrameIds = parentFrameIds;
         this.disappeared = new Event();
+        this.cancellationToken = new CancellationToken();
         this.initialize();
     }
     initialize(){
-        webNavigationCommitted.when(({tabId, frameId }) => tabId === this.tabId && this.parentFrameIds.some(fid => fid === frameId)).then(() => {
+        webNavigationCommitted.when(({tabId, frameId }) => tabId === this.tabId && this.parentFrameIds.some(fid => fid === frameId), this.cancellationToken).then(() => {
+            this.disappear();
+        });
+        tabRemoved.when((tabId) => tabId === this.tabId, this.cancellationToken).then(() => {
             this.disappear();
         });
     }
     disappear(){
+        this.cancellationToken.cancel();
         this.disappeared.dispatch();
     }
     executeScriptAsync(url){
@@ -71,15 +86,15 @@ class Navigation{
 
 var navigationCreated = webNavigationCommitted.mapAsync(async ({tabId, frameId, url}) => [await Navigation.create(tabId, frameId, url)]);
 
-function getNavigationId(tabId, frameId){
-    return `${tabId}:${frameId}`;
+function getNavigationId(tabId, frameId, url){
+    return `${tabId}:${frameId}:${url}`;
 }
 
 var getNavigationIdMessageType = new MessageType('getNavigationId');
 var getNavigationIdMessageTarget = runtimeMessagesTarget.ofType(getNavigationIdMessageType);
 
 runtimeMessagesEventSource.filter((msg, sender) => !!sender.tab && getNavigationIdMessageType.filterMessage(msg)).listen((msg, sender, sendResponse) => {
-    sendResponse(getNavigationId(sender.tab.id, sender.frameId));
+    sendResponse(getNavigationId(sender.tab.id, sender.frameId, sender.url));
 });
 
 var navigation = {
@@ -92,7 +107,7 @@ var navigation = {
             for(let tab of tabs){
                 chrome.webNavigation.getAllFrames({tabId: tab.id}, info => {
                     for(let frameInfo of info){
-                        if(getNavigationId(tab.id, frameInfo.frameId) === navigationId){
+                        if(getNavigationId(tab.id, frameInfo.frameId, frameInfo.url) === navigationId){
                             Navigation.create(tab.id, frameInfo.frameId, frameInfo.url).then(navigation => resolver.resolve(navigation));
                         }
                     }
