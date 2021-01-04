@@ -101,6 +101,9 @@ class Event extends EventSource{
 			this.listeners.splice(index, 1)
 		}
 	}
+	next(cancellationToken){
+		return this.when(() => true, cancellationToken)
+	}
 	dispatch(){
 		var args = Array.prototype.slice.apply(arguments);
 		for(let listener of this.listeners){

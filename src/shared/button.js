@@ -1,21 +1,73 @@
 import { macros } from './macros';
 import { Event, CancellationToken } from './events'
+import { buttonInteraction } from './button-interaction';
+
+class ButtonNotification{
+    constructor(navigation, {numberOfRules}){
+        this.navigation = navigation;
+        this.numberOfRules = numberOfRules;
+        this.disappeared = new Event();
+        this.updated = new Event();
+        this.initialize();
+    }
+    initialize(){
+        this.navigation.disappeared.next().then(() => {
+            this.disappear();
+        });
+    }
+    update({numberOfRules}){
+        this.numberOfRules = numberOfRules;
+        this.updated.dispatch();
+    }
+    disappear(){
+        this.disappeared.dispatch();
+    }
+}
 
 class Button{
     constructor(tabId){
         this.tabId = tabId;
-        this.numberOfRules = 0;
-        this.numberOfRulesWithSomethingToDo = 0;
-        this.numberOfRulesThatHaveExecuted = 0;
-        this.numberOfNavigations = 0;
+        this.notifications = [];
         this.disappeared = new Event();
         this.cancellationToken = new CancellationToken();
     }
-    addNumberOfRules(navigation, {numberOfRules}){
-        console.log(`adding ${numberOfRules} to button on tab ${this.tabId}`);
-        navigation.disappeared.listen(() => {
-            console.log(`a navigation that had ${numberOfRules} rules for tab ${this.tabId} has now disappeared`);
-        });
+    addNotification(navigation, {numberOfRules}){
+        var notification = this.notifications.find(n => n.navigation.id === navigation.id);
+        if(!notification){
+            notification = new ButtonNotification(navigation, {numberOfRules});
+            this.notifications.push(notification);
+            notification.disappeared.next(this.cancellationToken).then(() => {
+                this.removeNotification(notification);
+            });
+            notification.updated.listen(() => {
+                this.update();
+            }, this.cancellationToken);
+        }else{
+            notification.update({numberOfRules});
+        }
+        this.update();
+    }
+    removeNotification(notification){
+        var index = this.notifications.indexOf(notification);
+        if(index > -1){
+            this.notifications.splice(index, 1);
+            this.update();
+        }
+    }
+    disappear(){
+        this.cancellationToken.cancel();
+        this.disappeared.dispatch();
+    }
+    update(){
+        if(this.notifications.length === 0){
+            this.disappear();
+            return;
+        }
+        var numberOfRules = this.notifications.map(n => n.numberOfRules).reduce((a, b) => a + b, 0);
+        if(numberOfRules > 0){
+            buttonInteraction.setBadgeText({tabId: this.tabId, text: `${numberOfRules}`});
+            buttonInteraction.setBadgeBackgroundColor({tabId: this.tabId, color: '#aaa'});
+        }
     }
 }
 
@@ -23,17 +75,17 @@ class ButtonCollection{
     constructor(){
         this.buttons = [];
     }
-    async setNumberOfRules({navigationId, numberOfRules}){
+    async addNotification({navigationId, numberOfRules}){
         var navigation = await macros.navigation.getNavigation(navigationId);
         var button = this.buttons.find(b => b.tabId === navigation.tabId);
         if(!button){
             button = new Button(navigation.tabId);
             this.buttons.push(button);
-            button.disappeared.when(() => true).then(() => {
+            button.disappeared.next().then(() => {
                 this.removeButton(button);
             });
         }
-        button.addNumberOfRules(navigation, {numberOfRules});
+        button.addNotification(navigation, {numberOfRules});
     }
     removeButton(button){
         var index = this.buttons.indexOf(button);

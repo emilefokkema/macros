@@ -23,6 +23,10 @@ async function getParentFrameIds(tabId, frameId){
     return result;
 }
 
+function getNavigationId(tabId, frameId, url){
+    return `${tabId}:${frameId}:${url}`;
+}
+
 class WebNavigationCommitted extends EventSource{
     addListener(listener){
         chrome.webNavigation.onCommitted.addListener(listener);
@@ -46,6 +50,7 @@ var tabRemoved = new TabRemoved();
 
 class Navigation{
     constructor(tabId, frameId, parentFrameIds, url){
+        this.id = getNavigationId(tabId, frameId, url);
         this.url = url;
         this.tabId = tabId;
         this.frameId = frameId;
@@ -85,10 +90,6 @@ class Navigation{
 }
 
 var navigationCreated = webNavigationCommitted.mapAsync(async ({tabId, frameId, url}) => [await Navigation.create(tabId, frameId, url)]);
-
-function getNavigationId(tabId, frameId, url){
-    return `${tabId}:${frameId}:${url}`;
-}
 
 var getNavigationIdMessageType = new MessageType('getNavigationId');
 var getNavigationIdMessageTarget = runtimeMessagesTarget.ofType(getNavigationIdMessageType);

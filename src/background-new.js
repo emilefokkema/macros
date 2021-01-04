@@ -22,5 +22,5 @@ macros.onRequestRulesForUrl((url, sendResponse) => {
 	sendResponse(rules.getRulesForUrl(url));
 });
 macros.onNumberOfRulesNotification(notification => {
-	buttons.setNumberOfRules(notification);
+	buttons.addNotification(notification);
 });
