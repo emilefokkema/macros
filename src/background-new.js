@@ -1,5 +1,5 @@
 import { macros } from './shared/macros';
-import { rules } from './rules';
+import { rules } from './rules-new';
 import { buttons } from './shared/button';
 
 async function tryExecuteContentScript(navigation){
