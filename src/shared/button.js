@@ -1,6 +1,7 @@
 import { macros } from './macros';
-import { Event, CancellationToken } from './events'
+import { Event, CancellationToken } from './events';
 import { buttonInteraction } from './button-interaction';
+import { storage } from './storage';
 
 class ButtonNotification{
     constructor(navigation, {numberOfRules}){
@@ -21,6 +22,12 @@ class ButtonNotification{
     }
     disappear(){
         this.disappeared.dispatch();
+    }
+    toJSON(){
+        return {
+            navigationId: this.navigation.id,
+            numberOfRules: this.numberOfRules
+        };
     }
 }
 
@@ -69,6 +76,12 @@ class Button{
             buttonInteraction.setBadgeBackgroundColor({tabId: this.tabId, color: '#aaa'});
         }
     }
+    toJSON(){
+        return {
+            tabId: this.tabId,
+            notifications: this.notifications
+        };
+    }
 }
 
 class ButtonCollection{
@@ -86,12 +99,17 @@ class ButtonCollection{
             });
         }
         button.addNotification(navigation, {numberOfRules});
+        this.save();
     }
     removeButton(button){
         var index = this.buttons.indexOf(button);
         if(index > -1){
             this.buttons.splice(index, 1);
+            this.save();
         }
+    }
+    save(){
+        storage.setItem('buttons', this.buttons);
     }
 }
 
