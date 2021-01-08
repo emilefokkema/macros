@@ -1,4 +1,5 @@
 import { Event } from './shared/events';
+import { storage } from './shared/storage';
 
 function urlMatchesPattern(url, pattern){
 	var regexPattern = pattern.replace(/[.+?^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '[\\S]*?');
@@ -16,12 +17,7 @@ class RuleCollection{
 		this.ruleDeleted = new Event();
 	}
 	load(){
-		var item = localStorage.getItem('rules');
-		var parsed = JSON.parse(item);
-		if(!Array.isArray(parsed)){
-			return;
-		}
-		this.rules = parsed;
+		this.rules = storage.getItem('rules') || [];
 		this.latestRuleId = Math.max.apply(Math, this.rules.map(r => r.id));
 		console.log(`loaded ${this.rules.length} rules. Highest id: ${this.latestRuleId}`)
 		this.loaded = true;
@@ -33,7 +29,7 @@ class RuleCollection{
 		this.load();
 	}
 	save(){
-		localStorage.setItem('rules', JSON.stringify(this.rules));
+		storage.setItem('rules', this.rules);
 	}
 	deleteRule(ruleId){
 		var index = this.rules.findIndex(r => r.id === ruleId);
