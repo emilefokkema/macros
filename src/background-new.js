@@ -14,7 +14,6 @@ async function tryExecuteContentScript(navigation){
 	}
 }
 
-macros.navigation.getAll().then(all => all.map(navigation => tryExecuteContentScript(navigation)));
 macros.navigation.onCreated(navigation => {
 	tryExecuteContentScript(navigation);
 });
