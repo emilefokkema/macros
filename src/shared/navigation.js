@@ -98,22 +98,41 @@ runtimeMessagesEventSource.filter((msg, sender) => !!sender.tab && getNavigation
     sendResponse(getNavigationId(sender.tab.id, sender.frameId, sender.url));
 });
 
+function findNavigationInTab(tabId, navigationId, cancellationToken){
+    var resolver = new PromiseResolver();
+    var found = false;
+    chrome.webNavigation.getAllFrames({tabId}, info => {
+        if(cancellationToken.cancelled){
+            resolver.resolve(null);
+            return;
+        }
+        for(let frameInfo of info){
+            if(getNavigationId(tabId, frameInfo.frameId, frameInfo.url) === navigationId){
+                found = true;
+                Navigation.create(tabId, frameInfo.frameId, frameInfo.url).then(navigation => resolver.resolve(navigation));
+            }
+        }
+        if(!found){
+            resolver.resolve(null);
+        }
+    });
+    return resolver.promise;
+}
+
 var navigation = {
     getId(){
         return getNavigationIdMessageTarget.sendMessageAsync({});
     },
     getNavigation(navigationId){
         var resolver = new PromiseResolver();
+        var cancellationToken = new CancellationToken();
         chrome.tabs.query({}, tabs => {
-            for(let tab of tabs){
-                chrome.webNavigation.getAllFrames({tabId: tab.id}, info => {
-                    for(let frameInfo of info){
-                        if(getNavigationId(tab.id, frameInfo.frameId, frameInfo.url) === navigationId){
-                            Navigation.create(tab.id, frameInfo.frameId, frameInfo.url).then(navigation => resolver.resolve(navigation));
-                        }
-                    }
-                });
-            }
+            Promise.all(tabs.map(t => findNavigationInTab(t.id, navigationId, cancellationToken).then(result => {
+                if(result){
+                    cancellationToken.cancel();
+                    resolver.resolve(result);
+                }
+            }))).then(() => resolver.resolve(null));
         });
         return resolver.promise;
     },
