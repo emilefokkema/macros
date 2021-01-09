@@ -29,12 +29,21 @@ class ButtonNotification{
             numberOfRules: this.numberOfRules
         };
     }
+    static async create({navigationId, numberOfRules}){
+        var navigation = await macros.navigation.getNavigation(navigationId);
+        if(!navigation){
+            console.log(`could not recreate notification for navigation '${navigationId}'`)
+            return null;
+        }
+        var notification = new ButtonNotification(navigation, {numberOfRules});
+        return notification;
+    }
 }
 
 class Button{
-    constructor(tabId){
+    constructor(tabId, notifications){
         this.tabId = tabId;
-        this.notifications = [];
+        this.notifications = notifications || [];
         this.disappeared = new Event();
         this.cancellationToken = new CancellationToken();
     }
@@ -82,13 +91,35 @@ class Button{
             notifications: this.notifications
         };
     }
+    static async create({tabId, notifications}){
+        var notifications = (await Promise.all(notifications.map(n => ButtonNotification.create(n)))).filter(n => !!n);
+        if(notifications.length === 0){
+            return null;
+        }
+        var button = new Button(tabId, notifications);
+        button.update();
+        return button;
+    }
 }
 
 class ButtonCollection{
     constructor(){
+        this.loaded = false;
         this.buttons = [];
     }
+    async ensureLoaded(){
+        if(this.loaded){
+            return;
+        }
+        var stringifiedButtons = storage.getItem('buttons') || [];
+        console.log(`going to recreate buttons:`, stringifiedButtons);
+        this.buttons = (await Promise.all(stringifiedButtons.map(b => Button.create(b)))).filter(n => !!n);
+        this.save();
+        console.log(`button collection loaded ${this.buttons.length} buttons:`, JSON.parse(JSON.stringify(this.buttons)))
+        this.loaded = true;
+    }
     async addNotification({navigationId, numberOfRules}){
+        await this.ensureLoaded();
         var navigation = await macros.navigation.getNavigation(navigationId);
         var button = this.buttons.find(b => b.tabId === navigation.tabId);
         if(!button){
