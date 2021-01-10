@@ -9,7 +9,7 @@
 <body>
 	<template id="ruleTemplate">
 		<div class="row">
-			<div class="row-part left">{{rule.rule.name}}</div>
+			<div class="row-part left">{{rule.name}}</div>
 			<div class="row-part">
 				<div class="button" v-on:click="onExecuteClicked()" v-if="canExecute">
 					<span class="run-button fa fa-play"></span>
@@ -29,17 +29,25 @@
 			</div>
 		</div>
 	</template>
-	<div id="app">
-		<div class="row" v-if="rules.length === 0">
-			<div class="row-part left">
-				No macros for this page.
+	<template id="navigationTemplate">
+		<div>
+			<div class="row" v-if="navigation.rules.length === 0">
+				<div class="row-part left">
+					No macros for this page.
+				</div>
+			</div>
+			<rule v-for="rule of navigation.rules" v-bind:rule="rule" v-on:editclicked="onEditClicked(rule)" v-on:executeclicked="onExecuteClicked(rule)"></rule>
+			<div class="row">
+				<div class="action-button row-part" v-on:click="addRule()">
+					<span class="button fa fa-plus"></span>
+				</div>
 			</div>
 		</div>
-		<rule v-for="rule of rules" v-bind:rule="rule" v-on:editclicked="onEditClicked(rule)" v-on:executeclicked="onExecuteClicked(rule)"></rule>
+		
+	</template>
+	<div id="app">
+		<navigation v-for="navigation of navigations" v-bind:navigation="navigation"></navigation>
 		<div class="row">
-			<div class="action-button row-part" v-on:click="addRule()">
-				<span class="button fa fa-plus"></span>
-			</div>
 			<div class="action-button row-part" v-on:click="goToManagementPage()">
 				<span class="button fa fa-cog"></span>
 			</div>

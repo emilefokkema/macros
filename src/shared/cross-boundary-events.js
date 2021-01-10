@@ -1,5 +1,5 @@
-import { MessageType, MessagesSource, MessagesTarget } from './events';
-import { runtimeMessagesEventSource, runtimeMessagesTarget, runtimeMessagesSource } from './runtime-messages';
+import { MessageType, MessagesSource } from './events';
+import { runtimeMessagesEventSource, runtimeMessagesTarget, runtimeMessagesSource, activeTabMessagesTarget } from './runtime-messages';
 
 var subscriptionMessageType = new MessageType('crossBoundarySubscription');
 
@@ -20,31 +20,18 @@ class CrossBoundaryMessagesSource extends MessagesSource{
     }
     
     onMessage(listener, cancellationToken){
-        this.subscriptionMessageTarget.sendMessage({messageType: this.type});
+        //this.subscriptionMessageTarget.sendMessage({messageType: this.type});
         return this.source.onMessage(listener, cancellationToken);
-    }
-}
-
-class CrossBoundaryMessagesTarget extends MessagesTarget{
-    constructor(type){
-        super();
-        this.type = type;
-        this.messageType = new MessageType(type);
-        this.target = runtimeMessagesTarget.ofType(this.messageType);
-    }
-    sendMessageAsync(msg){
-        return this.target.sendMessageAsync(msg);
-    }
-    sendMessage(msg){
-        this.target.sendMessage(msg);
     }
 }
 
 class CrossBoundaryEvent{
     constructor(type){
         this.type = type;
+        var messageType = new MessageType(type);
         this.source = new CrossBoundaryMessagesSource(type);
-        this.target = new CrossBoundaryMessagesTarget(type);
+        this.target = runtimeMessagesTarget.ofType(messageType);
+        this.activeTabTarget = activeTabMessagesTarget.ofType(messageType);
     }
 }
 

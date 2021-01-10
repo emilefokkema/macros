@@ -4,9 +4,7 @@
 		el: '#app',
 		data: function(){
 			return {
-				pageId: undefined,
-				tabId: undefined,
-				rules: []
+				navigations: []
 			};
 		},
 		mounted: function(){
@@ -20,56 +18,74 @@
 			onEditClicked: function(rule){
 
 			},
-			addRule: function(){
-
-			},
 			goToManagementPage: function(){
 
 			},
-			setExecutionStates: function(executionStates){
-				for(let state of executionStates){
-					const rule = this.rules.find(r => r.ruleId === state.ruleId);
-					if(!rule){
-						continue;
-					}
-					rule.hasExecuted = state.hasExecuted;
-					rule.hasSomethingToDo = state.hasSomethingToDo;
+			addNavigation(navigation){
+				console.log(`adding navigation`,  JSON.parse(JSON.stringify(navigation)))
+				var existingIndex = this.navigations.findIndex(n => n.navigationId === navigation.navigationId);
+				if(existingIndex > -1){
+					this.navigations.splice(existingIndex, 1, navigation)
+				}else{
+					this.navigations.push(navigation);
 				}
 			},
-			initialize: async function(){
-				var pageId = await macros.getPageIdForPopup();
-				this.rules = await macros.getRulesForPage(pageId);
+			initialize: function(){
+				macros.onNotifyRulesForNavigation(navigation => {
+					this.addNavigation(navigation);
+				});
+				macros.notifyPopupOpened();
 			}
 		},
 		components: {
-			rule: {
-				template: document.getElementById("ruleTemplate").innerHTML,
+			navigation: {
+				template: document.getElementById("navigationTemplate").innerHTML,
 				props: {
-					rule: Object
+					navigation: Object
 				},
-				computed: {
-					editable: function(){
-						return true;
+				methods:{
+					addRule(){
+
 					},
-					isExecuting: function(){
-						return false;
+					onEditClicked(rule){
+
 					},
-					canExecute: function(){
-						return true;
-					},
-					hasExecuted: function(){
-						return false;
+					onExecuteClicked(rule){
+
 					}
 				},
-				methods: {
-					onExecuteClicked: function(){
-						this.$emit('executeclicked');
-					},
-					onEditClicked: function(){
-						this.$emit('editclicked');
-					},
+				components: {
+					rule: {
+						template: document.getElementById("ruleTemplate").innerHTML,
+						props: {
+							rule: Object
+						},
+						computed: {
+							editable: function(){
+								return true;
+							},
+							isExecuting: function(){
+								return false;
+							},
+							canExecute: function(){
+								return true;
+							},
+							hasExecuted: function(){
+								return false;
+							}
+						},
+						methods: {
+							onExecuteClicked: function(){
+								this.$emit('executeclicked');
+							},
+							onEditClicked: function(){
+								this.$emit('editclicked');
+							},
+						}
+					}
 				}
-			}
+			},
+			
 		}
 	})
 })();

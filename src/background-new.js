@@ -1,6 +1,9 @@
 import { macros } from './shared/macros';
 import { rules } from './rules-new';
 import { buttons } from './shared/button';
+import { setPopup } from './shared/set-popup';
+
+setPopup('popup.html')
 
 async function tryExecuteContentScript(navigation){
 	if(navigation.url === 'about:blank'){
@@ -22,4 +25,7 @@ macros.onRequestRulesForUrl((url, sendResponse) => {
 });
 macros.onNumberOfRulesNotification(notification => {
 	buttons.addNotification(notification);
+});
+macros.onNotifyPopupOpened(() => {
+	macros.requestToEmitRules();
 });
