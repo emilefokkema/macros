@@ -4,12 +4,17 @@ var currentlySelectedElement;
 var rules = [];
 var navigationId;
 var url;
+var loadedPromise;
+var loaded = false;
 
 var elementSelectedInDevtools = function(element){
 	currentlySelectedElement = element;
 }
 
-var notify = function(){
+var notify = async function(){
+	if(!loaded){
+		await loadedPromise;
+	}
 	macros.notifyNumberOfRules({
 		navigationId: navigationId,
 		numberOfRules: rules.length
@@ -29,11 +34,11 @@ var load = async function(){
 	});
 	navigationId = await macros.navigation.getId();
 	rules = await macros.getRulesForUrl(url);
-	console.log(`hello from content script on url ${url} with rules`, rules)
+	loaded = true;
 	notify();
 };
 
-load();
+loadedPromise = load();
 
 
 export {elementSelectedInDevtools};
