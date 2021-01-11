@@ -37,19 +37,20 @@
 				</div>
 			</div>
 			<rule v-for="rule of navigation.rules" v-bind:rule="rule" v-on:editclicked="onEditClicked(rule)" v-on:executeclicked="onExecuteClicked(rule)"></rule>
-			<div class="row">
-				<div class="action-button row-part" v-on:click="addRule()">
-					<span class="button fa fa-plus"></span>
-				</div>
-			</div>
 		</div>
 		
 	</template>
 	<div id="app">
-		<navigation v-for="navigation of navigations" v-bind:navigation="navigation"></navigation>
+		<select class="navigation-selector" v-if="navigations.length > 0" v-model="navigationIdOption">
+			<option v-for="navigation of navigations" v-bind:value="navigation.navigationId">{{navigation.origin}}</option>
+		</select>
+		<navigation v-bind:navigation="selectedNavigation" v-if="selectedNavigation"></navigation>
 		<div class="row">
 			<div class="action-button row-part" v-on:click="goToManagementPage()">
 				<span class="button fa fa-cog"></span>
+			</div>
+			<div v-if="selectedNavigation" class="action-button row-part" v-on:click="addRule()">
+				<span class="button fa fa-plus"></span>
 			</div>
 		</div>
 	</div>

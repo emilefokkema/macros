@@ -8,3 +8,8 @@ body{
 .row-part.left{
 	width: 170px;
 }
+.navigation-selector{
+	width:220px;
+	padding: 5px;
+	color: #666;
+}

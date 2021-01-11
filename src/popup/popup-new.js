@@ -4,11 +4,25 @@
 		el: '#app',
 		data: function(){
 			return {
-				navigations: []
+				navigations: [],
+				selectedNavigation: undefined
 			};
 		},
 		mounted: function(){
 			this.initialize();
+		},
+		computed: {
+			navigationIdOption: {
+				get: function(){
+					return this.selectedNavigation && this.selectedNavigation.navigationId;
+				},
+				set: function(value){
+					var navigation = this.navigations.find(n => n.navigationId === value);
+					if(navigation){
+						this.selectedNavigation = navigation;
+					}
+				}
+			}
 		},
 		methods: {
 			onExecuteClicked: function(rule){
@@ -22,13 +36,22 @@
 
 			},
 			addNavigation(navigation){
-				console.log(`adding navigation`,  JSON.parse(JSON.stringify(navigation)))
+				navigation.origin = new URL(navigation.url).origin;
 				var existingIndex = this.navigations.findIndex(n => n.navigationId === navigation.navigationId);
 				if(existingIndex > -1){
+					if(!!this.selectedNavigation && this.selectedNavigation.navigationId === navigation.navigationId){
+						this.selectedNavigation = navigation;
+					}
 					this.navigations.splice(existingIndex, 1, navigation)
 				}else{
 					this.navigations.push(navigation);
+					if(!this.selectedNavigation || navigation.rules.length > 0 && this.selectedNavigation.rules.length === 0){
+						this.selectedNavigation = navigation;
+					}
 				}
+			},
+			addRule(){
+
 			},
 			initialize: function(){
 				macros.onNotifyRulesForNavigation(navigation => {
@@ -44,9 +67,6 @@
 					navigation: Object
 				},
 				methods:{
-					addRule(){
-
-					},
 					onEditClicked(rule){
 
 					},
