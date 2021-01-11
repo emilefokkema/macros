@@ -3,7 +3,7 @@ var buttonInteraction = {
         chrome.browserAction.setBadgeText({tabId, text}, () => {
             var lastError = chrome.runtime.lastError;
             if(lastError){
-                console.log(`there was an error setting browser action badge text for tab ${tabId}: ${e.message}`);
+                console.log(`there was an error setting browser action badge text for tab ${tabId}: ${lastError.message}`);
             }
         });
     },
@@ -11,7 +11,7 @@ var buttonInteraction = {
         chrome.browserAction.setBadgeBackgroundColor({tabId, color}, () => {
             var lastError = chrome.runtime.lastError;
             if(lastError){
-                console.log(`there was an error setting browser action background color for tab ${tabId}: ${e.message}`);
+                console.log(`there was an error setting browser action background color for tab ${tabId}: ${lastError.message}`);
             }
         });
     }
