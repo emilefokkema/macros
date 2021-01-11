@@ -121,6 +121,10 @@ class ButtonCollection{
     async addNotification({navigationId, numberOfRules}){
         await this.ensureLoaded();
         var navigation = await macros.navigation.getNavigation(navigationId);
+        if(!navigation){
+            console.warn(`could not find navigation '${navigationId}'`);
+            return;
+        }
         var button = this.buttons.find(b => b.tabId === navigation.tabId);
         if(!button){
             button = new Button(navigation.tabId);
