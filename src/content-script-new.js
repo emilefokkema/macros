@@ -1,4 +1,5 @@
 import { macros } from './shared/macros';
+import { ContentScriptRule } from './content-script-rules';
 
 var currentlySelectedElement;
 var rules = [];
@@ -15,15 +16,22 @@ var notify = async function(){
 	if(!loaded){
 		await loadedPromise;
 	}
-	macros.notifyNumberOfRules({
-		navigationId: navigationId,
-		numberOfRules: rules.length
-	});
 	macros.notifyRulesForNavigation({
 		navigationId: navigationId,
 		url: url,
-		rules: rules.map(r => ({name: r.name}))
+		rules: rules.map(r => r.getNotification()),
+		numberOfRules: rules.length
 	});
+};
+
+var setRules = function(ruleDefinitions){
+	for(var rule of rules){
+		rule.dispose();
+	}
+	rules = ruleDefinitions.map(r => new ContentScriptRule(r));
+	if(rules.length > 0){
+		console.log(`navigation at ${url} has rules`, rules)
+	}
 };
 
 var load = async function(){
@@ -33,7 +41,7 @@ var load = async function(){
 		notify();
 	});
 	navigationId = await macros.navigation.getId();
-	rules = await macros.getRulesForUrl(url);
+	setRules(await macros.getRulesForUrl(url));
 	loaded = true;
 	notify();
 };

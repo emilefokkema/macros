@@ -5,7 +5,6 @@ class Macros{
 	constructor(){
 		this.navigation = navigation;
 		this.rulesForUrlRequest = crossBoundaryEventFactory.create('requestRulesForUrl');
-		this.numberOfRulesNotification = crossBoundaryEventFactory.create('numberOfRulesNotification');
 		this.popupOpenedNotification = crossBoundaryEventFactory.create('popupOpened');
 		this.emitRulesRequest = crossBoundaryEventFactory.create('emitRulesRequest');
 		this.rulesForNavigationNotification = crossBoundaryEventFactory.create('notifyRulesForNavigation');
@@ -16,17 +15,11 @@ class Macros{
 	onRequestRulesForUrl(listener, cancellationToken){
 		return this.rulesForUrlRequest.source.onMessage(listener, cancellationToken);
 	}
-	notifyNumberOfRules(notification){
-		this.numberOfRulesNotification.target.sendMessage(notification);
-	}
 	notifyRulesForNavigation(rulesForNavigation){
 		this.rulesForNavigationNotification.target.sendMessage(rulesForNavigation);
 	}
 	onNotifyRulesForNavigation(listener, cancellationToken){
 		return this.rulesForNavigationNotification.source.onMessage(listener, cancellationToken);
-	}
-	onNumberOfRulesNotification(listener, cancellationToken){
-		return this.numberOfRulesNotification.source.onMessage(listener, cancellationToken);
 	}
 	notifyPopupOpened(){
 		this.popupOpenedNotification.target.sendMessage({});

@@ -88,7 +88,7 @@
 								return false;
 							},
 							canExecute: function(){
-								return true;
+								return this.rule.hasSomethingToDo;
 							},
 							hasExecuted: function(){
 								return false;

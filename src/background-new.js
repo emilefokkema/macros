@@ -23,7 +23,7 @@ macros.navigation.onCreated(navigation => {
 macros.onRequestRulesForUrl((url, sendResponse) => {
 	sendResponse(rules.getRulesForUrl(url));
 });
-macros.onNumberOfRulesNotification(notification => {
+macros.onNotifyRulesForNavigation(notification => {
 	buttons.addNotification(notification);
 });
 macros.onNotifyPopupOpened(() => {
