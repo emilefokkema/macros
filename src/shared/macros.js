@@ -8,6 +8,7 @@ class Macros{
 		this.popupOpenedNotification = crossBoundaryEventFactory.create('popupOpened');
 		this.emitRulesRequest = crossBoundaryEventFactory.create('emitRulesRequest');
 		this.rulesForNavigationNotification = crossBoundaryEventFactory.create('notifyRulesForNavigation');
+		this.executeRuleMessage = crossBoundaryEventFactory.create('executeRule');
 	}
 	getRulesForUrl(url){
 		return this.rulesForUrlRequest.target.sendMessageAsync(url);
@@ -28,10 +29,20 @@ class Macros{
 		return this.popupOpenedNotification.source.onMessage(listener, cancellationToken);
 	}
 	requestToEmitRules(){
-		this.emitRulesRequest.activeTabTarget.sendMessage({});
+		this.emitRulesRequest.currentTabTarget.sendMessage({});
 	}
 	onRequestToEmitRules(listener, cancellationToken){
 		return this.emitRulesRequest.source.onMessage(listener, cancellationToken);
+	}
+	async executeRuleAsync(navigationId, ruleId){
+		var navigation = await this.navigation.getNavigation(navigationId);
+		if(!navigation){
+			throw new Error(`cound not find navigation '${navigationId}'`)
+		}
+		await this.executeRuleMessage.getTargetForNavigation(navigation).sendMessageAsync({ruleId});
+	}
+	onExecuteRuleRequest(navigationId, listener, cancellationToken){
+		return this.executeRuleMessage.getSourceForNavigation(navigationId).onMessage(listener, cancellationToken);
 	}
 }
 

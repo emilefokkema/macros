@@ -70,7 +70,7 @@ class RemoveClass{
 		}
 		return false;
 	}
-	execute(node, executionContext){
+	execute(node){
 		var classes = node.getAttribute('class');
 		if(!classes){
 			return;
@@ -155,6 +155,19 @@ class SelectAction{
 		}
 		return false;
 	}
+	execute(){
+		try{
+			var nodes = document.querySelectorAll(this.selector.text);
+			if(nodes.length === 0){
+				return;
+			}
+			for(var i = 0; i < nodes.length; i++){
+				this.action.execute(nodes[i]);
+			}
+		}catch(e){
+			
+		}
+	}
 	dispose(){
 		this.cancellationToken.cancel();
 	}
@@ -204,6 +217,11 @@ class ContentScriptRule{
 			}
 		}
 		return false;
+	}
+	execute(){
+		for(let action of this.actions){
+			action.execute();
+		}
 	}
 	dispose(){
 		this.cancellationToken.cancel();

@@ -54,6 +54,14 @@ var load = async function(){
 	});
 	navigationId = await macros.navigation.getId();
 	setRules(await macros.getRulesForUrl(url));
+	macros.onExecuteRuleRequest(navigationId, ({ruleId}, sendResponse) => {
+		console.log(`navigation '${navigationId}' got request to execute rule:`, ruleId);
+		var rule = rules.find(r => r.id === ruleId);
+		if(rule){
+			rule.execute();
+		}
+		sendResponse({});
+	});
 	loaded = true;
 	notify();
 };

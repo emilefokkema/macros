@@ -22,21 +22,17 @@ class RuntimeMessagesSource extends MessagesSource{
 	}
 }
 
-class ActiveTabMessagesTarget extends MessagesTarget{
-	async sendMessageAsync(msg){
-		var activeTabId = await this.getActiveTabId();
-		return await this.sendMessageToTabAsync(activeTabId, msg);
+class TabMessagesTarget extends MessagesTarget{
+	constructor(tabId){
+		super();
+		this.tabId = tabId;
 	}
 	sendMessage(msg){
-		this.getActiveTabId().then(activeTabId => {
-			chrome.tabs.sendMessage(activeTabId, msg);
-		}, error => {
-			console.error(error);
-		});
+		chrome.tabs.sendMessage(this.tabId, msg);
 	}
-	sendMessageToTabAsync(tabId, msg){
+	sendMessageAsync(msg){
 		var resolver = new PromiseResolver();
-		chrome.tabs.sendMessage(tabId, msg, resp => {
+		chrome.tabs.sendMessage(this.tabId, msg, resp => {
 			var lastError = chrome.runtime.lastError;
 			if(lastError){
 				resolver.reject(`error when sending message to tab ${tabId}. Message: ${JSON.stringify(msg)}. Error: ${lastError.message}`);
@@ -46,23 +42,34 @@ class ActiveTabMessagesTarget extends MessagesTarget{
 		});
 		return resolver.promise;
 	}
-	sendMessageToTab(tabId, msg){
-		chrome.tabs.sendMessage(tabId, msg);
+}
+
+class CurrentTabMessagesTarget extends MessagesTarget{
+	async sendMessageAsync(msg){
+		var messagesTarget = await this.getCurrentTabMessagesTarget();
+		return await messagesTarget.sendMessageAsync(msg);
 	}
-	getActiveTabId(){
+	sendMessage(msg){
+		this.getCurrentTabMessagesTarget().then(messagesTarget => {
+			messagesTarget.sendMessage(msg);
+		}, error => {
+			console.error(error);
+		});
+	}
+	getCurrentTabMessagesTarget(){
 		var resolver = new PromiseResolver();
 		chrome.tabs.query({lastFocusedWindow: true, active: true}, tabs => {
 			if(tabs.length !== 1){
 				resolver.reject(new Error(`looked for the single active tab, but found ${tabs.length} tabs`));
 				return;
 			}
-			resolver.resolve(tabs[0].id);
+			resolver.resolve(new TabMessagesTarget(tabs[0].id));
 		});
 		return resolver.promise;
 	}
 }
 
-var activeTabMessagesTarget = new ActiveTabMessagesTarget();
+var currentTabMessagesTarget = new CurrentTabMessagesTarget();
 
 class RuntimeMessagesTarget extends MessagesTarget{
 	sendMessageAsync(msg){
@@ -85,4 +92,4 @@ class RuntimeMessagesTarget extends MessagesTarget{
 var runtimeMessagesSource = new RuntimeMessagesSource();
 var runtimeMessagesTarget = new RuntimeMessagesTarget();
 
-export { runtimeMessagesEventSource, runtimeMessagesSource, runtimeMessagesTarget, activeTabMessagesTarget };
+export { runtimeMessagesEventSource, runtimeMessagesSource, runtimeMessagesTarget, currentTabMessagesTarget, TabMessagesTarget };

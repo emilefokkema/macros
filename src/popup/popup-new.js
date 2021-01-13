@@ -5,7 +5,8 @@
 		data: function(){
 			return {
 				navigations: [],
-				selectedNavigation: undefined
+				selectedNavigation: undefined,
+				ruleCurrentlyExecuting: undefined
 			};
 		},
 		mounted: function(){
@@ -25,9 +26,10 @@
 			}
 		},
 		methods: {
-			onExecuteClicked: function(rule){
-				
-
+			onExecuteClicked: async function({rule, navigationId}){
+				this.ruleCurrentlyExecuting = rule;
+				await macros.executeRuleAsync(navigationId, rule.id);
+				this.ruleCurrentlyExecuting = undefined;
 			},
 			onEditClicked: function(rule){
 
@@ -64,28 +66,30 @@
 			navigation: {
 				template: document.getElementById("navigationTemplate").innerHTML,
 				props: {
-					navigation: Object
+					navigation: Object,
+					rulecurrentlyexecuting: Object
 				},
 				methods:{
 					onEditClicked(rule){
 
 					},
 					onExecuteClicked(rule){
-
+						this.$emit('executeclicked', {rule, navigationId: this.navigation.navigationId});
 					}
 				},
 				components: {
 					rule: {
 						template: document.getElementById("ruleTemplate").innerHTML,
 						props: {
-							rule: Object
+							rule: Object,
+							rulecurrentlyexecuting: Object
 						},
 						computed: {
 							editable: function(){
 								return true;
 							},
 							isExecuting: function(){
-								return false;
+								return this.rulecurrentlyexecuting === this.rule;
 							},
 							canExecute: function(){
 								return this.rule.hasSomethingToDo;

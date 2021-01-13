@@ -1,5 +1,5 @@
 import { MessageType, MessagesSource } from './events';
-import { runtimeMessagesEventSource, runtimeMessagesTarget, runtimeMessagesSource, activeTabMessagesTarget } from './runtime-messages';
+import { runtimeMessagesEventSource, runtimeMessagesTarget, runtimeMessagesSource, currentTabMessagesTarget, TabMessagesTarget } from './runtime-messages';
 
 var subscriptionMessageType = new MessageType('crossBoundarySubscription');
 
@@ -25,13 +25,39 @@ class CrossBoundaryMessagesSource extends MessagesSource{
     }
 }
 
+class NavigationMessageType{
+    constructor(type, navigationId){
+        this.type = type;
+        this.navigationId = navigationId;
+    }
+    filterMessage(msg){
+        return msg.type === this.type && msg.navigationId === this.navigationId;
+    }
+    packMessage(msg){
+        return {
+            type: this.type,
+            navigationId: this.navigationId,
+            message: msg
+        };
+    }
+    unpackMessage(msg){
+        return msg.message;
+    }
+}
+
 class CrossBoundaryEvent{
     constructor(type){
         this.type = type;
         var messageType = new MessageType(type);
         this.source = new CrossBoundaryMessagesSource(type);
         this.target = runtimeMessagesTarget.ofType(messageType);
-        this.activeTabTarget = activeTabMessagesTarget.ofType(messageType);
+        this.currentTabTarget = currentTabMessagesTarget.ofType(messageType);
+    }
+    getTargetForNavigation(navigation){
+        return new TabMessagesTarget(navigation.tabId).ofType(new NavigationMessageType(this.type, navigation.id));
+    }
+    getSourceForNavigation(navigationId){
+        return runtimeMessagesSource.ofType(new NavigationMessageType(this.type, navigationId));
     }
 }
 
