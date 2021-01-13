@@ -4,9 +4,10 @@ import { buttonInteraction } from './button-interaction';
 import { storage } from './storage';
 
 class ButtonNotification{
-    constructor(navigation, {numberOfRules}){
+    constructor(navigation, {numberOfRules, numberOfRulesThatHaveSomethingToDo}){
         this.navigation = navigation;
         this.numberOfRules = numberOfRules;
+        this.numberOfRulesThatHaveSomethingToDo = numberOfRulesThatHaveSomethingToDo;
         this.disappeared = new Event();
         this.updated = new Event();
         this.initialize();
@@ -16,8 +17,9 @@ class ButtonNotification{
             this.disappear();
         });
     }
-    update({numberOfRules}){
+    update({numberOfRules, numberOfRulesThatHaveSomethingToDo}){
         this.numberOfRules = numberOfRules;
+        this.numberOfRulesThatHaveSomethingToDo = numberOfRulesThatHaveSomethingToDo;
         this.updated.dispatch();
     }
     disappear(){
@@ -47,10 +49,10 @@ class Button{
         this.disappeared = new Event();
         this.cancellationToken = new CancellationToken();
     }
-    addNotification(navigation, {numberOfRules}){
+    addNotification(navigation, info){
         var notification = this.notifications.find(n => n.navigation.id === navigation.id);
         if(!notification){
-            notification = new ButtonNotification(navigation, {numberOfRules});
+            notification = new ButtonNotification(navigation, info);
             this.notifications.push(notification);
             notification.disappeared.next(this.cancellationToken).then(() => {
                 this.removeNotification(notification);
@@ -59,7 +61,7 @@ class Button{
                 this.update();
             }, this.cancellationToken);
         }else{
-            notification.update({numberOfRules});
+            notification.update(info);
         }
         this.update();
     }
@@ -80,9 +82,13 @@ class Button{
             return;
         }
         var numberOfRules = this.notifications.map(n => n.numberOfRules).reduce((a, b) => a + b, 0);
-        if(numberOfRules > 0){
+        var numberOfRulesThatHaveSomethingToDo = this.notifications.map(n => n.numberOfRulesThatHaveSomethingToDo).reduce((a, b) => a + b, 0);
+        if(numberOfRulesThatHaveSomethingToDo > 0){
+            buttonInteraction.setBadgeText({tabId: this.tabId, text: `${numberOfRulesThatHaveSomethingToDo}`});
+            buttonInteraction.setBadgeBackgroundColor({tabId: this.tabId, color: '#007bff'});
+        }else if(numberOfRules > 0){
             buttonInteraction.setBadgeText({tabId: this.tabId, text: `${numberOfRules}`});
-            buttonInteraction.setBadgeBackgroundColor({tabId: this.tabId, color: '#aaa'});
+            buttonInteraction.setBadgeBackgroundColor({tabId: this.tabId, color: '#6c757d'});
         }
     }
     toJSON(){
@@ -118,7 +124,7 @@ class ButtonCollection{
         console.log(`button collection loaded ${this.buttons.length} buttons:`, JSON.parse(JSON.stringify(this.buttons)))
         this.loaded = true;
     }
-    async addNotification({navigationId, numberOfRules}){
+    async addNotification({navigationId, ...rest}){
         await this.ensureLoaded();
         var navigation = await macros.navigation.getNavigation(navigationId);
         if(!navigation){
@@ -133,7 +139,7 @@ class ButtonCollection{
                 this.removeButton(button);
             });
         }
-        button.addNotification(navigation, {numberOfRules});
+        button.addNotification(navigation, rest);
         this.save();
     }
     removeButton(button){

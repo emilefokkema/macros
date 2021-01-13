@@ -1,3 +1,6 @@
+import { Event, CancellationToken } from './shared/events';
+import { documentMutations } from './document-mutations'
+
 class Selector{
 	constructor(text, attributeNames){
 		this.text = text;
@@ -121,7 +124,39 @@ function createSelectedNodeAction(definition){
 class SelectAction{
 	constructor(definition){
 		this.selector = Selector.create(definition.selector);
-		this.action = createSelectedNodeAction(definition.action)
+		this.action = createSelectedNodeAction(definition.action);
+		this.hasSomethingToDoChanged = new Event();
+		this.cancellationToken = new CancellationToken();
+		this.hasSomethingToDoNow = this.hasSomethingToDo();
+		documentMutations.listen(this.selector.attributeNames, () => this.onDocumentMutation(), this.cancellationToken);
+	}
+	onDocumentMutation(){
+		var hasSomethingToDoNow = this.hasSomethingToDo();
+		if(hasSomethingToDoNow !== this.hasSomethingToDoNow){
+			this.hasSomethingToDoNow = hasSomethingToDoNow;
+			this.hasSomethingToDoChanged.dispatch();
+		}
+	}
+	getEffectOnNode(node){
+		if(!node.matches(this.selector.text)){
+			return null;
+		}
+		return this.action.getEffectOnNode(node);
+	}
+	hasSomethingToDo(){
+		var nodes = document.querySelectorAll(this.selector.text);
+		if(nodes.length === 0){
+			return false;
+		}
+		for(var i = 0; i < nodes.length; i++){
+			if(this.action.hasEffectOnNode(nodes[i])){
+				return true;
+			}
+		}
+		return false;
+	}
+	dispose(){
+		this.cancellationToken.cancel();
 	}
 }
 
@@ -135,18 +170,46 @@ class ContentScriptRule{
 	constructor(definition){
 		this.id = definition.id;
 		this.name = definition.name;
-		this.actions = definition.actions.map(a => createAction(a));
-		this.hasSomethingToDo = false;
+		this.cancellationToken = new CancellationToken();
+		this.actions = [];
+		this.hasSomethingToDoChanged = new Event();
+		for(var actionDefinition of definition.actions){
+			this.addAction(actionDefinition);
+		}
+		this.hasSomethingToDoNow = this.hasSomethingToDo();
+	}
+	addAction(definition){
+		var action = createAction(definition);
+		this.actions.push(action);
+		action.hasSomethingToDoChanged.listen(() => this.onActionHasSomethingToDoChanged(), this.cancellationToken);
+	}
+	onActionHasSomethingToDoChanged(){
+		var hasSomethingToDoNow = this.hasSomethingToDo();
+		if(hasSomethingToDoNow !== this.hasSomethingToDoNow){
+			this.hasSomethingToDoNow = hasSomethingToDoNow;
+			this.hasSomethingToDoChanged.dispatch();
+		}
 	}
 	getNotification(){
 		return {
 			name: this.name,
 			id: this.id,
-			hasSomethingToDo: this.hasSomethingToDo
+			hasSomethingToDo: this.hasSomethingToDo()
 		};
 	}
+	hasSomethingToDo(){
+		for(let action of this.actions){
+			if(action.hasSomethingToDo()){
+				return true;
+			}
+		}
+		return false;
+	}
 	dispose(){
-
+		this.cancellationToken.cancel();
+		for(var action of this.actions){
+			action.dispose();
+		}
 	}
 }
 

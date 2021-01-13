@@ -1,4 +1,5 @@
 import { macros } from './shared/macros';
+import { CancellationToken } from './shared/events';
 import { ContentScriptRule } from './content-script-rules';
 
 var currentlySelectedElement;
@@ -7,6 +8,7 @@ var navigationId;
 var url;
 var loadedPromise;
 var loaded = false;
+var cancellationToken;
 
 var elementSelectedInDevtools = function(element){
 	currentlySelectedElement = element;
@@ -16,19 +18,29 @@ var notify = async function(){
 	if(!loaded){
 		await loadedPromise;
 	}
+	var ruleNotifications = rules.map(r => r.getNotification());
 	macros.notifyRulesForNavigation({
 		navigationId: navigationId,
 		url: url,
-		rules: rules.map(r => r.getNotification()),
-		numberOfRules: rules.length
+		rules: ruleNotifications,
+		numberOfRules: ruleNotifications.length,
+		numberOfRulesThatHaveSomethingToDo: ruleNotifications.filter(r => r.hasSomethingToDo).length
 	});
 };
 
 var setRules = function(ruleDefinitions){
+	if(cancellationToken){
+		cancellationToken.cancel();
+	}
+	cancellationToken = new CancellationToken();
 	for(var rule of rules){
 		rule.dispose();
 	}
-	rules = ruleDefinitions.map(r => new ContentScriptRule(r));
+	rules = ruleDefinitions.map(r => {
+		var rule = new ContentScriptRule(r);
+		rule.hasSomethingToDoChanged.listen(() => notify(), cancellationToken);
+		return rule;
+	});
 	if(rules.length > 0){
 		console.log(`navigation at ${url} has rules`, rules)
 	}
