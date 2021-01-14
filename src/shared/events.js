@@ -106,7 +106,7 @@ class Event extends EventSource{
 	}
 	dispatch(){
 		var args = Array.prototype.slice.apply(arguments);
-		for(let listener of this.listeners){
+		for(let listener of this.listeners.slice()){
 			listener(...args);
 		}
 	}
