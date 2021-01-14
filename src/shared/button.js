@@ -36,7 +36,13 @@ class ButtonNotification{
             numberOfRulesThatHaveSomethingToDo: this.numberOfRulesThatHaveSomethingToDo
         };
     }
-    static async create({navigationId, numberOfRules}){
+    static create(navigation, {numberOfRules, numberOfRulesThatHaveSomethingToDo}){
+        if(numberOfRules === 0){
+            return null;
+        }
+        return new ButtonNotification(navigation, {numberOfRules, numberOfRulesThatHaveSomethingToDo});
+    }
+    static async recreate({navigationId, numberOfRules}){
         var navigation = await macros.navigation.getNavigation(navigationId);
         if(!navigation){
             console.log(`could not recreate notification for navigation '${navigationId}'`)
@@ -57,7 +63,10 @@ class Button{
     addNotification(navigation, info){
         var notification = this.notifications.find(n => n.navigation.id === navigation.id);
         if(!notification){
-            notification = new ButtonNotification(navigation, info);
+            notification = ButtonNotification.create(navigation, info);//new ButtonNotification(navigation, info);
+            if(!notification){
+                return;
+            }
             this.notifications.push(notification);
             notification.disappeared.next(this.cancellationToken).then(() => {
                 this.removeNotification(notification);
@@ -102,8 +111,17 @@ class Button{
             notifications: this.notifications
         };
     }
-    static async create({tabId, notifications}){
-        var notifications = (await Promise.all(notifications.map(n => ButtonNotification.create(n)))).filter(n => !!n);
+    static create(navigation, notificationInfo){
+        var notification = ButtonNotification.create(navigation, notificationInfo);
+        if(notification === null){
+            return null;
+        }
+        var button = new Button(navigation.tabId);
+        button.addNotification(navigation, notificationInfo);
+        return button;
+    }
+    static async recreate({tabId, notifications}){
+        var notifications = (await Promise.all(notifications.map(n => ButtonNotification.recreate(n)))).filter(n => !!n);
         if(notifications.length === 0){
             return null;
         }
@@ -124,12 +142,12 @@ class ButtonCollection{
         }
         var stringifiedButtons = storage.getItem('buttons') || [];
         console.log(`going to recreate buttons:`, stringifiedButtons);
-        this.buttons = (await Promise.all(stringifiedButtons.map(b => Button.create(b)))).filter(n => !!n);
+        this.buttons = (await Promise.all(stringifiedButtons.map(b => Button.recreate(b)))).filter(n => !!n);
         this.save();
         console.log(`button collection loaded ${this.buttons.length} buttons:`, JSON.parse(JSON.stringify(this.buttons)))
         this.loaded = true;
     }
-    async addNotification({navigationId, ...rest}){
+    async addNotification({navigationId, ...info}){
         await this.ensureLoaded();
         var navigation = await macros.navigation.getNavigation(navigationId);
         if(!navigation){
@@ -138,13 +156,18 @@ class ButtonCollection{
         }
         var button = this.buttons.find(b => b.tabId === navigation.tabId);
         if(!button){
-            button = new Button(navigation.tabId);
+            button = Button.create(navigation, info);
+            if(button === null){
+                return;
+            }
             this.buttons.push(button);
             button.disappeared.next().then(() => {
                 this.removeButton(button);
             });
+        }else{
+            button.addNotification(navigation, info);
         }
-        button.addNotification(navigation, rest);
+        
         this.save();
     }
     removeButton(button){
