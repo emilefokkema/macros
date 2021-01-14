@@ -20,7 +20,11 @@ class ButtonNotification{
     update({numberOfRules, numberOfRulesThatHaveSomethingToDo}){
         this.numberOfRules = numberOfRules;
         this.numberOfRulesThatHaveSomethingToDo = numberOfRulesThatHaveSomethingToDo;
-        this.updated.dispatch();
+        if(this.numberOfRules === 0){
+            this.disappear();
+        }else{
+            this.updated.dispatch();
+        }
     }
     disappear(){
         this.disappeared.dispatch();
