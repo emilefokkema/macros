@@ -32,7 +32,8 @@ class ButtonNotification{
     toJSON(){
         return {
             navigationId: this.navigation.id,
-            numberOfRules: this.numberOfRules
+            numberOfRules: this.numberOfRules,
+            numberOfRulesThatHaveSomethingToDo: this.numberOfRulesThatHaveSomethingToDo
         };
     }
     static async create({navigationId, numberOfRules}){
