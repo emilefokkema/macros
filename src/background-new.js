@@ -1,6 +1,7 @@
 import { macros } from './shared/macros';
 import { rules } from './rules-new';
 import { buttons } from './shared/button';
+import { editors } from './shared/editors';
 import { setPopup } from './shared/set-popup';
 
 setPopup('popup.html')
@@ -28,4 +29,7 @@ macros.onNotifyRulesForNavigation(notification => {
 });
 macros.onNotifyPopupOpened(() => {
 	macros.requestToEmitRules();
+});
+macros.onRequestToOpenEditor((req) => {
+	editors.openEditor(req);
 });

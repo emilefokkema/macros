@@ -3,30 +3,18 @@
 			el: '#app',
 			data: function(){
 				return {
-					url: undefined,
 					name: undefined,
-					hasPage: false,
 					ruleId: undefined,
 					urlPattern: undefined,
 					actions: [],
 					runningAction: undefined,
-					automatic: false
+					automatic: false,
+					isNew: true,
+					hasPage: false
 				};
 			},
 			mounted: function(){
 				this.initialize();
-				chrome.runtime.onMessage.addListener((msg, sender) => {
-					if(msg.pageDestroyed){
-						this.hasPage = false;
-					}else if(msg.addActionForSelector){
-						this.addActionsForSelectors([msg.selector]);
-					}
-				});
-			},
-			computed: {
-				isNew: function(){
-					return this.ruleId === undefined;
-				}
 			},
 			methods: {
 				onAddType: function(type){
@@ -42,19 +30,7 @@
 					});
 				},
 				initialize: function(){
-					chrome.runtime.sendMessage(undefined, {initialize: true}, initMsg => {
-						if(initMsg.url){
-							this.url = initMsg.url;
-							this.hasPage = true;
-						}
-						if(initMsg.ruleId){
-							this.ruleId = initMsg.ruleId;
-							this.setRule(initMsg.rule);
-						}else{
-							this.urlPattern = this.url;
-						}
-						this.addActionsForSelectors(initMsg.selectorsForWhichToAddActions);
-					});
+
 				},
 				addActionsForSelectors(selectors){
 					for(let selector of selectors){
@@ -78,25 +54,10 @@
 					document.title = `Edit '${this.name}'`
 				},
 				gotoPage: function(){
-					chrome.runtime.sendMessage(undefined, {focusPage: true});
+					
 				},
 				saveRule: function(){
-					var rule = {
-						name: this.name,
-						urlPattern: this.urlPattern,
-						actions: this.actions,
-						automatic: this.automatic
-					};
-					if(this.isNew){
-						chrome.runtime.sendMessage(undefined, {createdRule: rule}, (msg) => {
-							this.ruleId = msg.ruleId;
-							this.setTitle();
-						});
-					}else{
-						chrome.runtime.sendMessage(undefined, {updatedRule: rule}, (msg) => {
-							this.setTitle();
-						});
-					}
+
 				},
 				deleteAction: function(action){
 					var index = this.actions.indexOf(action);
@@ -106,62 +67,9 @@
 				},
 				executeAction: function(action){
 					this.runningAction = action;
-					console.log(`going to execute action`)
-					chrome.runtime.sendMessage(undefined, {executeAction: true, action: action}, (resp) => {
-						console.log(`executed action with result`, resp);
-						this.runningAction = undefined;
-					})
 				}
 			},
 			components: {
-				'class-finder': {
-					template: document.getElementById("classFinderTemplate").innerHTML,
-					data: function(){
-						return {
-							queryProperties: [
-								{
-									property: undefined,
-									value: undefined,
-									comparison: "eq"
-								}
-							],
-							result: [],
-							collapsed: true
-						};
-					},
-					methods: {
-						toggleCollapsed: function(){
-							this.collapsed = !this.collapsed;
-						},
-						search: function(){
-							chrome.runtime.sendMessage(undefined, {findSelectors: true, req: {properties: this.queryProperties}}, (resp) => {
-								this.result = resp;
-							});
-						}
-					},
-					components: {
-						'query-property': {
-							template: document.getElementById("queryPropertyTemplate").innerHTML,
-							props: {
-								property: Object
-							}
-						},
-						'selector-match': {
-							template: document.getElementById("selectorMatchTemplate").innerHTML,
-							props: {
-								match: Object
-							},
-							components: {
-								'match-node': {
-									template: document.getElementById("matchNodeTemplate").innerHTML,
-									props: {
-										node: Object
-									},
-								}
-							}
-						}
-					}
-				},
 				'action-adder': {
 					template: document.getElementById("actionAdderTemplate").innerHTML,
 					data: function(){

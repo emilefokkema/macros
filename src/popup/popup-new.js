@@ -31,8 +31,8 @@
 				await macros.executeRuleAsync(navigationId, rule.id);
 				this.ruleCurrentlyExecuting = undefined;
 			},
-			onEditClicked: function(rule){
-
+			onEditClicked: function({rule, navigationId}){
+				macros.requestToOpenEditor({ruleId: rule.id, navigationId});
 			},
 			goToManagementPage: function(){
 
@@ -71,7 +71,7 @@
 				},
 				methods:{
 					onEditClicked(rule){
-
+						this.$emit('editclicked', {rule, navigationId: this.navigation.navigationId});
 					},
 					onExecuteClicked(rule){
 						this.$emit('executeclicked', {rule, navigationId: this.navigation.navigationId});

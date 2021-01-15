@@ -44,7 +44,7 @@
 		<select class="navigation-selector" v-if="navigations.length > 0" v-model="navigationIdOption">
 			<option v-for="navigation of navigations" v-bind:value="navigation.navigationId">{{navigation.origin}}</option>
 		</select>
-		<navigation v-bind:navigation="selectedNavigation" v-bind:rulecurrentlyexecuting="ruleCurrentlyExecuting" v-if="selectedNavigation" v-on:executeclicked="onExecuteClicked($event)"></navigation>
+		<navigation v-bind:navigation="selectedNavigation" v-bind:rulecurrentlyexecuting="ruleCurrentlyExecuting" v-if="selectedNavigation" v-on:executeclicked="onExecuteClicked($event)" v-on:editclicked="onEditClicked($event)"></navigation>
 		<div class="row">
 			<div class="action-button row-part" v-on:click="goToManagementPage()">
 				<span class="button fa fa-cog"></span>

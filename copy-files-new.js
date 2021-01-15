@@ -8,7 +8,7 @@ copyFile('./src/manifest.json', './dist/manifest.json');
 
 copyFile('./src/create-rule/create-rule.css', './dist/create-rule.css');
 copyFile('./src/create-rule/create-rule-new.js', './dist/create-rule.js');
-copyFile('./src/create-rule/create-rule.html', './dist/create-rule.html');
+copyFile('./src/create-rule/create-rule-new.html', './dist/create-rule.html');
 
 copyFile('./src/management/management.css', './dist/management.css');
 copyFile('./src/management/management-new.js', './dist/management.js');

@@ -9,6 +9,7 @@ class Macros{
 		this.emitRulesRequest = crossBoundaryEventFactory.create('emitRulesRequest');
 		this.rulesForNavigationNotification = crossBoundaryEventFactory.create('notifyRulesForNavigation');
 		this.executeRuleMessage = crossBoundaryEventFactory.create('executeRule');
+		this.openEditorRequest = crossBoundaryEventFactory.create('openEditor');
 	}
 	getRulesForUrl(url){
 		return this.rulesForUrlRequest.target.sendMessageAsync(url);
@@ -43,6 +44,12 @@ class Macros{
 	}
 	onExecuteRuleRequest(navigationId, listener, cancellationToken){
 		return this.executeRuleMessage.getSourceForNavigation(navigationId).onMessage(listener, cancellationToken);
+	}
+	onRequestToOpenEditor(listener, cancellationToken){
+		return this.openEditorRequest.source.onMessage(listener, cancellationToken);
+	}
+	requestToOpenEditor(req){
+		this.openEditorRequest.target.sendMessage(req);
 	}
 }
 
