@@ -24,7 +24,8 @@ var notify = async function(){
 		url: url,
 		rules: ruleNotifications,
 		numberOfRules: ruleNotifications.length,
-		numberOfRulesThatHaveSomethingToDo: ruleNotifications.filter(r => r.hasSomethingToDo).length
+		numberOfRulesThatHaveSomethingToDo: ruleNotifications.filter(r => r.hasSomethingToDo).length,
+		numberOfRulesThatHaveExecuted: ruleNotifications.filter(r => r.hasExecuted).length
 	});
 };
 

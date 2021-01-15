@@ -95,7 +95,7 @@
 								return this.rule.hasSomethingToDo;
 							},
 							hasExecuted: function(){
-								return false;
+								return this.rule.hasExecuted;
 							}
 						},
 						methods: {

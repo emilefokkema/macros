@@ -190,6 +190,7 @@ class ContentScriptRule{
 			this.addAction(actionDefinition);
 		}
 		this.hasSomethingToDoNow = this.hasSomethingToDo();
+		this.hasExecuted = false;
 	}
 	addAction(definition){
 		var action = createAction(definition);
@@ -207,7 +208,8 @@ class ContentScriptRule{
 		return {
 			name: this.name,
 			id: this.id,
-			hasSomethingToDo: this.hasSomethingToDo()
+			hasSomethingToDo: this.hasSomethingToDo(),
+			hasExecuted: this.hasExecuted
 		};
 	}
 	hasSomethingToDo(){
@@ -222,6 +224,7 @@ class ContentScriptRule{
 		for(let action of this.actions){
 			action.execute();
 		}
+		this.hasExecuted = true;
 	}
 	dispose(){
 		this.cancellationToken.cancel();
