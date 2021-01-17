@@ -1,6 +1,9 @@
+import { openTab } from './open-tab';
+
 class Editor{
-	constructor({navigationId, ruleId}){
-		this.navigationId = navigationId;
+	constructor({otherNavigationId, ownNavigationId, ruleId}){
+		this.otherNavigationId = otherNavigationId;
+		this.ownNavigationId = ownNavigationId;
 		this.ruleId = ruleId;
 	}
 }
@@ -8,9 +11,11 @@ class Editor{
 class EditorCollection{
 	constructor(){
 		this.editors = [];
+		this.initializations = [];
 	}
-	openEditor({navigationId, ruleId}){
-		console.log(`going to open editor for navigation '${navigationId}' and rule '${ruleId}'`)
+	async openEditor({otherNavigationId, ruleId}){
+		this.initializations.push({otherNavigationId, ruleId});
+		var tabId = openTab('create-rule.html');
 	}
 }
 
