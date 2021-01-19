@@ -1,4 +1,4 @@
-import { openTab } from './open-tab';
+import { macros } from './macros';
 
 class Editor{
 	constructor({otherNavigationId, ownNavigationId, ruleId}){
@@ -15,7 +15,7 @@ class EditorCollection{
 	}
 	async openEditor({otherNavigationId, ruleId}){
 		this.initializations.push({otherNavigationId, ruleId});
-		var tabId = openTab('create-rule.html');
+		var navigationId = await macros.navigation.openTab('create-rule.html');
 	}
 }
 

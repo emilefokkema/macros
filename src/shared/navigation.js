@@ -123,6 +123,13 @@ var navigation = {
     getId(){
         return getNavigationIdMessageTarget.sendMessageAsync({});
     },
+    openTab(url){
+        var resolver = new PromiseResolver();
+        chrome.tabs.create({url}, tab => {
+            console.log(`new tab ${tab.id} was created`)
+        });
+        return resolver.promise;
+    },
     getNavigation(navigationId){
         var resolver = new PromiseResolver();
         var cancellationToken = new CancellationToken();
