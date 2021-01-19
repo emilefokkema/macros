@@ -15,7 +15,8 @@ class EditorCollection{
 	}
 	async openEditor({otherNavigationId, ruleId}){
 		this.initializations.push({otherNavigationId, ruleId});
-		var navigationId = await macros.navigation.openTab('create-rule.html');
+		var navigation = await macros.navigation.openTab('create-rule.html');
+		navigation.disappeared.next().then(() => console.log(`an editor has disappeared`))
 	}
 }
 

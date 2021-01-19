@@ -98,7 +98,10 @@ runtimeMessagesEventSource.filter((msg, sender) => !!sender.tab && getNavigation
     sendResponse(getNavigationId(sender.tab.id, sender.frameId, sender.url));
 });
 
-function findNavigationInTab(tabId, navigationId, cancellationToken){
+function findNavigationInTab(tabId, tabUrl, navigationId, cancellationToken){
+    if(getNavigationId(tabId, 0, tabUrl) === navigationId){
+        return Navigation.create(tabId, 0, tabUrl);
+    }
     var resolver = new PromiseResolver();
     var found = false;
     chrome.webNavigation.getAllFrames({tabId}, info => {
@@ -126,7 +129,7 @@ var navigation = {
     openTab(url){
         var resolver = new PromiseResolver();
         chrome.tabs.create({url}, tab => {
-            console.log(`new tab ${tab.id} was created`)
+            navigationCreated.when(n => n.tabId === tab.id).then(([n]) => resolver.resolve(n));
         });
         return resolver.promise;
     },
@@ -134,7 +137,7 @@ var navigation = {
         var resolver = new PromiseResolver();
         var cancellationToken = new CancellationToken();
         chrome.tabs.query({}, tabs => {
-            Promise.all(tabs.map(t => findNavigationInTab(t.id, navigationId, cancellationToken).then(result => {
+            Promise.all(tabs.map(t => findNavigationInTab(t.id, t.url, navigationId, cancellationToken).then(result => {
                 if(result){
                     cancellationToken.cancel();
                     resolver.resolve(result);

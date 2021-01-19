@@ -22,9 +22,10 @@ class EventSource {
 		var resolve;
 		var promise = new Promise((res) => {resolve = res;});
 		var listener = this.listen(function(){
-			if(predicate.apply(null, arguments)){
+			var args = [].slice.apply(arguments);
+			if(predicate.apply(null, args)){
 				listener.cancel();
-				resolve();
+				resolve(args);
 			}
 		}, cancellationToken);
 		return promise;
