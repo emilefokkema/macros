@@ -33,3 +33,7 @@ macros.onNotifyPopupOpened(() => {
 macros.onRequestToOpenEditor((req) => {
 	editors.openEditor(req);
 });
+macros.onRequestToInitializeEditor((msg, sendResponse) => {
+	var initialization = editors.getEditorInitialization();
+	sendResponse(initialization);
+});

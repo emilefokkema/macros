@@ -89,6 +89,9 @@ class EditorCollection{
 			this.save();
 		}
 	}
+	getEditorInitialization(){
+		return this.initializations.shift();
+	}
 }
 
 var editors = new EditorCollection();

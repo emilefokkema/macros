@@ -29,8 +29,9 @@
 						action: {type: "delete"}
 					});
 				},
-				initialize: function(){
-
+				initialize: async function(){
+					var initialization = await macros.initializeEditor();
+					console.log(`initialize with:`, initialization)
 				},
 				addActionsForSelectors(selectors){
 					for(let selector of selectors){
