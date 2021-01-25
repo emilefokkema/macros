@@ -11,9 +11,16 @@ class Macros{
 		this.executeRuleMessage = crossBoundaryEventFactory.create('executeRule');
 		this.openEditorRequest = crossBoundaryEventFactory.create('openEditor');
 		this.initializeEditorRequest = crossBoundaryEventFactory.create('initializeEditor');
+		this.ruleByIdRequest = crossBoundaryEventFactory.create('requestRuleById');
 	}
 	getRulesForUrl(url){
 		return this.rulesForUrlRequest.target.sendMessageAsync(url);
+	}
+	getRuleById(ruleId){
+		return this.ruleByIdRequest.target.sendMessageAsync(ruleId);
+	}
+	onGetRuleByIdRequest(listener, cancellationToken){
+		return this.ruleByIdRequest.source.onMessage(listener, cancellationToken);
 	}
 	onRequestRulesForUrl(listener, cancellationToken){
 		return this.rulesForUrlRequest.source.onMessage(listener, cancellationToken);

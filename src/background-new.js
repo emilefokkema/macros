@@ -1,7 +1,7 @@
 import { macros } from './shared/macros';
 import { rules } from './rules-new';
 import { buttons } from './shared/button';
-import { editors } from './shared/editors';
+import { editors } from './editors';
 import { setPopup } from './shared/set-popup';
 
 setPopup('popup.html')
@@ -36,4 +36,7 @@ macros.onRequestToOpenEditor((req) => {
 macros.onRequestToInitializeEditor((msg, sendResponse) => {
 	var initialization = editors.getEditorInitialization();
 	sendResponse(initialization);
+});
+macros.onGetRuleByIdRequest((ruleId, sendResponse) => {
+	sendResponse(rules.getRule(ruleId));
 });

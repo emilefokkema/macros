@@ -30,8 +30,11 @@
 					});
 				},
 				initialize: async function(){
-					var initialization = await macros.initializeEditor();
-					console.log(`initialize with:`, initialization)
+					var {otherNavigationId, ruleId} = await macros.initializeEditor();
+					if(ruleId !== undefined){
+						var rule = await macros.getRuleById(ruleId);
+						this.setRule(rule);
+					}
 				},
 				addActionsForSelectors(selectors){
 					for(let selector of selectors){

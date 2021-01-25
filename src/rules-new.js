@@ -63,6 +63,7 @@ class RuleCollection{
 		return this.rules.slice();
 	}
 	getRule(ruleId){
+		this.ensureLoaded();
 		return this.rules.find(r => r.id === ruleId);
 	}
 	getRulesForUrl(url){

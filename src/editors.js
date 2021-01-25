@@ -1,6 +1,6 @@
-import { macros } from './macros';
-import { storage } from './storage';
-import { Event, CancellationToken } from './events';
+import { macros } from './shared/macros';
+import { storage } from './shared/storage';
+import { Event, CancellationToken } from './shared/events';
 
 class Editor{
 	constructor(ruleId, ownNavigation, otherNavigation){
