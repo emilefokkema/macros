@@ -10,7 +10,9 @@
 					runningAction: undefined,
 					automatic: false,
 					isNew: true,
-					hasPage: false
+					hasPage: false,
+					url: undefined,
+					otherNavigationId: undefined
 				};
 			},
 			mounted: function(){
@@ -32,8 +34,21 @@
 				initialize: async function(){
 					var {otherNavigationId, ruleId} = await macros.initializeEditor();
 					if(ruleId !== undefined){
+						this.ruleId = ruleId;
+						this.isNew = false;
 						var rule = await macros.getRuleById(ruleId);
 						this.setRule(rule);
+					}
+					if(otherNavigationId !== undefined){
+						this.otherNavigationId = otherNavigationId;
+						var otherNavigation = await macros.navigation.getNavigation(otherNavigationId);
+						if(otherNavigation){
+							this.hasPage = true;
+							this.url = otherNavigation.url;
+							otherNavigation.disappeared.listen(() => {
+								this.hasPage = false;
+							});
+						}
 					}
 				},
 				addActionsForSelectors(selectors){
@@ -57,8 +72,11 @@
 				setTitle: function(){
 					document.title = `Edit '${this.name}'`
 				},
-				gotoPage: function(){
-					
+				gotoPage: async function(){
+					var otherNavigation = await macros.navigation.getNavigation(this.otherNavigationId);
+					if(otherNavigation){
+						otherNavigation.focus();
+					}
 				},
 				saveRule: function(){
 

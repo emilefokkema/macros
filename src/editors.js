@@ -22,6 +22,9 @@ class Editor{
 			});
 		}
 	}
+	focus(){
+		this.ownNavigation.focus();
+	}
 	toJSON(){
 		return {
 			ruleId: this.ruleId,
@@ -72,6 +75,13 @@ class EditorCollection{
 	}
 	async openEditor({navigationId: otherNavigationId, ruleId}){
 		await this.ensureLoaded();
+		if(ruleId !== undefined){
+			var editorForRule = this.editors.find(e => e.ruleId === ruleId);
+			if(editorForRule){
+				editorForRule.focus();
+				return;
+			}
+		}
 		this.initializations.push({otherNavigationId, ruleId});
 		var otherNavigation = undefined;
 		if(otherNavigationId !== undefined){

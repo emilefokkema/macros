@@ -60,6 +60,9 @@ class Navigation{
             this.disappear();
         });
     }
+    focus(){
+        chrome.tabs.update(this.tabId, {active: true});
+    }
     disappear(){
         this.cancellationToken.cancel();
         this.disappeared.dispatch();
