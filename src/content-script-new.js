@@ -49,13 +49,18 @@ var setRules = function(ruleDefinitions){
 
 var load = async function(){
 	url = location.href;
-	
-	macros.onRequestToEmitRules(() => {
-		notify();
-	});
 	navigationId = await macros.navigation.getId();
 	setRules(await macros.getRulesForUrl(url));
-	macros.onExecuteRuleRequest(navigationId, ({ruleId}, sendResponse) => {
+	macros.onRequestToEmitRules(({navigationIds}) => {
+		if(!navigationIds.some(id => navigationId === id)){
+			return;
+		}
+		notify();
+	});
+	macros.onExecuteRuleRequest(({ruleId, navigationId: _navigationId}, sendResponse) => {
+		if(_navigationId !== navigationId){
+			return;
+		}
 		console.log(`navigation '${navigationId}' got request to execute rule:`, ruleId);
 		var rule = rules.find(r => r.id === ruleId);
 		if(rule){

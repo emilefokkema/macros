@@ -1,6 +1,7 @@
 import { PromiseResolver } from './promise-resolver';
 import { EventSource, MessageType, Event, CancellationToken } from './events';
-import { runtimeMessagesEventSource, runtimeMessagesTarget } from './runtime-messages';
+import { runtimeMessagesEventSource, runtimeMessagesTarget, TabMessagesTarget } from './runtime-messages';
+import { tabRemoved } from './tab-removed';
 
 function getFrame(tabId, frameId){
     var resolver = new PromiseResolver();
@@ -36,25 +37,17 @@ class WebNavigationCommitted extends EventSource{
     }
 }
 
-class TabRemoved extends EventSource{
-    addListener(listener){
-        chrome.tabs.onRemoved.addListener(listener);
-    }
-    removeListener(listener){
-        chrome.tabs.onRemoved.removeListener(listener);
-    }
-}
-
 var webNavigationCommitted = new WebNavigationCommitted();
-var tabRemoved = new TabRemoved();
+
 
 class Navigation{
-    constructor(tabId, frameId, parentFrameIds, url){
+    constructor(tabId, frameId, parentFrameIds, url, messagesTarget){
         this.id = getNavigationId(tabId, frameId, url);
         this.url = url;
         this.tabId = tabId;
         this.frameId = frameId;
         this.parentFrameIds = parentFrameIds;
+        this.messagesTarget = messagesTarget;
         this.disappeared = new Event();
         this.cancellationToken = new CancellationToken();
         this.initialize();
@@ -84,8 +77,16 @@ class Navigation{
         return resolver.promise;
     }
     static async create(tabId, frameId, url){
-        var parentFrameIds = await getParentFrameIds(tabId, frameId);
-        return new Navigation(tabId, frameId, parentFrameIds, url);
+        var parentFrameIds = [frameId];
+        var messagesTarget;
+        if(await getFrame(tabId, frameId)){
+            messagesTarget = new TabMessagesTarget(tabId);
+            parentFrameIds = await getParentFrameIds(tabId, frameId);
+        }else{
+            messagesTarget = runtimeMessagesTarget;
+        }
+        
+        return new Navigation(tabId, frameId, parentFrameIds, url, messagesTarget);
     }
 }
 
@@ -97,6 +98,20 @@ var getNavigationIdMessageTarget = runtimeMessagesTarget.ofType(getNavigationIdM
 runtimeMessagesEventSource.filter((msg, sender) => !!sender.tab && getNavigationIdMessageType.filterMessage(msg)).listen((msg, sender, sendResponse) => {
     sendResponse(getNavigationId(sender.tab.id, sender.frameId, sender.url));
 });
+
+var navigationMessagesEventSource = runtimeMessagesEventSource.filter((msg, sender) => !!sender.tab).mapAsync(async (msg, {frameId, tab, url}, sendResponse) => [msg, await Navigation.create(tab.id, frameId, url), sendResponse]);
+
+function getPopupTabId(){
+    var resolver = new PromiseResolver();
+    chrome.tabs.query({lastFocusedWindow: true, active: true}, tabs => {
+        if(tabs.length !== 1){
+            resolver.reject(new Error(`looked for the single active tab, but found ${tabs.length} tabs`));
+            return;
+        }
+        resolver.resolve(tabs[0].id);
+    });
+    return resolver.promise;
+}
 
 function findNavigationInTab(tabId, tabUrl, navigationId, cancellationToken){
     if(getNavigationId(tabId, 0, tabUrl) === navigationId){
@@ -146,6 +161,9 @@ var navigation = {
         });
         return resolver.promise;
     },
+    async getAllForPopupTab(){
+        return await this.getAllForTab(await getPopupTabId());
+    },
     getAllForTab(tabId){
         var resolver = new PromiseResolver();
         chrome.webNavigation.getAllFrames({tabId}, info => {
@@ -165,4 +183,4 @@ var navigation = {
     }
 };
 
-export { navigation };
+export { navigation, navigationMessagesEventSource };

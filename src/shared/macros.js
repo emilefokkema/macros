@@ -37,21 +37,17 @@ class Macros{
 	onNotifyPopupOpened(listener, cancellationToken){
 		return this.popupOpenedNotification.source.onMessage(listener, cancellationToken);
 	}
-	requestToEmitRules(){
-		this.emitRulesRequest.currentTabTarget.sendMessage({});
+	requestToEmitRules(msg){
+		this.emitRulesRequest.target.sendMessage(msg);
 	}
 	onRequestToEmitRules(listener, cancellationToken){
 		return this.emitRulesRequest.source.onMessage(listener, cancellationToken);
 	}
 	async executeRuleAsync(navigationId, ruleId){
-		var navigation = await this.navigation.getNavigation(navigationId);
-		if(!navigation){
-			throw new Error(`cound not find navigation '${navigationId}'`)
-		}
-		await this.executeRuleMessage.getTargetForNavigation(navigation).sendMessageAsync({ruleId});
+		return this.executeRuleMessage.target.sendMessageAsync({navigationId, ruleId});
 	}
-	onExecuteRuleRequest(navigationId, listener, cancellationToken){
-		return this.executeRuleMessage.getSourceForNavigation(navigationId).onMessage(listener, cancellationToken);
+	onExecuteRuleRequest(listener, cancellationToken){
+		return this.executeRuleMessage.source.onMessage(listener, cancellationToken);
 	}
 	onRequestToOpenEditor(listener, cancellationToken){
 		return this.openEditorRequest.source.onMessage(listener, cancellationToken);
