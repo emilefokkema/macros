@@ -32,8 +32,13 @@
 					});
 				},
 				initialize: async function(){
-					var {otherNavigationId, ruleId} = await macros.initializeEditor();
-					if(ruleId !== undefined){
+					var url = new URL(location.href);
+					var otherNavigationId = url.searchParams.get('navigationId');
+					var ruleId = url.searchParams.get('ruleId');
+					if(ruleId){
+						ruleId = parseInt(ruleId);
+					}
+					if(ruleId){
 						this.ruleId = ruleId;
 						this.isNew = false;
 						var rule = await macros.getRuleById(ruleId);
@@ -50,6 +55,7 @@
 							});
 						}
 					}
+					macros.notifyEditorLoaded({ruleId, otherNavigationId});
 				},
 				addActionsForSelectors(selectors){
 					for(let selector of selectors){

@@ -46,7 +46,6 @@ class EditorCollection{
 	constructor(){
 		this.loaded = false;
 		this.editors = [];
-		this.initializations = [];
 	}
 	save(){
 		storage.setItem('editors', this.editors);
@@ -88,15 +87,24 @@ class EditorCollection{
 				return;
 			}
 		}
-		this.initializations.push({otherNavigationId, ruleId});
 		var otherNavigation = undefined;
 		if(otherNavigationId !== undefined){
 			otherNavigation = await macros.navigation.getNavigation(otherNavigationId);
 		}
-		var navigation = await macros.navigation.openTab('create-rule.html');
+		var navigation = await macros.navigation.openTab(this.createEditorUrl(otherNavigationId, ruleId));
 		var editor = new Editor(ruleId, navigation, otherNavigation);
 		this.addEditor(editor);
 		this.save();
+	}
+	createEditorUrl(otherNavigationId, ruleId){
+		var searchParams = new URLSearchParams();
+		if(otherNavigationId){
+			searchParams.append('navigationId', otherNavigationId);
+		}
+		if(ruleId){
+			searchParams.append('ruleId', ruleId);
+		}
+		return `create-rule.html?${searchParams}`;
 	}
 	removeEditor(editor){
 		var index = this.editors.indexOf(editor);
@@ -104,9 +112,6 @@ class EditorCollection{
 			this.editors.splice(index, 1);
 			this.save();
 		}
-	}
-	getEditorInitialization(){
-		return this.initializations.shift();
 	}
 	async getEditedStatus(ruleId){
 		await this.ensureLoaded();

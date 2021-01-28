@@ -41,7 +41,9 @@ class AsyncMappedEventSource extends EventSource{
 		var self = this;
 		return this.eventSource.listen(function(){
 			var args = Array.prototype.slice.apply(arguments);
-			self.mapAsync(...args).then(mapped => listener(...mapped));
+			self.mapAsync(...args).then(mapped => {
+				listener(...mapped)
+			});
 		}, cancellationToken)
 	}
 }

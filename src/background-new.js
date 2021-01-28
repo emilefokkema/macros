@@ -3,6 +3,7 @@ import { rules } from './rules-new';
 import { buttons } from './shared/button';
 import { editors } from './editors';
 import { setPopup } from './shared/set-popup';
+import { navigationMessagesEventSource } from './shared/navigation';
 
 setPopup('popup.html')
 
@@ -38,10 +39,9 @@ macros.onEditedStatusRequest(({ruleId}, sendResponse) => {
 	editors.getEditedStatus(ruleId).then(st => sendResponse(st));
 	return true;
 });
-macros.onRequestToInitializeEditor((msg, sendResponse) => {
-	var initialization = editors.getEditorInitialization();
-	sendResponse(initialization);
-});
 macros.onGetRuleByIdRequest((ruleId, sendResponse) => {
 	sendResponse(rules.getRule(ruleId));
+});
+macros.onEditorLoaded(({ruleId, otherNavigationId}, navigation) => {
+	console.log(`editor loaded for ruleId ${ruleId} and otherNavigationId ${otherNavigationId} at navigation`, navigation)
 });

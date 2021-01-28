@@ -9,8 +9,10 @@ class CrossBoundaryMessagesSource extends MessagesSource{
     constructor(type){
         super();
         this.type = type;
-        this.messageType = new MessageType(type);
+        var messageType = new MessageType(type);
+        this.messageType = messageType;
         this.source = runtimeMessagesSource.ofType(this.messageType);
+        this.messageFromNavigationSource = navigationMessagesEventSource.filter((msg) => messageType.filterMessage(msg)).map((msg, navigation, sendResponse) => [messageType.unpackMessage(msg), navigation, sendResponse]);
         this.subscriptionMessageTarget = runtimeMessagesTarget.ofType(subscriptionMessageType);
         this.navigationSubscriptionRequested = new Event();
         navigationMessagesEventSource
@@ -20,6 +22,10 @@ class CrossBoundaryMessagesSource extends MessagesSource{
             .listen((msg, navigation) => {
                 this.navigationSubscriptionRequested.dispatch(navigation);
             });
+    }
+
+    onMessageFromNavigation(listener, cancellationToken){
+        return this.messageFromNavigationSource.listen(listener, cancellationToken);
     }
     
     onMessage(listener, cancellationToken){
