@@ -36,7 +36,7 @@ class TabMessagesTarget extends MessagesTarget{
 		super();
 		this.tabId = tabId;
 		this.disappeared = new Event();
-		tabRemoved.when((tabId) => tabId === this.tabId).then(() => {
+		tabRemoved.when((_tabId) => _tabId === this.tabId).then(() => {
             this.disappeared.dispatch();
         });
 	}
@@ -48,7 +48,7 @@ class TabMessagesTarget extends MessagesTarget{
 		chrome.tabs.sendMessage(this.tabId, msg, resp => {
 			var lastError = chrome.runtime.lastError;
 			if(lastError){
-				resolver.reject(`error when sending message to tab ${tabId}. Message: ${JSON.stringify(msg)}. Error: ${lastError.message}`);
+				resolver.reject(`error when sending message to tab ${this.tabId}. Message: ${JSON.stringify(msg)}. Error: ${lastError.message}`);
 			}else{
 				resolver.resolve(resp);
 			}

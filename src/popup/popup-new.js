@@ -82,12 +82,15 @@
 						template: document.getElementById("ruleTemplate").innerHTML,
 						props: {
 							rule: Object,
-							rulecurrentlyexecuting: Object
+							rulecurrentlyexecuting: Object,
+							navigationid: String
+						},
+						data: function(){
+							return {
+								editable: false
+							};
 						},
 						computed: {
-							editable: function(){
-								return true;
-							},
 							isExecuting: function(){
 								return this.rulecurrentlyexecuting === this.rule;
 							},
@@ -97,6 +100,10 @@
 							hasExecuted: function(){
 								return this.rule.hasExecuted;
 							}
+						},
+						mounted: async function(){
+							var editedStatus = await macros.getEditedStatusAsync(this.rule.id);
+							this.editable = !editedStatus.edited || editedStatus.navigationId === this.navigationid;
 						},
 						methods: {
 							onExecuteClicked: function(){

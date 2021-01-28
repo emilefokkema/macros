@@ -34,6 +34,10 @@ macros.onNotifyPopupOpened(async () => {
 macros.onRequestToOpenEditor((req) => {
 	editors.openEditor(req);
 });
+macros.onEditedStatusRequest(({ruleId}, sendResponse) => {
+	editors.getEditedStatus(ruleId).then(st => sendResponse(st));
+	return true;
+});
 macros.onRequestToInitializeEditor((msg, sendResponse) => {
 	var initialization = editors.getEditorInitialization();
 	sendResponse(initialization);

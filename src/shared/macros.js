@@ -13,6 +13,7 @@ class Macros{
 		this.initializeEditorRequest = crossBoundaryEventFactory.create('initializeEditor');
 		this.ruleByIdRequest = crossBoundaryEventFactory.create('requestRuleById');
 		this.executeActionRequest = crossBoundaryEventFactory.create('executeAction');
+		this.editedStatusRequest = crossBoundaryEventFactory.create('requestEditedStatus');
 	}
 	getRulesForUrl(url){
 		return this.rulesForUrlRequest.target.sendMessageAsync(url);
@@ -67,6 +68,12 @@ class Macros{
 	}
 	onRequestToInitializeEditor(listener, cancellationToken){
 		return this.initializeEditorRequest.source.onMessage(listener, cancellationToken);
+	}
+	getEditedStatusAsync(ruleId){
+		return this.editedStatusRequest.target.sendMessageAsync({ruleId});
+	}
+	onEditedStatusRequest(listener, cancellationToken){
+		return this.editedStatusRequest.source.onMessage(listener, cancellationToken);
 	}
 }
 

@@ -102,6 +102,17 @@ class EditorCollection{
 	getEditorInitialization(){
 		return this.initializations.shift();
 	}
+	async getEditedStatus(ruleId){
+		await this.ensureLoaded();
+		var editorForRule = this.editors.find(e => e.ruleId === ruleId);
+		if(!editorForRule){
+			return {edited: false};
+		}
+		return {
+			edited: true,
+			navigationId: editorForRule.otherNavigation && editorForRule.otherNavigation.id
+		};
+	}
 }
 
 var editors = new EditorCollection();
