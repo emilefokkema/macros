@@ -234,4 +234,4 @@ class ContentScriptRule{
 	}
 }
 
-export { ContentScriptRule };
+export { ContentScriptRule, createAction };

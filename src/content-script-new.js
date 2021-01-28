@@ -1,6 +1,6 @@
 import { macros } from './shared/macros';
 import { CancellationToken } from './shared/events';
-import { ContentScriptRule } from './content-script-rules';
+import { ContentScriptRule, createAction } from './content-script-rules';
 
 var currentlySelectedElement;
 var rules = [];
@@ -66,6 +66,14 @@ var load = async function(){
 		if(rule){
 			rule.execute();
 		}
+		sendResponse({});
+	});
+	macros.onExecuteActionRequest(({navigationId: _navigationId, action: actionDefinition}, sendResponse) => {
+		if(_navigationId !== navigationId){
+			return;
+		}
+		var action = createAction(actionDefinition);
+		action.execute();
 		sendResponse({});
 	});
 	loaded = true;

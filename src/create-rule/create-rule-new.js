@@ -87,8 +87,10 @@
 						this.actions.splice(index, 1);
 					}
 				},
-				executeAction: function(action){
+				executeAction: async function(action){
 					this.runningAction = action;
+					await macros.executeActionAsync(this.otherNavigationId, action);
+					this.runningAction = undefined;
 				}
 			},
 			components: {

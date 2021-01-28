@@ -88,8 +88,12 @@ class CombinedMessagesTarget extends MessagesTarget{
 	getTargets(){
 		return [runtimeMessagesTarget].concat(this.tabMessagesTargets);
 	}
-	sendMessageAsync(msg){
-		return Promise.race(this.getTargets().map(t => t.sendMessageAsync(msg)));
+	async sendMessageAsync(msg){
+		var settled = await Promise.allSettled(this.getTargets().map(t => t.sendMessageAsync(msg)));
+		var fulfilled = settled.find(r => r.status === 'fulfilled');
+		if(fulfilled){
+			return fulfilled.value;
+		}
 	}
 	sendMessage(msg){
 		for(var target of this.getTargets()){
