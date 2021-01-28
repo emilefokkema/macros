@@ -34,6 +34,9 @@
 			onEditClicked: function({rule, navigationId}){
 				macros.requestToOpenEditor({ruleId: rule.id, navigationId});
 			},
+			addRule(){
+				macros.requestToOpenEditor({navigationId: this.selectedNavigation.navigationId});
+			},
 			goToManagementPage: function(){
 
 			},
@@ -51,9 +54,6 @@
 						this.selectedNavigation = navigation;
 					}
 				}
-			},
-			addRule(){
-
 			},
 			initialize: function(){
 				macros.onNotifyRulesForNavigation(navigation => {

@@ -81,6 +81,12 @@ class EditorCollection{
 				editorForRule.focus();
 				return;
 			}
+		}else if(otherNavigationId !== undefined){
+			var editorForOtherNavigation = this.editors.find(e => e.otherNavigation && e.otherNavigation.id === otherNavigationId);
+			if(editorForOtherNavigation){
+				editorForOtherNavigation.focus();
+				return;
+			}
 		}
 		this.initializations.push({otherNavigationId, ruleId});
 		var otherNavigation = undefined;
