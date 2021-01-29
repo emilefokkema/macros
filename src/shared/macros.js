@@ -1,4 +1,4 @@
-import { navigation } from './navigation';
+import { navigation } from './navigation/navigation-interface';
 import { crossBoundaryEventFactory } from './cross-boundary-events';
 
 class Macros{

@@ -95,6 +95,7 @@ class Button{
     }
     update(){
         if(this.notifications.length === 0){
+            buttonInteraction.setBadgeText({tabId: this.tabId, text: ``});
             this.disappear();
             return;
         }

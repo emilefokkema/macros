@@ -1,6 +1,6 @@
 import { MessageType, MessagesSource, MessagesTarget, Event } from './events';
 import { runtimeMessagesTarget, runtimeMessagesSource, CombinedMessagesTarget } from './runtime-messages';
-import { navigationMessagesEventSource } from './navigation';
+import { navigationMessagesEventSource } from './navigation/navigations';
 import { storage } from './storage'
 
 var subscriptionMessageType = new MessageType('crossBoundarySubscription');
