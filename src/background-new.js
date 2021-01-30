@@ -1,9 +1,8 @@
 import { macros } from './shared/macros';
 import { rules } from './rules-new';
 import { buttons } from './shared/button';
-import { editors } from './editors';
+import { editorCollection } from './editor-collection';
 import { setPopup } from './shared/set-popup';
-import { navigationMessagesEventSource } from './shared/navigation';
 
 setPopup('popup.html')
 
@@ -33,15 +32,15 @@ macros.onNotifyPopupOpened(async () => {
 	macros.requestToEmitRules({navigationIds: navigationsOnPopupTab.map(n => n.id)});
 });
 macros.onRequestToOpenEditor((req) => {
-	editors.openEditor(req);
+	editorCollection.openEditor(req);
 });
 macros.onEditedStatusRequest(({ruleId}, sendResponse) => {
-	editors.getEditedStatus(ruleId).then(st => sendResponse(st));
+	editorCollection.getEditedStatus(ruleId).then(st => sendResponse(st));
 	return true;
 });
 macros.onGetRuleByIdRequest((ruleId, sendResponse) => {
 	sendResponse(rules.getRule(ruleId));
 });
 macros.onEditorLoaded(({ruleId, otherNavigationId}, navigation) => {
-	console.log(`editor loaded for ruleId ${ruleId} and otherNavigationId ${otherNavigationId} at navigation`, navigation)
+	editorCollection.addOpenedEditor(ruleId, navigation, otherNavigationId);
 });

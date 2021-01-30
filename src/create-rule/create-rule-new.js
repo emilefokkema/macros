@@ -31,27 +31,28 @@
 						action: {type: "delete"}
 					});
 				},
+				removePage(){
+					this.hasPage = false;
+					var newUrl = macros.editors.replaceParamsInHref(location.href, undefined, this.ruleId);
+					history.pushState('',{}, newUrl);
+					macros.notifyEditorLoaded({ruleId: this.ruleId});
+				},
 				initialize: async function(){
-					var url = new URL(location.href);
-					var otherNavigationId = url.searchParams.get('navigationId');
-					var ruleId = url.searchParams.get('ruleId');
-					if(ruleId){
-						ruleId = parseInt(ruleId);
-					}
+					var {ruleId, navigationId: otherNavigationId} = macros.editors.getParamsFromHref(location.href);
 					if(ruleId){
 						this.ruleId = ruleId;
 						this.isNew = false;
 						var rule = await macros.getRuleById(ruleId);
 						this.setRule(rule);
 					}
-					if(otherNavigationId !== undefined){
+					if(otherNavigationId){
 						this.otherNavigationId = otherNavigationId;
 						var otherNavigation = await macros.navigation.getNavigation(otherNavigationId);
 						if(otherNavigation){
 							this.hasPage = true;
 							this.url = otherNavigation.url;
 							otherNavigation.disappeared.listen(() => {
-								this.hasPage = false;
+								this.removePage();
 							});
 						}
 					}

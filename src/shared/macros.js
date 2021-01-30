@@ -1,9 +1,11 @@
 import { navigation } from './navigation/navigation-interface';
 import { crossBoundaryEventFactory } from './cross-boundary-events';
+import { editors } from './editors';
 
 class Macros{
 	constructor(){
 		this.navigation = navigation;
+		this.editors = editors;
 		this.rulesForUrlRequest = crossBoundaryEventFactory.create('requestRulesForUrl');
 		this.popupOpenedNotification = crossBoundaryEventFactory.create('popupOpened');
 		this.emitRulesRequest = crossBoundaryEventFactory.create('emitRulesRequest');

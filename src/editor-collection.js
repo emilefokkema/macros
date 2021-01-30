@@ -1,26 +1,20 @@
 import { macros } from './shared/macros';
 import { storage } from './shared/storage';
 import { Event, CancellationToken } from './shared/events';
+import { editors } from './shared/editors';
 
 class Editor{
-	constructor(ruleId, ownNavigation, otherNavigation){
-		this.otherNavigation = otherNavigation;
+	constructor(ruleId, ownNavigation, otherNavigationId){
+		this.otherNavigationId = otherNavigationId;
 		this.ownNavigation = ownNavigation;
 		this.ruleId = ruleId;
 		this.disappeared = new Event();
-		this.updated = new Event();
 		this.initialize();
 	}
 	initialize(){
 		this.ownNavigation.disappeared.next().then(() => {
             this.disappeared.dispatch();
 		});
-		if(this.otherNavigation){
-			this.otherNavigation.disappeared.next().then(() => {
-				this.otherNavigation = undefined;
-				this.updated.dispatch();
-			});
-		}
 	}
 	focus(){
 		this.ownNavigation.focus();
@@ -29,7 +23,7 @@ class Editor{
 		return {
 			ruleId: this.ruleId,
 			ownNavigationId: this.ownNavigation && this.ownNavigation.id,
-			otherNavigationId: this.otherNavigation && this.otherNavigation.id
+			otherNavigationId: this.otherNavigationId
 		};
 	}
 	static async recreate({ruleId, ownNavigationId, otherNavigationId}){
@@ -37,8 +31,7 @@ class Editor{
 		if(!ownNavigation){
 			return null;
 		}
-		var otherNavigation = otherNavigationId ? await macros.navigation.getNavigation(otherNavigationId): undefined;
-		return new Editor(ruleId, ownNavigation, otherNavigation);
+		return new Editor(ruleId, ownNavigation, otherNavigationId);
 	}
 }
 
@@ -63,6 +56,10 @@ class EditorCollection{
 		}
 		this.loaded = true;
 	}
+	addOpenedEditor(ruleId, navigation, otherNavigationId){
+		this.addEditor(new Editor(ruleId, navigation, otherNavigationId));
+		this.save();
+	}
 	addEditor(editor){
 		var cancellationToken = new CancellationToken();
 		this.editors.push(editor);
@@ -70,7 +67,6 @@ class EditorCollection{
 			this.removeEditor(editor);
 			cancellationToken.cancel();
 		});
-		editor.updated.listen(() => this.save(), cancellationToken);
 	}
 	async openEditor({navigationId: otherNavigationId, ruleId}){
 		await this.ensureLoaded();
@@ -81,30 +77,13 @@ class EditorCollection{
 				return;
 			}
 		}else if(otherNavigationId !== undefined){
-			var editorForOtherNavigation = this.editors.find(e => e.otherNavigation && e.otherNavigation.id === otherNavigationId);
+			var editorForOtherNavigation = this.editors.find(e => e.otherNavigationId === otherNavigationId);
 			if(editorForOtherNavigation){
 				editorForOtherNavigation.focus();
 				return;
 			}
 		}
-		var otherNavigation = undefined;
-		if(otherNavigationId !== undefined){
-			otherNavigation = await macros.navigation.getNavigation(otherNavigationId);
-		}
-		var navigation = await macros.navigation.openTab(this.createEditorUrl(otherNavigationId, ruleId));
-		var editor = new Editor(ruleId, navigation, otherNavigation);
-		this.addEditor(editor);
-		this.save();
-	}
-	createEditorUrl(otherNavigationId, ruleId){
-		var searchParams = new URLSearchParams();
-		if(otherNavigationId){
-			searchParams.append('navigationId', otherNavigationId);
-		}
-		if(ruleId){
-			searchParams.append('ruleId', ruleId);
-		}
-		return `create-rule.html?${searchParams}`;
+		macros.navigation.openTab(editors.createEditorUrl(otherNavigationId, ruleId));
 	}
 	removeEditor(editor){
 		var index = this.editors.indexOf(editor);
@@ -121,11 +100,11 @@ class EditorCollection{
 		}
 		return {
 			edited: true,
-			navigationId: editorForRule.otherNavigation && editorForRule.otherNavigation.id
+			navigationId: editorForRule.otherNavigationId
 		};
 	}
 }
 
-var editors = new EditorCollection();
+var editorCollection = new EditorCollection();
 
-export { editors };
+export { editorCollection };

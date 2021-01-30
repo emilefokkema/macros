@@ -73,11 +73,7 @@ var navigation = {
         return getNavigationHistoryIdMessageTarget.sendMessageAsync({});
     },
     openTab(url){
-        var resolver = new PromiseResolver();
-        chrome.tabs.create({url}, tab => {
-            navigationCreated.when(n => n.tabId === tab.id).then(([n]) => resolver.resolve(n));
-        });
-        return resolver.promise;
+        chrome.tabs.create({url});
     },
     getNavigation(navigationId){
         var resolver = new PromiseResolver();
