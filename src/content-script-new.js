@@ -49,8 +49,24 @@ var setRules = function(ruleDefinitions){
 
 var load = async function(){
 	url = location.href;
-	navigationId = await macros.navigation.getId();
+	var navigationHistoryId;
+	[navigationId, navigationHistoryId] = await Promise.all([macros.navigation.getId(), macros.navigation.getHistoryId()]);
+	console.log(`navigation id '${navigationId}', navigation history id '${navigationHistoryId}'`)
 	setRules(await macros.getRulesForUrl(url));
+	macros.navigation.onReplaced(async ({navigationHistoryId: _navigationHistoryId, newNavigationId}) => {
+		if(_navigationHistoryId !== navigationHistoryId){
+			return;
+		}
+		if(newNavigationId === navigationId){
+			console.log(`the navigation was replaced with one that has the same id!`);
+			return;
+		}
+		console.log(`navigation replaced. setting url, navigationId and rules again`)
+		url = location.href;
+		navigationId = newNavigationId;
+		setRules(await macros.getRulesForUrl(url));
+		notify();
+	});
 	macros.onRequestToEmitRules(({navigationIds}) => {
 		if(!navigationIds.some(id => navigationId === id)){
 			return;

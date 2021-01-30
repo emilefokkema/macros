@@ -31,6 +31,24 @@ class EventSource {
 		return promise;
 	}
 }
+class CombinedEventSource extends EventSource{
+	constructor(sources){
+		super();
+		this.sources = sources;
+	}
+	listen(listener, cancellationToken){
+		var listeners = [];
+		for(let source of this.sources){
+			listeners.push(source.listen(listener, cancellationToken));
+		}
+		var cancel = () => {
+			for(let _listener of listeners){
+				_listener.cancel();
+			}
+		};
+		return {cancel};
+	}
+}
 class AsyncMappedEventSource extends EventSource{
 	constructor(eventSource, mapAsync){
 		super();
@@ -261,4 +279,4 @@ class MessagesTargetOfType extends MessagesTarget{
 	}
 }
 
-export {EventSource, Event, CancellationToken, FilteredEventSource, MessageSender, MessageType, MessagesSource, MessagesTarget, MessagesSourceAndTarget};
+export {EventSource, Event, CancellationToken, FilteredEventSource, MessageSender, MessageType, MessagesSource, MessagesTarget, MessagesSourceAndTarget, CombinedEventSource};
