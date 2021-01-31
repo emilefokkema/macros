@@ -15,6 +15,9 @@ class EventSource {
 	map(map){
 		return new MappedEventSourceWithDelegate(this, map);
 	}
+	once(){
+		return new OneEventSource(this);
+	}
 	mapAsync(mapAsync){
 		return new AsyncMappedEventSource(this, mapAsync);
 	}
@@ -29,6 +32,27 @@ class EventSource {
 			}
 		}, cancellationToken);
 		return promise;
+	}
+	next(cancellationToken){
+		return this.when(() => true, cancellationToken)
+	}
+}
+class OneEventSource extends EventSource{
+	constructor(source){
+		super();
+		this.source = source;
+		this.hasEmitted = false;
+	}
+	listen(listener, cancellationToken){
+		var self = this;
+		var sub = this.source.listen(function(){
+			var args = Array.prototype.slice.apply(arguments);
+			self.hasEmitted = true;
+			var result = listener(...args);
+			sub.cancel();
+			return result;
+		}, cancellationToken);
+		return sub;
 	}
 }
 class CombinedEventSource extends EventSource{
@@ -121,9 +145,6 @@ class Event extends EventSource{
 		if(index > -1){
 			this.listeners.splice(index, 1)
 		}
-	}
-	next(cancellationToken){
-		return this.when(() => true, cancellationToken)
 	}
 	dispatch(){
 		var args = Array.prototype.slice.apply(arguments);

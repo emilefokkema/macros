@@ -1,5 +1,5 @@
 import { PromiseResolver } from '../promise-resolver';
-import { Event, CancellationToken } from '../events';
+import { CancellationToken, CombinedEventSource } from '../events';
 import { runtimeMessagesTarget, TabMessagesTarget, runtimeMessagesEventSource } from '../runtime-messages';
 import { tabRemoved } from '../tab-removed';
 import { webNavigationCommitted, historyStateUpdatedOrReferenceFramentUpdated } from './navigation-event-sources';
@@ -41,20 +41,12 @@ class Navigation{
         this.frameId = frameId;
         this.parentFrameIds = parentFrameIds;
         this.messagesTarget = messagesTarget;
-        this.disappeared = new Event();
         this.cancellationToken = new CancellationToken();
-        this.initialize();
-    }
-    initialize(){
-        webNavigationCommitted.when(({tabId, frameId }) => tabId === this.tabId && this.parentFrameIds.some(fid => fid === frameId), this.cancellationToken).then(() => {
-            this.disappear();
-        });
-        tabRemoved.when((tabId) => tabId === this.tabId, this.cancellationToken).then(() => {
-            this.disappear();
-        });
-        historyStateUpdatedOrReferenceFramentUpdated.when(({tabId, frameId}) => tabId === this.tabId && frameId === this.frameId, this.cancellationToken).then(() => {
-            this.disappear();
-        });
+        this.disappeared = new CombinedEventSource([
+            webNavigationCommitted.filter(({tabId, frameId }) => tabId === this.tabId && this.parentFrameIds.some(fid => fid === frameId)),
+            tabRemoved.filter((tabId) => tabId === this.tabId),
+            historyStateUpdatedOrReferenceFramentUpdated.filter(({tabId, frameId}) => tabId === this.tabId && frameId === this.frameId)
+        ]).once();
     }
     focus(){
         chrome.tabs.update(this.tabId, {active: true});
