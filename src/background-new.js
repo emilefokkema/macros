@@ -41,6 +41,9 @@ macros.onEditedStatusRequest(({ruleId}, sendResponse) => {
 macros.onGetRuleByIdRequest((ruleId, sendResponse) => {
 	sendResponse(rules.getRule(ruleId));
 });
+macros.onGetAllRulesRequest((_, sendResponse) => {
+	sendResponse(rules.getAll());
+});
 macros.onEditorLoaded(({ruleId, otherNavigationId}, navigation) => {
 	editorCollection.addOpenedEditor(ruleId, navigation, otherNavigationId);
 });

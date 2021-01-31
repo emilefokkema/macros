@@ -12,7 +12,7 @@ copyFile('./src/create-rule/create-rule-new.html', './dist/create-rule.html');
 
 copyFile('./src/management/management.css', './dist/management.css');
 copyFile('./src/management/management-new.js', './dist/management.js');
-copyFile('./src/management/management.html', './dist/management.html');
+copyFile('./src/management/management-new.html', './dist/management.html');
 
 copyFile('./src/popup/popup.css', './dist/popup.css');
 copyFile('./src/popup/popup-new.js', './dist/popup.js');

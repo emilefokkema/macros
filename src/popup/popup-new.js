@@ -38,7 +38,7 @@
 				macros.requestToOpenEditor({navigationId: this.selectedNavigation.navigationId});
 			},
 			goToManagementPage: function(){
-
+				macros.openManagementPage();
 			},
 			addNavigation(navigation){
 				navigation.origin = new URL(navigation.url).origin;

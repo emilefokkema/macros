@@ -13,6 +13,7 @@ class Macros{
 		this.executeRuleMessage = crossBoundaryEventFactory.create('executeRule');
 		this.openEditorRequest = crossBoundaryEventFactory.create('openEditor');
 		this.ruleByIdRequest = crossBoundaryEventFactory.create('requestRuleById');
+		this.allRulesRequest = crossBoundaryEventFactory.create('requestAllRules');
 		this.executeActionRequest = crossBoundaryEventFactory.create('executeAction');
 		this.editedStatusRequest = crossBoundaryEventFactory.create('requestEditedStatus');
 		this.editorLoadedMessage = crossBoundaryEventFactory.create('editorLoaded');
@@ -23,8 +24,14 @@ class Macros{
 	getRuleById(ruleId){
 		return this.ruleByIdRequest.target.sendMessageAsync(ruleId);
 	}
+	getAllRules(){
+		return this.allRulesRequest.target.sendMessageAsync({});
+	}
 	onGetRuleByIdRequest(listener, cancellationToken){
 		return this.ruleByIdRequest.source.onMessage(listener, cancellationToken);
+	}
+	onGetAllRulesRequest(listener, cancellationToken){
+		return this.allRulesRequest.source.onMessage(listener, cancellationToken);
 	}
 	onRequestRulesForUrl(listener, cancellationToken){
 		return this.rulesForUrlRequest.source.onMessage(listener, cancellationToken);
@@ -64,6 +71,9 @@ class Macros{
 	}
 	requestToOpenEditor(req){
 		this.openEditorRequest.target.sendMessage(req);
+	}
+	openManagementPage(){
+		this.navigation.openTab('management.html')
 	}
 	getEditedStatusAsync(ruleId){
 		return this.editedStatusRequest.target.sendMessageAsync({ruleId});

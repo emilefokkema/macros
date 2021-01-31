@@ -60,6 +60,7 @@ class RuleCollection{
 		this.ruleUpdated.dispatch();
 	}
 	getAll(){
+		this.ensureLoaded();
 		return this.rules.slice();
 	}
 	getRule(ruleId){
