@@ -32,14 +32,28 @@
 			rule: {
 				template: document.getElementById("ruleTemplate").innerHTML,
 				props: {
-					rule: Object
+					rule: Object,
+					deletable: true
+				},
+				mounted: function(){
+					this.initialize();
 				},
 				methods: {
+					async initialize(){
+						var editedStatus = await macros.getEditedStatusAsync(this.rule.id);
+						this.deletable = !editedStatus.edited;
+						macros.onEditedStatusChanged(({ruleId, edited}) => {
+							if(ruleId !== this.rule.id){
+								return;
+							}
+							this.deletable = !edited;
+						});
+					},
 					onDeleteClicked: function(){
 						this.$emit('deleteruleclicked')
 					},
 					onEditClicked: function(){
-						this.$emit('editruleclicked')
+						macros.requestToOpenEditor({ruleId: this.rule.id});
 					}
 				}
 			}

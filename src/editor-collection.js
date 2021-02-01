@@ -59,13 +59,12 @@ class EditorCollection{
 	addOpenedEditor(ruleId, navigation, otherNavigationId){
 		this.addEditor(new Editor(ruleId, navigation, otherNavigationId));
 		this.save();
+		macros.notifyEditedStatusChanged({ruleId, otherNavigationId, edited: true});
 	}
 	addEditor(editor){
-		var cancellationToken = new CancellationToken();
 		this.editors.push(editor);
 		editor.disappeared.next().then(() => {
 			this.removeEditor(editor);
-			cancellationToken.cancel();
 		});
 	}
 	async openEditor({navigationId: otherNavigationId, ruleId}){
@@ -89,6 +88,7 @@ class EditorCollection{
 		var index = this.editors.indexOf(editor);
 		if(index > -1){
 			this.editors.splice(index, 1);
+			macros.notifyEditedStatusChanged({ruleId: editor.ruleId, edited: false});
 			this.save();
 		}
 	}
