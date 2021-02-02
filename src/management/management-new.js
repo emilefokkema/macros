@@ -25,8 +25,12 @@
 			rule: {
 				template: document.getElementById("ruleTemplate").innerHTML,
 				props: {
-					rule: Object,
-					deletable: true
+					rule: Object
+				},
+				data: function(){
+					return {
+						deletable: true
+					};
 				},
 				mounted: function(){
 					this.initialize();
