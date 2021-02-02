@@ -53,6 +53,11 @@ var load = async function(){
 	[navigationId, navigationHistoryId] = await Promise.all([macros.navigation.getId(), macros.navigation.getHistoryId()]);
 	console.log(`navigation id '${navigationId}', navigation history id '${navigationHistoryId}'`)
 	setRules(await macros.getRulesForUrl(url));
+	macros.onRuleAdded(async () => {
+		console.log(`a rule was added, setting rules again`)
+		setRules(await macros.getRulesForUrl(url));
+		notify();
+	});
 	macros.navigation.onReplaced(async ({navigationHistoryId: _navigationHistoryId, newNavigationId}) => {
 		if(_navigationHistoryId !== navigationHistoryId){
 			return;

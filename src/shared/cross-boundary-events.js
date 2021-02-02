@@ -58,7 +58,9 @@ class CrossBoundarySubscriptionCollection{
         this.subscriptions = [];
     }
     save(){
-        storage.setItem('crossBoundarySubscriptions', this.subscriptions.filter(s => !s.empty))
+        var nonEmpty = this.subscriptions.filter(s => !s.empty);
+        console.log(`saving crossBoundarySubscriptions: ${nonEmpty.length} in number`)
+        storage.setItem('crossBoundarySubscriptions', nonEmpty)
     }
     addSubscription(type, target){
         if(!this.subscriptions.some(s => s.type === type)){

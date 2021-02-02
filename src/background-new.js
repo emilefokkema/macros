@@ -54,3 +54,7 @@ macros.onDeleteRuleRequest((ruleId, sendResponse) => {
 macros.onEditorLoaded(({ruleId, otherNavigationId}, navigation) => {
 	editorCollection.addOpenedEditor(ruleId, navigation, otherNavigationId);
 });
+
+rules.ruleAdded.listen(() => {
+	macros.notifyRuleAdded();
+});
