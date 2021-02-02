@@ -18,6 +18,8 @@ class Macros{
 		this.editedStatusRequest = crossBoundaryEventFactory.create('requestEditedStatus');
 		this.editorLoadedMessage = crossBoundaryEventFactory.create('editorLoaded');
 		this.editedStatusChangedMessage = crossBoundaryEventFactory.create('editedStatusChanged');
+		this.saveRuleRequest = crossBoundaryEventFactory.create('requestSaveRule');
+		this.deleteRuleRequest = crossBoundaryEventFactory.create('requestDeleteRule');
 	}
 	getRulesForUrl(url){
 		return this.rulesForUrlRequest.target.sendMessageAsync(url);
@@ -93,6 +95,18 @@ class Macros{
 	}
 	notifyEditorLoaded(msg){
 		this.editorLoadedMessage.target.sendMessage(msg);
+	}
+	saveRuleAsync(rule){
+		return this.saveRuleRequest.target.sendMessageAsync(rule);
+	}
+	onSaveRuleRequest(listener, cancellationToken){
+		return this.saveRuleRequest.source.onMessage(listener, cancellationToken);
+	}
+	deleteRuleAsync(ruleId){
+		return this.deleteRuleRequest.target.sendMessageAsync(ruleId);
+	}
+	onDeleteRuleRequest(listener, cancellationToken){
+		return this.deleteRuleRequest.source.onMessage(listener, cancellationToken);
 	}
 }
 

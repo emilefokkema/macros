@@ -51,6 +51,9 @@
 						if(otherNavigation){
 							this.hasPage = true;
 							this.url = otherNavigation.url;
+							if(this.isNew){
+								this.urlPattern = this.url;
+							}
 							otherNavigation.disappeared.listen(() => {
 								this.removePage();
 							});
@@ -76,6 +79,24 @@
 					this.actions = rule.actions;
 					this.automatic = !!rule.automatic;
 				},
+				saveRule: async function(){
+					var rule = {
+						name: this.name,
+						urlPattern: this.urlPattern,
+						automatic: !!this.automatic,
+						actions: this.actions,
+						id: this.ruleId
+					};
+					var ruleId = await macros.saveRuleAsync(rule);
+					if(this.isNew){
+						this.isNew = false;
+						this.ruleId = ruleId;
+						this.setTitle();
+						var newUrl = macros.editors.replaceParamsInHref(location.href, this.otherNavigationId, this.ruleId);
+						history.pushState('',{}, newUrl);
+						macros.notifyEditorLoaded({ruleId: this.ruleId, otherNavigationId: this.otherNavigationId});
+					}
+				},
 				setTitle: function(){
 					document.title = `Edit '${this.name}'`
 				},
@@ -84,9 +105,6 @@
 					if(otherNavigation){
 						otherNavigation.focus();
 					}
-				},
-				saveRule: function(){
-
 				},
 				deleteAction: function(action){
 					var index = this.actions.indexOf(action);

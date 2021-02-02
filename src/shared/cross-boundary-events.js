@@ -77,6 +77,7 @@ class CrossBoundarySubscriptionCollection{
             return;
         }
         await subscription.load(storedForType);
+        this.save();
     }
 }
 

@@ -14,17 +14,10 @@
 			initialize: async function(){
 					this.rules = await macros.getAllRules();
 			},
-			setNonDeletable: function(nonDeletableRuleIds){
-				for(var rule of this.rules){
-					rule.deletable = !nonDeletableRuleIds.some(id => id === rule.ruleId);
-				}
-			},
-			onEditRuleClicked: function(rule){
-				
-			},
-			onDeleteRuleClicked: function(rule){
+			onDeleteRuleClicked: async function(rule){
 				if(confirm(`Are you sure you want to delete '${rule.name}'?`)){
-					
+					await macros.deleteRuleAsync(rule.id);
+					this.rules = await macros.getAllRules();
 				}
 			}
 		},

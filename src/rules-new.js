@@ -32,12 +32,21 @@ class RuleCollection{
 		storage.setItem('rules', this.rules);
 	}
 	deleteRule(ruleId){
+		this.ensureLoaded();
 		var index = this.rules.findIndex(r => r.id === ruleId);
 		if(index > -1){
 			this.rules.splice(index, 1);
 			this.save();
-			this.ruleDeleted.dispatch();
+			this.ruleDeleted.dispatch({ruleId});
 		}
+	}
+	saveRule(rule){
+		this.ensureLoaded();
+		if(rule.id === undefined){
+			return this.saveNewRule(rule);
+		}
+		this.updateRule(rule);
+		return rule.id;
 	}
 	saveNewRule(rule){
 		rule.id = ++this.latestRuleId;
@@ -57,7 +66,7 @@ class RuleCollection{
 		this.rules.splice(index, 1);
 		this.rules.push(rule);
 		this.save();
-		this.ruleUpdated.dispatch();
+		this.ruleUpdated.dispatch({ruleId: rule.id});
 	}
 	getAll(){
 		this.ensureLoaded();

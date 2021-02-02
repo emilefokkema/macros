@@ -44,6 +44,13 @@ macros.onGetRuleByIdRequest((ruleId, sendResponse) => {
 macros.onGetAllRulesRequest((_, sendResponse) => {
 	sendResponse(rules.getAll());
 });
+macros.onSaveRuleRequest((rule, sendResponse) => {
+	sendResponse(rules.saveRule(rule));
+});
+macros.onDeleteRuleRequest((ruleId, sendResponse) => {
+	rules.deleteRule(ruleId);
+	sendResponse({});
+});
 macros.onEditorLoaded(({ruleId, otherNavigationId}, navigation) => {
 	editorCollection.addOpenedEditor(ruleId, navigation, otherNavigationId);
 });
