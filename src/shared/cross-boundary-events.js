@@ -4,6 +4,21 @@ import { navigationMessagesEventSource } from './navigation/navigations';
 import { storage } from './storage'
 
 var subscriptionMessageType = new MessageType('crossBoundarySubscription');
+var targetRequestType = new MessageType('requestTarget');
+var subscriptionMessageTarget = runtimeMessagesTarget.ofType(subscriptionMessageType);
+var targetRequestTarget = runtimeMessagesTarget.ofType(targetRequestType);
+
+var subscriptionMessageSource = navigationMessagesEventSource
+    .filter(msg => subscriptionMessageType.filterMessage(msg))
+    .map((msg, navigation) => [{type: subscriptionMessageType.unpackMessage(msg).messageType, target: navigation.messagesTarget}]);
+var targetRequestSource = runtimeMessagesSource.ofType(targetRequestType);
+
+var managed = false;
+
+async function getCombinedTargetAsync(type){
+    var serialized = await targetRequestTarget.sendMessageAsync({type});
+    return await CombinedMessagesTarget.create(serialized);
+}
 
 class CrossBoundaryMessagesSource extends MessagesSource{
     constructor(type){
@@ -11,17 +26,8 @@ class CrossBoundaryMessagesSource extends MessagesSource{
         this.type = type;
         var messageType = new MessageType(type);
         this.messageType = messageType;
-        this.source = runtimeMessagesSource.ofType(this.messageType);
+        this.source = runtimeMessagesSource.ofType(messageType);
         this.messageFromNavigationSource = navigationMessagesEventSource.filter((msg) => messageType.filterMessage(msg)).map((msg, navigation, sendResponse) => [messageType.unpackMessage(msg), navigation, sendResponse]);
-        this.subscriptionMessageTarget = runtimeMessagesTarget.ofType(subscriptionMessageType);
-        this.navigationSubscriptionRequested = new Event();
-        navigationMessagesEventSource
-            .filter(msg => subscriptionMessageType.filterMessage(msg))
-            .map((msg, navigation) => [subscriptionMessageType.unpackMessage(msg), navigation])
-            .filter((msg) => msg.messageType === this.type)
-            .listen((msg, navigation) => {
-                this.navigationSubscriptionRequested.dispatch(navigation);
-            });
     }
 
     onMessageFromNavigation(listener, cancellationToken){
@@ -29,7 +35,7 @@ class CrossBoundaryMessagesSource extends MessagesSource{
     }
     
     onMessage(listener, cancellationToken){
-        this.subscriptionMessageTarget.sendMessage({messageType: this.type});
+        subscriptionMessageTarget.sendMessage({messageType: this.type});
         return this.source.onMessage(listener, cancellationToken);
     }
 }
@@ -48,38 +54,52 @@ class CrossBoundarySubscriptionForType{
             target: this.combinedTarget 
         };
     }
-    load({target}){
-        return this.combinedTarget.load(target);
+    addTarget(target){
+        this.combinedTarget.addTarget(target);
+    }
+    static createNew(type){
+        return new CrossBoundarySubscriptionForType(type, new CombinedMessagesTarget());
+    }
+    static async create({type, target}){
+        var combinedTarget = await CombinedMessagesTarget.create(target);
+        return new CrossBoundarySubscriptionForType(type, combinedTarget);
     }
 }
 
 class CrossBoundarySubscriptionCollection{
     constructor(){
         this.subscriptions = [];
+        this.loadingPromise = undefined;
     }
     save(){
         var nonEmpty = this.subscriptions.filter(s => !s.empty);
-        console.log(`saving crossBoundarySubscriptions: ${nonEmpty.length} in number`)
         storage.setItem('crossBoundarySubscriptions', nonEmpty)
     }
-    addSubscription(type, target){
-        if(!this.subscriptions.some(s => s.type === type)){
-            var subscription = new CrossBoundarySubscriptionForType(type, target);
+    async ensureLoaded(){
+        await (this.loadingPromise = this.loadingPromise || this.load());
+    }
+    async load(){
+        var saved = storage.getItem('crossBoundarySubscriptions') || [];
+        var subscriptions = await Promise.all(saved.map(s => CrossBoundarySubscriptionForType.create(s)));
+        for(let subscription of subscriptions){
             this.subscriptions.push(subscription);
             subscription.updated.listen(() => this.save());
         }
     }
-    async loadSubscriptionForType(type){
+    async addTargetForType(type, target){
+        await this.ensureLoaded();
         var subscription = this.subscriptions.find(s => s.type === type);
         if(!subscription){
-            return;
+            subscription = CrossBoundarySubscriptionForType.createNew(type);
+            this.subscriptions.push(subscription);
+            subscription.updated.listen(() => this.save());
         }
-        var storedForType = (storage.getItem('crossBoundarySubscriptions') || []).find(s => s.type === type);
-        if(!storedForType){
-            return;
-        }
-        await subscription.load(storedForType);
-        this.save();
+        subscription.addTarget(target);
+    }
+    async getTargetForType(type){
+        await this.ensureLoaded();
+        var subscription = this.subscriptions.find(s => s.type === type) || CrossBoundarySubscriptionForType.createNew(type);
+        return subscription.combinedTarget;
     }
 }
 
@@ -89,45 +109,50 @@ class CrossBoundaryMessagesTarget extends MessagesTarget{
     constructor(type){
         super();
         this.type = type;
-        this.combinedTarget = new CombinedMessagesTarget();
-        subscriptionCollection.addSubscription(type, this.combinedTarget);
-        this.target = this.combinedTarget.ofType(new MessageType(type));
-        this.loaded = false;
-        this.loadingPromise = undefined;
+        this.messageType = new MessageType(type);
     }
-    async ensureLoaded(){
-        if(this.loaded){
-            return;
-        }
-        await (this.loadingPromise = this.loadingPromise || subscriptionCollection.loadSubscriptionForType(this.type));
-        this.loaded = true;
+    async getTarget(){
+        var target = managed ? await subscriptionCollection.getTargetForType(this.type) : await getCombinedTargetAsync(this.type);
+        return target.ofType(this.messageType);
     }
+    
     async sendMessageAsync(msg){
-        await this.ensureLoaded();
-        return this.target.sendMessageAsync(msg);
+        var target = await this.getTarget();
+        return target.sendMessageAsync(msg);
     }
 	sendMessage(msg){
-        this.ensureLoaded().then(() => this.target.sendMessage(msg));
-    }
-    addTarget(target){
-        this.ensureLoaded().then(() => this.combinedTarget.addTarget(target));
+        this.getTarget().then(t => t.sendMessage(msg));        
     }
 }
 
 class CrossBoundaryEvent{
-    constructor(type){
-        this.target = new CrossBoundaryMessagesTarget(type);
-        this.source = new CrossBoundaryMessagesSource(type);
-        this.source.navigationSubscriptionRequested.listen((navigation) => {
-            this.target.addTarget(navigation.messagesTarget);
-        });
+    constructor(target, source){
+        this.target = target;
+        this.source = source;
     }
 }
 
 class Factory{
-
+    constructor(){
+        this.subscriptionMessageSubscription = subscriptionMessageSource.listen(({type, target}) => {
+            if(!managed){
+                this.subscriptionMessageSubscription.cancel();
+                return;
+            }
+            subscriptionCollection.addTargetForType(type, target);
+        });
+    }
     create(type){
-        return new CrossBoundaryEvent(type);
+        var target = new CrossBoundaryMessagesTarget(type);
+        var source = new CrossBoundaryMessagesSource(type);
+        return new CrossBoundaryEvent(target, source);
+    }
+    manageSubscriptions(){
+        managed = true;
+        targetRequestSource.onMessage(({type}, sendResponse) => {
+            subscriptionCollection.getTargetForType(type).then(sendResponse);
+            return true;
+        });
     }
 }
 

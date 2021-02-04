@@ -4,6 +4,8 @@ import { buttons } from './shared/button';
 import { editorCollection } from './editor-collection';
 import { setPopup } from './shared/set-popup';
 
+macros.forBackground();
+
 setPopup('popup.html')
 
 async function tryExecuteContentScript(navigation){

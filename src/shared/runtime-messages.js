@@ -55,6 +55,12 @@ class TabMessagesTarget extends MessagesTarget{
 		});
 		return resolver.promise;
 	}
+	static async tryCreate(tabId){
+		if(await tabExists(tabId)){
+			return new TabMessagesTarget(tabId);
+		}
+		return null;
+	}
 }
 
 class RuntimeMessagesTarget extends MessagesTarget{
@@ -104,14 +110,6 @@ class CombinedMessagesTarget extends MessagesTarget{
 	toJSON(){
 		return this.tabMessagesTargets.map(tt => tt.tabId);
 	}
-	async load(tabIds){
-		var existingTabIds = (await Promise.all(tabIds.map(async (id) => ({id: id, exists: await tabExists(id)})))).filter(r => r.exists).map(r => r.id);
-		for(let existingTabId of existingTabIds){
-			var target = new TabMessagesTarget(existingTabId);
-			this.tabMessagesTargets.push(target);
-			target.disappeared.listen(() => this.removeTarget(target));
-		}
-	}
 	removeTarget(target){
 		var index = this.tabMessagesTargets.indexOf(target);
 		if(index > -1){
@@ -125,6 +123,14 @@ class CombinedMessagesTarget extends MessagesTarget{
 			target.disappeared.listen(() => this.removeTarget(target));
 			this.updated.dispatch();
 		}
+	}
+	static async create(tabIds){
+		var result = new CombinedMessagesTarget();
+		var tabMessagesTargets = (await Promise.all(tabIds.map(async (id) => TabMessagesTarget.tryCreate(id)))).filter(t => !!t);
+		for(let tabMessagesTarget of tabMessagesTargets){
+			result.addTarget(tabMessagesTarget);
+		}
+		return result;
 	}
 }
 

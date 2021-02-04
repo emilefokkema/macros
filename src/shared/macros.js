@@ -22,6 +22,9 @@ class Macros{
 		this.deleteRuleRequest = crossBoundaryEventFactory.create('requestDeleteRule');
 		this.ruleAddedNotification = crossBoundaryEventFactory.create('notifyRuleAdded');
 	}
+	forBackground(){
+		crossBoundaryEventFactory.manageSubscriptions();
+	}
 	getRulesForUrl(url){
 		return this.rulesForUrlRequest.target.sendMessageAsync(url);
 	}
