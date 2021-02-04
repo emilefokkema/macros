@@ -42,9 +42,6 @@ var setRules = function(ruleDefinitions){
 		rule.hasSomethingToDoChanged.listen(() => notify(), cancellationToken);
 		return rule;
 	});
-	if(rules.length > 0){
-		console.log(`navigation at ${url} has rules`, rules)
-	}
 };
 
 var load = async function(){
@@ -54,8 +51,16 @@ var load = async function(){
 	console.log(`navigation id '${navigationId}', navigation history id '${navigationHistoryId}'`)
 	setRules(await macros.getRulesForUrl(url));
 	macros.onRuleAdded(async () => {
-		console.log(`a rule was added, setting rules again`)
-		setRules(await macros.getRulesForUrl(url));
+		
+		var newRules = await macros.getRulesForUrl(url);
+		var newRuleDefinition = newRules.find(r => !rules.some(rr => rr.id === r.id));
+		if(!newRuleDefinition){
+			return;
+		}
+		console.log(`a rule was added for ${url}`)
+		var newRule = new ContentScriptRule(newRuleDefinition);
+		newRule.hasSomethingToDoChanged.listen(() => notify(), cancellationToken);
+		rules.push(newRule);
 		notify();
 	});
 	macros.navigation.onReplaced(async ({navigationHistoryId: _navigationHistoryId, newNavigationId}) => {
