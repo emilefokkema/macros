@@ -51,7 +51,6 @@ var load = async function(){
 	console.log(`navigation id '${navigationId}', navigation history id '${navigationHistoryId}'`)
 	setRules(await macros.getRulesForUrl(url));
 	macros.onRuleAdded(async () => {
-		
 		var newRules = await macros.getRulesForUrl(url);
 		var newRuleDefinition = newRules.find(r => !rules.some(rr => rr.id === r.id));
 		if(!newRuleDefinition){
@@ -61,6 +60,34 @@ var load = async function(){
 		var newRule = new ContentScriptRule(newRuleDefinition);
 		newRule.hasSomethingToDoChanged.listen(() => notify(), cancellationToken);
 		rules.push(newRule);
+		notify();
+	});
+	macros.onRuleDeleted(({ruleId}) => {
+		var ruleIndexToRemove = rules.findIndex(r => r.id === ruleId);
+		if(ruleIndexToRemove === -1){
+			return;
+		}
+		console.log(`removing rule ${ruleId}`)
+		var [ruleToRemove] = rules.splice(ruleIndexToRemove, 1);
+		ruleToRemove.dispose();
+		notify();
+	});
+	macros.onRuleUpdated(async ({ruleId}) => {
+		var ruleIndexToUpdate = rules.findIndex(r => r.id === ruleId);
+		if(ruleIndexToUpdate === -1){
+			return;
+		}
+		console.log(`replacing rule ${ruleId}`);
+		var replacementRuleDefinition = (await macros.getRulesForUrl(url)).find(r => r.id === ruleId);
+		var oldRule;
+		if(replacementRuleDefinition){
+			var replacementRule = new ContentScriptRule(replacementRuleDefinition);
+			replacementRule.hasSomethingToDoChanged.listen(() => notify(), cancellationToken);
+			[oldRule] = rules.splice(ruleIndexToUpdate, 1, replacementRule);
+		}else{
+			[oldRule] = rules.splice(ruleIndexToUpdate, 1);
+		}
+		oldRule.dispose();
 		notify();
 	});
 	macros.navigation.onReplaced(async ({navigationHistoryId: _navigationHistoryId, newNavigationId}) => {

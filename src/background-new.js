@@ -60,3 +60,9 @@ macros.onEditorLoaded(({ruleId, otherNavigationId}, navigation) => {
 rules.ruleAdded.listen(() => {
 	macros.notifyRuleAdded();
 });
+rules.ruleDeleted.listen((msg) => {
+	macros.notifyRuleDeleted(msg);
+});
+rules.ruleUpdated.listen((msg) => {
+	macros.notifyRuleUpdated(msg);
+});

@@ -21,6 +21,8 @@ class Macros{
 		this.saveRuleRequest = crossBoundaryEventFactory.create('requestSaveRule');
 		this.deleteRuleRequest = crossBoundaryEventFactory.create('requestDeleteRule');
 		this.ruleAddedNotification = crossBoundaryEventFactory.create('notifyRuleAdded');
+		this.ruleDeletedNotification = crossBoundaryEventFactory.create('notifyRuleDeleted');
+		this.ruleUpdatedNotification = crossBoundaryEventFactory.create('notifyRuleUpdated');
 	}
 	forBackground(){
 		crossBoundaryEventFactory.manageSubscriptions();
@@ -117,6 +119,18 @@ class Macros{
 	}
 	onRuleAdded(listener, cancellationToken){
 		return this.ruleAddedNotification.source.onMessage(listener, cancellationToken);
+	}
+	notifyRuleDeleted(msg){
+		this.ruleDeletedNotification.target.sendMessage(msg);
+	}
+	onRuleDeleted(listener, cancellationToken){
+		return this.ruleDeletedNotification.source.onMessage(listener, cancellationToken);
+	}
+	notifyRuleUpdated(msg){
+		this.ruleUpdatedNotification.target.sendMessage(msg);
+	}
+	onRuleUpdated(listener, cancellationToken){
+		return this.ruleUpdatedNotification.source.onMessage(listener, cancellationToken);
 	}
 }
 
