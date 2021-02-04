@@ -95,7 +95,7 @@
 								return this.rulecurrentlyexecuting === this.rule;
 							},
 							canExecute: function(){
-								return this.rule.hasSomethingToDo;
+								return this.rule.hasSomethingToDo && !this.rulecurrentlyexecuting;
 							},
 							hasExecuted: function(){
 								return this.rule.hasExecuted;
