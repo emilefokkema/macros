@@ -1,5 +1,5 @@
-import { Event, CancellationToken } from './shared/events';
-import { documentMutations } from './document-mutations'
+import { CombinedEventSource } from './shared/events';
+import { DocumentMutations } from './document-mutations'
 
 class Selector{
 	constructor(text, attributeNames){
@@ -125,17 +125,11 @@ class SelectAction{
 	constructor(definition){
 		this.selector = Selector.create(definition.selector);
 		this.action = createSelectedNodeAction(definition.action);
-		this.hasSomethingToDoChanged = new Event();
-		this.cancellationToken = new CancellationToken();
-		this.hasSomethingToDoNow = this.hasSomethingToDo();
-		documentMutations.listen(this.selector.attributeNames, () => this.onDocumentMutation(), this.cancellationToken);
-	}
-	onDocumentMutation(){
-		var hasSomethingToDoNow = this.hasSomethingToDo();
-		if(hasSomethingToDoNow !== this.hasSomethingToDoNow){
-			this.hasSomethingToDoNow = hasSomethingToDoNow;
-			this.hasSomethingToDoChanged.dispatch();
-		}
+		this.hasSomethingToDoChanged = new DocumentMutations(this.selector.attributeNames)
+			.map(() => [this.hasSomethingToDo()]).compare([this.hasSomethingToDo()])
+			.filter(([hadSomethingToDo], [hasSomethingToDo]) => {
+				return hadSomethingToDo !== hasSomethingToDo;
+			});
 	}
 	getEffectOnNode(node){
 		if(!node.matches(this.selector.text)){
@@ -168,9 +162,6 @@ class SelectAction{
 			
 		}
 	}
-	dispose(){
-		this.cancellationToken.cancel();
-	}
 }
 
 function createAction(definition){
@@ -183,26 +174,11 @@ class ContentScriptRule{
 	constructor(definition){
 		this.id = definition.id;
 		this.name = definition.name;
-		this.cancellationToken = new CancellationToken();
-		this.actions = [];
-		this.hasSomethingToDoChanged = new Event();
-		for(var actionDefinition of definition.actions){
-			this.addAction(actionDefinition);
-		}
-		this.hasSomethingToDoNow = this.hasSomethingToDo();
+		this.actions = definition.actions.map(d => createAction(d));
 		this.hasExecuted = false;
-	}
-	addAction(definition){
-		var action = createAction(definition);
-		this.actions.push(action);
-		action.hasSomethingToDoChanged.listen(() => this.onActionHasSomethingToDoChanged(), this.cancellationToken);
-	}
-	onActionHasSomethingToDoChanged(){
-		var hasSomethingToDoNow = this.hasSomethingToDo();
-		if(hasSomethingToDoNow !== this.hasSomethingToDoNow){
-			this.hasSomethingToDoNow = hasSomethingToDoNow;
-			this.hasSomethingToDoChanged.dispatch();
-		}
+		this.hasSomethingToDoChanged = new CombinedEventSource(this.actions.map(a => a.hasSomethingToDoChanged))
+			.map(() => [this.hasSomethingToDo()]).compare([this.hasSomethingToDo()])
+			.filter(([hadSomethingToDo], [hasSomethingToDo]) => hadSomethingToDo !== hasSomethingToDo);
 	}
 	getNotification(){
 		return {
@@ -227,10 +203,7 @@ class ContentScriptRule{
 		this.hasExecuted = true;
 	}
 	dispose(){
-		this.cancellationToken.cancel();
-		for(var action of this.actions){
-			action.dispose();
-		}
+
 	}
 }
 
