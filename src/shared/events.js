@@ -75,22 +75,72 @@ class OneEventSource extends EventSource{
 		return sub;
 	}
 }
+
+class SourceAndListeners{
+	constructor(source){
+		this.source = source;
+		this.listenersAndCancellationTokensAndSubscriptions = [];
+	}
+	cancelSubscriptionForListener(listener){
+		var removedListenerAndCancellationTokenAndSubscription = this.removeListener(listener);
+		if(removedListenerAndCancellationTokenAndSubscription){
+			removedListenerAndCancellationTokenAndSubscription.subscription.cancel();
+		}
+	}
+	removeListener(listener){
+		var index = this.listenersAndCancellationTokensAndSubscriptions.findIndex(l => l.listener === listener);
+		if(index === -1){
+			return null;
+		}
+		var [listenerAndCancellationTokenAndSubscription] = this.listenersAndCancellationTokensAndSubscriptions.splice(index, 1);
+		return listenerAndCancellationTokenAndSubscription;
+	}
+	listen(listener, cancellationToken){
+		var subscription = this.source.listen(listener, cancellationToken);
+		var listenerAndCancellationTokenAndSubscription = {listener, cancellationToken, subscription};
+		if(cancellationToken){
+			cancellationToken.onCancelled(() => this.removeListener(listener));
+		}
+		this.listenersAndCancellationTokensAndSubscriptions.push(listenerAndCancellationTokenAndSubscription);
+		return {
+			cancel: () => this.cancelSubscriptionForListener(listener)
+		};
+	}
+	cancel(){
+		for(let listenerAndCancellationTokenAndSubscription of this.listenersAndCancellationTokensAndSubscriptions){
+			listenerAndCancellationTokenAndSubscription.subscription.cancel();
+		}
+	}
+}
 class CombinedEventSource extends EventSource{
 	constructor(sources){
 		super();
-		this.sources = sources;
+		this.sourcesAndListeners = sources.map(s => new SourceAndListeners(s));
+		this.listenersAndCancellationTokens = [];
+	}
+	removeListener(listener){
+		var index = this.listenersAndCancellationTokens.findIndex(l => l.listener === listener);
+		if(index === -1){
+			return;
+		}
+		this.listenersAndCancellationTokens.splice(index, 1);
 	}
 	listen(listener, cancellationToken){
-		var listeners = [];
-		for(let source of this.sources){
-			listeners.push(source.listen(listener, cancellationToken));
+		for(let sourceAndListener of this.sourcesAndListeners){
+			sourceAndListener.listen(listener, cancellationToken);
 		}
-		var cancel = () => {
-			for(let _listener of listeners){
-				_listener.cancel();
+		if(cancellationToken){
+			cancellationToken.onCancelled(() => this.removeListener(listener));
+		}
+		this.listenersAndCancellationTokens.push({listener, cancellationToken});
+		return {
+			cancel: () => {
+				for(let sourceAndListener of this.sourcesAndListeners){
+					sourceAndListener.cancelSubscriptionForListener(listener);
+				}
+				this.removeListener(listener);
 			}
 		};
-		return {cancel};
 	}
 }
 class AsyncMappedEventSource extends EventSource{
