@@ -125,6 +125,21 @@ class CombinedEventSource extends EventSource{
 		}
 		this.listenersAndCancellationTokens.splice(index, 1);
 	}
+	addSource(source){
+		var sourceAndListeners = new SourceAndListeners(source);
+		for(let {listener, cancellationToken} of this.listenersAndCancellationTokens){
+			sourceAndListeners.listen(listener, cancellationToken);
+		}
+		this.sourcesAndListeners.push(sourceAndListeners);
+	}
+	removeSource(source){
+		var index = this.sourcesAndListeners.findIndex(s => s.source === source);
+		if(index === -1){
+			return;
+		}
+		var [sourceAndListeners] = this.sourcesAndListeners.splice(index, 1);
+		sourceAndListeners.cancel();
+	}
 	listen(listener, cancellationToken){
 		for(let sourceAndListener of this.sourcesAndListeners){
 			sourceAndListener.listen(listener, cancellationToken);
