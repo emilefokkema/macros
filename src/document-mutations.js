@@ -9,7 +9,7 @@ class DocumentMutations extends EventSource{
 		this.listeners = [];
 	}
 	notifyListeners(){
-		for(var listener of this.listeners){
+		for(var listener of this.listeners.slice()){
 			listener();
 		}
 	}

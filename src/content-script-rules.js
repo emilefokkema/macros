@@ -1,4 +1,4 @@
-import { CombinedEventSource, Event } from './shared/events';
+import { CombinedEventSource, Event, CancellationToken } from './shared/events';
 import { DocumentMutations } from './document-mutations'
 
 class Selector{
@@ -174,11 +174,13 @@ class ContentScriptRule{
 	constructor(definition){
 		this.id = definition.id;
 		this.name = definition.name;
+		this.automatic = !!definition.automatic;
 		this.actions = definition.actions.map(d => createAction(d));
 		this.hasExecuted = false;
 		this.hasSomethingToDoChanged = new CombinedEventSource(this.actions.map(a => a.hasSomethingToDoChanged))
 			.map(() => [this.hasSomethingToDo()]).compare(() => [this.hasSomethingToDo()])
-			.filter(([hadSomethingToDo], [hasSomethingToDo]) => hadSomethingToDo !== hasSomethingToDo);
+			.filter(([hadSomethingToDo], [hasSomethingToDo]) => hadSomethingToDo !== hasSomethingToDo)
+			.map(([hadSomethingToDo], [hasSomethingToDo]) => [hasSomethingToDo]);
 	}
 	getNotification(){
 		return {
@@ -212,6 +214,7 @@ class ContentScriptRuleCollection{
 		this.notifications = new CombinedEventSource([this.collectionUpdated, this.ruleHasSomethingToDoChanged])
 			.map(() => [this.getNotification()]);
 		this.rules = [];
+		this.automaticExecutions = [];
 	}
 	async refresh(){
 		var definitions = await this.getAllDefinitionsAsync();
@@ -228,6 +231,36 @@ class ContentScriptRuleCollection{
 			this.collectionUpdated.dispatch();
 		}
 	}
+	stopAutomaticRuleExecution(ruleId){
+		var index = this.automaticExecutions.findIndex(e => e.ruleId === ruleId);
+		if(index === -1){
+			return;
+		}
+		var [{cancellationToken}] = this.automaticExecutions.splice(index, 1);
+		cancellationToken.cancel();
+	}
+	async executeAutomatically(rule, cancellationToken){
+		do{
+			if(cancellationToken.cancelled){
+				console.log(`stopping automatic execution of rule '${rule.name}'`)
+				break;
+			}
+			if(!rule.hasSomethingToDo()){
+				console.log(`waiting until rule '${rule.name}' has something to do before executing automatically`)
+				await rule.hasSomethingToDoChanged.when(hasSomethingToDo => hasSomethingToDo, cancellationToken);
+			}
+			if(cancellationToken.cancelled){
+				console.log(`stopping automatic execution of rule '${rule.name}'`)
+				break;
+			}
+			console.log(`executing rule '${rule.name}' automatically`)
+			rule.execute();
+			if(rule.hasSomethingToDo()){
+				console.log(`after executing, rule '${rule.name}' still has something to do; stopping automatic execution`);
+				break;
+			}
+		}while(true);
+	}
 	getRule(ruleId){
 		return this.rules.find(r => r.id === ruleId);
 	}
@@ -235,6 +268,11 @@ class ContentScriptRuleCollection{
 		var rule = new ContentScriptRule(definition);
 		this.rules.push(rule);
 		this.ruleHasSomethingToDoChanged.addSource(rule.hasSomethingToDoChanged);
+		if(rule.automatic){
+			var cancellationToken = new CancellationToken();
+			this.automaticExecutions.push({ruleId: rule.id, cancellationToken})
+			this.executeAutomatically(rule, cancellationToken).then(() => this.stopAutomaticRuleExecution(rule.id));
+		}
 	}
 	removeRuleInternal(ruleId){
 		var index = this.rules.findIndex(r => r.id === ruleId);
@@ -243,6 +281,7 @@ class ContentScriptRuleCollection{
 		}
 		var [rule] = this.rules.splice(index, 1);
 		this.ruleHasSomethingToDoChanged.removeSource(rule.hasSomethingToDoChanged);
+		this.stopAutomaticRuleExecution(ruleId);
 		return true;
 	}
 	removeRule(ruleId){
