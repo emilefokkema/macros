@@ -12,12 +12,17 @@
 		},
 		methods: {
 			initialize: async function(){
-					this.rules = await macros.getAllRules();
+				await this.refresh();
+				macros.onRuleAdded(() => this.refresh());
+				macros.onRuleUpdated(() => this.refresh());
+			},
+			refresh: async function(){
+				this.rules = await macros.getAllRules();
 			},
 			onDeleteRuleClicked: async function(rule){
 				if(confirm(`Are you sure you want to delete '${rule.name}'?`)){
 					await macros.deleteRuleAsync(rule.id);
-					this.rules = await macros.getAllRules();
+					this.refresh();
 				}
 			}
 		},
