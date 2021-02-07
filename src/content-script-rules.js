@@ -126,7 +126,7 @@ class SelectAction{
 		this.selector = Selector.create(definition.selector);
 		this.action = createSelectedNodeAction(definition.action);
 		this.hasSomethingToDoChanged = new DocumentMutations(this.selector.attributeNames)
-			.map(() => [this.hasSomethingToDo()]).compare([this.hasSomethingToDo()])
+			.map(() => [this.hasSomethingToDo()]).compare(() => [this.hasSomethingToDo()])
 			.filter(([hadSomethingToDo], [hasSomethingToDo]) => {
 				return hadSomethingToDo !== hasSomethingToDo;
 			});
@@ -177,7 +177,7 @@ class ContentScriptRule{
 		this.actions = definition.actions.map(d => createAction(d));
 		this.hasExecuted = false;
 		this.hasSomethingToDoChanged = new CombinedEventSource(this.actions.map(a => a.hasSomethingToDoChanged))
-			.map(() => [this.hasSomethingToDo()]).compare([this.hasSomethingToDo()])
+			.map(() => [this.hasSomethingToDo()]).compare(() => [this.hasSomethingToDo()])
 			.filter(([hadSomethingToDo], [hasSomethingToDo]) => hadSomethingToDo !== hasSomethingToDo);
 	}
 	getNotification(){

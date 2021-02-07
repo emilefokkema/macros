@@ -21,8 +21,8 @@ class EventSource {
 	mapAsync(mapAsync){
 		return new AsyncMappedEventSource(this, mapAsync);
 	}
-	compare(initialArgs){
-		return new ComparingEventSource(this, initialArgs);
+	compare(getInitialArgs){
+		return new ComparingEventSource(this, getInitialArgs);
 	}
 	when(predicate, cancellationToken){
 		var resolve;
@@ -42,17 +42,17 @@ class EventSource {
 }
 
 class ComparingEventSource extends EventSource{
-	constructor(source, initialArgs){
+	constructor(source, getInitialArgs){
 		super();
 		this.source = source;
-		this.latestArgs = initialArgs;
+		this.getInitialArgs = getInitialArgs;
 	}
 	listen(listener, cancellationToken){
-		var self = this;
+		var latestArgs = this.getInitialArgs();
 		return this.source.listen(function(){
 			var args = Array.prototype.slice.apply(arguments);
-			var result = listener(self.latestArgs, args);
-			self.latestArgs = args;
+			var result = listener(latestArgs, args);
+			latestArgs = args;
 			return result; 
 		}, cancellationToken);
 	}
