@@ -1,4 +1,4 @@
-import { CombinedEventSource } from './shared/events';
+import { CombinedEventSource, Event } from './shared/events';
 import { DocumentMutations } from './document-mutations'
 
 class Selector{
@@ -202,9 +202,63 @@ class ContentScriptRule{
 		}
 		this.hasExecuted = true;
 	}
-	dispose(){
+}
 
+class ContentScriptRuleCollection{
+	constructor(getAllDefinitionsAsync){
+		this.getAllDefinitionsAsync = getAllDefinitionsAsync;
+		this.ruleHasSomethingToDoChanged = new CombinedEventSource([]);
+		this.collectionUpdated = new Event();
+		this.notifications = new CombinedEventSource([this.collectionUpdated, this.ruleHasSomethingToDoChanged])
+			.map(() => [this.getNotification()]);
+		this.rules = [];
+	}
+	async refresh(){
+		var definitions = await this.getAllDefinitionsAsync();
+		var currentRuleIds = this.rules.map(r => r.id);
+		var oldRuleIds = currentRuleIds.filter(id => !definitions.some(d => d.id === id));
+		for(let oldRuleId of oldRuleIds){
+			this.removeRuleInternal(oldRuleId);
+		}
+		var newDefinitions = definitions.filter(d => !currentRuleIds.some(id => id === d.id));
+		for(let newDefinition of newDefinitions){
+			this.addRuleForDefinition(newDefinition);
+		}
+		if(oldRuleIds.length > 0 || newDefinitions.length > 0){
+			this.collectionUpdated.dispatch();
+		}
+	}
+	getRule(ruleId){
+		return this.rules.find(r => r.id === ruleId);
+	}
+	addRuleForDefinition(definition){
+		var rule = new ContentScriptRule(definition);
+		this.rules.push(rule);
+		this.ruleHasSomethingToDoChanged.addSource(rule.hasSomethingToDoChanged);
+	}
+	removeRuleInternal(ruleId){
+		var index = this.rules.findIndex(r => r.id === ruleId);
+		if(index === -1){
+			return false;;
+		}
+		var [rule] = this.rules.splice(index, 1);
+		this.ruleHasSomethingToDoChanged.removeSource(rule.hasSomethingToDoChanged);
+		return true;
+	}
+	removeRule(ruleId){
+		if(this.removeRuleInternal(ruleId)){
+			this.collectionUpdated.dispatch();
+		}
+	}
+	getNotification(){
+		var ruleNotifications = this.rules.map(r => r.getNotification());
+		return {
+			rules: ruleNotifications,
+			numberOfRules: ruleNotifications.length,
+			numberOfRulesThatHaveSomethingToDo: ruleNotifications.filter(r => r.hasSomethingToDo).length,
+			numberOfRulesThatHaveExecuted: ruleNotifications.filter(r => r.hasExecuted).length
+		};
 	}
 }
 
-export { ContentScriptRule, createAction };
+export { ContentScriptRuleCollection, createAction };
