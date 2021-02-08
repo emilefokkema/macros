@@ -81,8 +81,8 @@ class Navigation{
     }
 }
 
-var navigationMessagesEventSource = runtimeMessagesEventSource.filter((msg, sender) => !!sender.tab).mapAsync(async (msg, {frameId, tab, url}, sendResponse) => [msg, await Navigation.create(tab.id, frameId, url), sendResponse]);
-var navigationCreated = webNavigationCommitted.mapAsync(async ({tabId, frameId, url}) => [await Navigation.create(tabId, frameId, url)]);
+var navigationMessagesEventSource = runtimeMessagesEventSource.filter((msg, sender) => !!sender.tab && sender.tab.id > 0).mapAsync(async (msg, {frameId, tab, url}, sendResponse) => [msg, await Navigation.create(tab.id, frameId, url), sendResponse]);
+var navigationCreated = webNavigationCommitted.filter(({tabId, frameId, url}) => tabId > 0).mapAsync(async ({tabId, frameId, url}) => [await Navigation.create(tabId, frameId, url)]);
 var navigationReplaced = historyStateUpdatedOrReferenceFramentUpdated.map(({tabId, frameId, url}) => [{navigationHistoryId: getNavigationHistoryId(tabId, frameId), newNavigationId: getNavigationId(tabId, frameId, url)}]);
 
 export { Navigation, getNavigationId, getNavigationHistoryId, navigationMessagesEventSource, navigationCreated, navigationReplaced};
