@@ -12,6 +12,7 @@ var loaded = false;
 var ruleCollection = new ContentScriptRuleCollection(() => macros.getRulesForUrl(url));
 
 var elementSelectedInDevtools = function(element){
+	console.log(`navigation at ${url} has currently selected element`, element)
 	currentlySelectedElement = element;
 }
 
@@ -19,7 +20,7 @@ var sendNotification = async function(notification){
 	if(!loaded){
 		await loadedPromise;
 	}
-	console.log(`sending notification: `, JSON.stringify(notification))
+	console.log(`navigation ${navigationId} sending notification: `, JSON.stringify(notification))
 	macros.notifyRulesForNavigation({
 		navigationId: navigationId,
 		url: url,
