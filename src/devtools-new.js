@@ -1,6 +1,9 @@
 import { macros } from './shared/macros';
 import { elementSelectionChanged } from './shared/devtools/element-selection-changed';
 import { inspectedWindow } from './shared/devtools/inspected-window';
+import { createSidebarPaneInElements } from './shared/devtools/create-sidebar-pane-in-elements';
+
+createSidebarPaneInElements('Macros', 'devtools_sidebar.html');
 
 var tabId = inspectedWindow.tabId;
 
