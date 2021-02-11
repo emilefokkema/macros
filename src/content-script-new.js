@@ -13,9 +13,9 @@ var loaded = false;
 var ruleCollection = new ContentScriptRuleCollection(() => macros.getRulesForUrl(url));
 
 var elementSelectedInDevtools = function(element){
-	var selector = Selector.forElement(element);
-	console.log(`navigation at ${url} has currently selected element`, selector)
 	currentlySelectedElement = element;
+	var notification = getSelectedElementNotification();
+	console.log(`selected element: `, notification)
 }
 
 var sendNotification = async function(notification){
@@ -31,6 +31,17 @@ var sendNotification = async function(notification){
 		numberOfRulesThatHaveSomethingToDo: notification.numberOfRulesThatHaveSomethingToDo,
 		numberOfRulesThatHaveExecuted: notification.numberOfRulesThatHaveExecuted
 	});
+}
+
+function getSelectedElementNotification(){
+	if(!currentlySelectedElement){
+		return null;
+	}
+	var selector = Selector.forElement(currentlySelectedElement);
+	var effect = ruleCollection.getEffectOnNode(currentlySelectedElement);
+	return {
+		selector, effect
+	};
 }
 
 var load = async function(){

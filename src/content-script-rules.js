@@ -175,6 +175,9 @@ class ContentScriptRule{
 		}
 		this.hasExecuted = true;
 	}
+	getEffectOnNode(node){
+		return this.actions.map(a => a.getEffectOnNode(node));
+	}
 }
 
 class ContentScriptRuleCollection{
@@ -268,6 +271,12 @@ class ContentScriptRuleCollection{
 			numberOfRulesThatHaveSomethingToDo: ruleNotifications.filter(r => r.hasSomethingToDo).length,
 			numberOfRulesThatHaveExecuted: ruleNotifications.filter(r => r.hasExecuted).length
 		};
+	}
+	getEffectOnNode(node){
+		return this.rules.map(rule => ({
+			ruleId: rule.id,
+			effect: rule.getEffectOnNode(node)
+		}));
 	}
 }
 
