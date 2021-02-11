@@ -1,5 +1,6 @@
 import { macros } from './shared/macros';
 import { ContentScriptRuleCollection, createAction } from './content-script-rules';
+import { Selector } from './shared/selector';
 
 var currentlySelectedElement;
 var navigationId;
@@ -12,7 +13,8 @@ var loaded = false;
 var ruleCollection = new ContentScriptRuleCollection(() => macros.getRulesForUrl(url));
 
 var elementSelectedInDevtools = function(element){
-	console.log(`navigation at ${url} has currently selected element`, element)
+	var selector = Selector.forElement(element);
+	console.log(`navigation at ${url} has currently selected element`, selector)
 	currentlySelectedElement = element;
 }
 

@@ -1,35 +1,6 @@
 import { CombinedEventSource, Event, CancellationToken } from './shared/events';
 import { DocumentMutations } from './document-mutations'
-
-class Selector{
-	constructor(text, attributeNames){
-		this.text = text;
-		this.attributeNames = attributeNames;
-	}
-	static create(text){
-		var attributeNames = [];
-		var hasId = false;
-		var hasClass = false;
-		var rgx = /(?:#([^\.\[]+))|(?:\.([^#\.\[]+))|\[([^=]+)(?:=(?:"[^"]*"|[^\]]+))?\]/g;
-		var match;
-		while((match = rgx.exec(text)) !== null){
-			if(match[1]){
-				hasId = true;
-			}else if(match[2]){
-				hasClass = true;
-			}else if(match[3]){
-				attributeNames.push(match[3])
-			}
-		}
-		if(hasId && !attributeNames.some(n => n === 'id')){
-			attributeNames.push('id');
-		}
-		if(hasClass && !attributeNames.some(n => n === 'class')){
-			attributeNames.push('class');
-		}
-		return new Selector(text, attributeNames);
-	}
-}
+import { Selector } from './shared/selector';
 
 class DeleteNode{
 	getEffectOnNode(node){
