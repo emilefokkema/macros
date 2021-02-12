@@ -13,7 +13,8 @@
 		methods: {
 
 			initialize: async function(){
-				
+				var navigations = await macros.navigation.getAllForTab(macros.inspectedWindow.tabId);
+				console.log(`navigations:`, navigations)
 			}
 		}
 	})

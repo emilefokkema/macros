@@ -1,10 +1,12 @@
 import { navigation } from './navigation/navigation-interface';
 import { crossBoundaryEventFactory } from './cross-boundary-events';
 import { editors } from './editors';
+import { inspectedWindow } from './devtools/inspected-window';
 
 class Macros{
 	constructor(){
 		this.navigation = navigation;
+		this.inspectedWindow = inspectedWindow;
 		this.editors = editors;
 		this.rulesForUrlRequest = crossBoundaryEventFactory.create('requestRulesForUrl');
 		this.emitRulesRequest = crossBoundaryEventFactory.create('emitRulesRequest');

@@ -5,31 +5,22 @@ import { Selector } from './shared/selector';
 var currentlySelectedElement;
 var navigationId;
 var url;
-var loadedPromise;
-var loaded = false;
-
-
-
 var ruleCollection = new ContentScriptRuleCollection(() => macros.getRulesForUrl(url));
 
 var elementSelectedInDevtools = function(element){
 	currentlySelectedElement = element;
-	var notification = getSelectedElementNotification();
-	console.log(`selected element: `, notification)
 }
 
-var sendNotification = async function(notification){
-	if(!loaded){
-		await loadedPromise;
-	}
-	console.log(`navigation ${navigationId} sending notification: `, JSON.stringify(notification))
+function sendNotification(ruleCollectionNotification, selectedElementNotification){
+	console.log(`navigation ${navigationId} sending notification: `, JSON.stringify(ruleCollectionNotification))
 	macros.notifyRulesForNavigation({
 		navigationId: navigationId,
 		url: url,
-		rules: notification.rules,
-		numberOfRules: notification.numberOfRules,
-		numberOfRulesThatHaveSomethingToDo: notification.numberOfRulesThatHaveSomethingToDo,
-		numberOfRulesThatHaveExecuted: notification.numberOfRulesThatHaveExecuted
+		rules: ruleCollectionNotification.rules,
+		numberOfRules: ruleCollectionNotification.numberOfRules,
+		numberOfRulesThatHaveSomethingToDo: ruleCollectionNotification.numberOfRulesThatHaveSomethingToDo,
+		numberOfRulesThatHaveExecuted: ruleCollectionNotification.numberOfRulesThatHaveExecuted,
+		selectedElement: selectedElementNotification
 	});
 }
 
@@ -49,7 +40,7 @@ var load = async function(){
 	var navigationHistoryId;
 	[navigationId, navigationHistoryId] = await Promise.all([macros.navigation.getId(), macros.navigation.getHistoryId()]);
 	console.log(`navigation id '${navigationId}', navigation history id '${navigationHistoryId}'`)
-	ruleCollection.notifications.listen(notification => sendNotification(notification));
+	ruleCollection.notifications.listen(notification => sendNotification(notification, getSelectedElementNotification()));
 	await ruleCollection.refresh();
 	macros.onRuleAdded(() => ruleCollection.refresh());
 	macros.onRuleDeleted(({ruleId}) => ruleCollection.removeRule(ruleId));
@@ -69,13 +60,13 @@ var load = async function(){
 		url = location.href;
 		navigationId = newNavigationId;
 		await ruleCollection.refresh();
-		sendNotification(ruleCollection.getNotification());
+		sendNotification(ruleCollection.getNotification(), getSelectedElementNotification());
 	});
 	macros.onRequestToEmitRules(({navigationIds}) => {
 		if(!navigationIds.some(id => navigationId === id)){
 			return;
 		}
-		sendNotification(ruleCollection.getNotification());
+		sendNotification(ruleCollection.getNotification(), getSelectedElementNotification());
 	});
 	macros.onExecuteRuleRequest(({ruleId, navigationId: _navigationId}, sendResponse) => {
 		if(_navigationId !== navigationId){
@@ -96,10 +87,9 @@ var load = async function(){
 		action.execute();
 		sendResponse({});
 	});
-	loaded = true;
 };
 
-loadedPromise = load();
+load();
 
 
 export {elementSelectedInDevtools};
