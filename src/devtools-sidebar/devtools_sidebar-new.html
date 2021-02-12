@@ -9,7 +9,9 @@
 <body>
 	
 	<div id="app">
-		hello
+		<select class="navigation-selector" v-if="navigations.length > 0" v-model="navigationIdOption">
+			<option v-for="navigation of navigations" v-bind:value="navigation.navigationId">{{navigation.origin}}</option>
+		</select>
 	</div>
 	<script src="devtools_sidebar.js">
 	</script>
