@@ -55,11 +55,12 @@
 					}
 				}
 			},
-			initialize: function(){
+			initialize: async function(){
 				macros.onNotifyRulesForNavigation(navigation => {
 					this.addNavigation(navigation);
 				});
-				macros.notifyPopupOpened();
+				var navigationsOnPopupTab = await macros.navigation.getAllForPopupTab();
+				macros.requestToEmitRules({navigationIds: navigationsOnPopupTab.map(n => n.id)});
 			}
 		},
 		components: {
