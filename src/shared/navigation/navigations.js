@@ -36,6 +36,7 @@ function getNavigationHistoryId(tabId, frameId){
 class Navigation{
     constructor(tabId, frameId, parentFrameIds, url, messagesTarget){
         this.id = getNavigationId(tabId, frameId, url);
+        this.historyId = getNavigationHistoryId(tabId, frameId);
         this.url = url;
         this.tabId = tabId;
         this.frameId = frameId;
