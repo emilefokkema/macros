@@ -29,10 +29,6 @@ macros.onRequestRulesForUrl((url, sendResponse) => {
 macros.onNotifyRulesForNavigation(notification => {
 	buttons.addNotification(notification);
 });
-macros.onNotifyPopupOpened(async () => {
-	var navigationsOnPopupTab = await macros.navigation.getAllForPopupTab();
-	macros.requestToEmitRules({navigationIds: navigationsOnPopupTab.map(n => n.id)});
-});
 macros.onRequestToOpenEditor((req) => {
 	editorCollection.openEditor(req);
 });

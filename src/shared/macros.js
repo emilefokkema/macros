@@ -7,7 +7,6 @@ class Macros{
 		this.navigation = navigation;
 		this.editors = editors;
 		this.rulesForUrlRequest = crossBoundaryEventFactory.create('requestRulesForUrl');
-		this.popupOpenedNotification = crossBoundaryEventFactory.create('popupOpened');
 		this.emitRulesRequest = crossBoundaryEventFactory.create('emitRulesRequest');
 		this.rulesForNavigationNotification = crossBoundaryEventFactory.create('notifyRulesForNavigation');
 		this.executeRuleMessage = crossBoundaryEventFactory.create('executeRule');
@@ -50,12 +49,6 @@ class Macros{
 	}
 	onNotifyRulesForNavigation(listener, cancellationToken){
 		return this.rulesForNavigationNotification.source.onMessage(listener, cancellationToken);
-	}
-	notifyPopupOpened(){
-		this.popupOpenedNotification.target.sendMessage({});
-	}
-	onNotifyPopupOpened(listener, cancellationToken){
-		return this.popupOpenedNotification.source.onMessage(listener, cancellationToken);
 	}
 	requestToEmitRules(msg){
 		this.emitRulesRequest.target.sendMessage(msg);
