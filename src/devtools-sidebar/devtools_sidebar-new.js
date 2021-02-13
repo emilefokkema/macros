@@ -25,24 +25,34 @@
 			}
 		},
 		methods: {
-			addNavigation(navigation){
-				navigation.origin = new URL(navigation.url).origin;
-				this.navigations.push(navigation);
-				if(!this.selectedNavigation){
-					this.selectedNavigation = navigation;
+			removeNavigation(navigationId){
+				var index = this.navigations.findIndex(n => n.navigationId === navigationId);
+				if(index === -1){
+					return;
 				}
-				console.log(`adding navigation:`, navigation);
+				this.navigations.splice(index, 1);
+			},
+			async addNavigation(notification){
+				var navigation = await macros.navigation.getNavigation(notification.navigationId);
+				if(!navigation){
+					return;
+				}
+				notification.origin = new URL(notification.url).origin;
+				this.navigations.push(notification);
+				navigation.disappeared.next().then(() => this.removeNavigation(notification.navigationId));
+				if(!this.selectedNavigation){
+					this.selectedNavigation = notification;
+				}
 			},
 			initialize: async function(){
-				var navigations = [];
+				var tabId = macros.inspectedWindow.tabId;
 				macros.onNotifyRulesForNavigation(notification => {
-					if(!navigations.some(n => n.id === notification.navigationId)){
+					if(notification.tabId !== tabId){
 						return;
 					}
 					this.addNavigation(notification);
 				});
-				navigations = await macros.navigation.getAllForTab(macros.inspectedWindow.tabId);
-				macros.requestToEmitRules({navigationIds: navigations.map(n => n.id)});
+				macros.requestToEmitRules({tabId});
 			}
 		}
 	})
