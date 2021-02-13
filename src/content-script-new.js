@@ -3,6 +3,7 @@ import { ContentScriptRuleCollection, createAction } from './content-script-rule
 
 var currentlySelectedElement;
 var navigationId;
+var tabId;
 var url;
 var loadedPromise;
 var loaded = false;
@@ -23,6 +24,7 @@ var sendNotification = async function(notification){
 	macros.notifyRulesForNavigation({
 		navigationId: navigationId,
 		url: url,
+		tabId: tabId,
 		rules: notification.rules,
 		numberOfRules: notification.numberOfRules,
 		numberOfRulesThatHaveSomethingToDo: notification.numberOfRulesThatHaveSomethingToDo,
@@ -32,9 +34,11 @@ var sendNotification = async function(notification){
 
 var load = async function(){
 	url = location.href;
-	var navigationHistoryId;
-	[navigationId, navigationHistoryId] = await Promise.all([macros.navigation.getId(), macros.navigation.getHistoryId()]);
-	console.log(`navigation id '${navigationId}', navigation history id '${navigationHistoryId}'`)
+	var currentNavigation = await macros.navigation.getCurrent();
+	var navigationHistoryId = currentNavigation.historyId;
+	navigationId = currentNavigation.id;
+	tabId = currentNavigation.tabId;
+	console.log(`navigation id '${navigationId}', navigation history id '${navigationHistoryId}', tabId ${tabId}`);
 	ruleCollection.notifications.listen(notification => sendNotification(notification));
 	await ruleCollection.refresh();
 	macros.onRuleAdded(() => ruleCollection.refresh());
@@ -57,8 +61,8 @@ var load = async function(){
 		await ruleCollection.refresh();
 		sendNotification(ruleCollection.getNotification());
 	});
-	macros.onRequestToEmitRules(({navigationIds}) => {
-		if(!navigationIds.some(id => navigationId === id)){
+	macros.onRequestToEmitRules(({tabId: _tabId}) => {
+		if(_tabId != tabId){
 			return;
 		}
 		sendNotification(ruleCollection.getNotification());
