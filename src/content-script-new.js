@@ -4,6 +4,7 @@ import { Selector } from './shared/selector';
 
 var currentlySelectedElement;
 var navigationId;
+var tabId;
 var url;
 var ruleCollection = new ContentScriptRuleCollection(() => macros.getRulesForUrl(url));
 
@@ -16,6 +17,7 @@ function sendNotification(ruleCollectionNotification, selectedElementNotificatio
 	macros.notifyRulesForNavigation({
 		navigationId: navigationId,
 		url: url,
+		tabId: tabId,
 		rules: ruleCollectionNotification.rules,
 		numberOfRules: ruleCollectionNotification.numberOfRules,
 		numberOfRulesThatHaveSomethingToDo: ruleCollectionNotification.numberOfRulesThatHaveSomethingToDo,
@@ -37,9 +39,11 @@ function getSelectedElementNotification(){
 
 var load = async function(){
 	url = location.href;
-	var navigationHistoryId;
-	[navigationId, navigationHistoryId] = await Promise.all([macros.navigation.getId(), macros.navigation.getHistoryId()]);
-	console.log(`navigation id '${navigationId}', navigation history id '${navigationHistoryId}'`)
+	var currentNavigation = await macros.navigation.getCurrent();
+	var navigationHistoryId = currentNavigation.historyId;
+	navigationId = currentNavigation.id;
+	tabId = currentNavigation.tabId;
+	console.log(`navigation id '${navigationId}', navigation history id '${navigationHistoryId}', tabId ${tabId}`);
 	ruleCollection.notifications.listen(notification => sendNotification(notification, getSelectedElementNotification()));
 	await ruleCollection.refresh();
 	macros.onRuleAdded(() => ruleCollection.refresh());
@@ -62,8 +66,8 @@ var load = async function(){
 		await ruleCollection.refresh();
 		sendNotification(ruleCollection.getNotification(), getSelectedElementNotification());
 	});
-	macros.onRequestToEmitRules(({navigationIds}) => {
-		if(!navigationIds.some(id => navigationId === id)){
+	macros.onRequestToEmitRules(({tabId: _tabId}) => {
+		if(_tabId != tabId){
 			return;
 		}
 		sendNotification(ruleCollection.getNotification(), getSelectedElementNotification());

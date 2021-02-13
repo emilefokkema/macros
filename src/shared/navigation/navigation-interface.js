@@ -15,31 +15,19 @@ try{
 
 }
 
-var getNavigationIdMessageType = new MessageType('getNavigationId');
-var getNavigationHistoryIdMessageType = new MessageType('getNativationHistoryId');
+var getCurrentNavigationMessageType = new MessageType('getCurrentNavigation');
 
-var getNavigationIdMessageTarget = runtimeMessagesTarget.ofType(getNavigationIdMessageType);
-var getNavigationHistoryIdMessageTarget = runtimeMessagesTarget.ofType(getNavigationHistoryIdMessageType);
 
-runtimeMessagesEventSource.filter((msg, sender) => !!sender.tab && getNavigationIdMessageType.filterMessage(msg)).listen((msg, sender, sendResponse) => {
-    sendResponse(getNavigationId(sender.tab.id, sender.frameId, sender.url));
+var getCurrentNavigationMessageTarget = runtimeMessagesTarget.ofType(getCurrentNavigationMessageType);
+
+
+runtimeMessagesEventSource.filter((msg, sender) => !!sender.tab && sender.tab.id > 0 && getCurrentNavigationMessageType.filterMessage(msg)).listen((msg, sender, sendResponse) => {
+    sendResponse({
+        id: getNavigationId(sender.tab.id, sender.frameId, sender.url),
+        historyId: getNavigationHistoryId(sender.tab.id, sender.frameId),
+        tabId: sender.tab.id
+    })
 });
-
-runtimeMessagesEventSource.filter((msg, sender) => !!sender.tab && getNavigationHistoryIdMessageType.filterMessage(msg)).listen((msg, sender, sendResponse) => {
-    sendResponse(getNavigationHistoryId(sender.tab.id, sender.frameId));
-});
-
-function getPopupTabId(){
-    var resolver = new PromiseResolver();
-    chrome.tabs.query({lastFocusedWindow: true, active: true}, tabs => {
-        if(tabs.length !== 1){
-            resolver.reject(new Error(`looked for the single active tab, but found ${tabs.length} tabs`));
-            return;
-        }
-        resolver.resolve(tabs[0].id);
-    });
-    return resolver.promise;
-}
 
 function findNavigationInTab(tabId, tabUrl, navigationId, cancellationToken){
     if(getNavigationId(tabId, 0, tabUrl) === navigationId){
@@ -66,11 +54,8 @@ function findNavigationInTab(tabId, tabUrl, navigationId, cancellationToken){
 }
 
 var navigation = {
-    getId(){
-        return getNavigationIdMessageTarget.sendMessageAsync({});
-    },
-    getHistoryId(){
-        return getNavigationHistoryIdMessageTarget.sendMessageAsync({});
+    getCurrent(){
+        return getCurrentNavigationMessageTarget.sendMessageAsync({});
     },
     openTab(url){
         chrome.tabs.create({url});
@@ -88,8 +73,16 @@ var navigation = {
         });
         return resolver.promise;
     },
-    async getAllForPopupTab(){
-        return await this.getAllForTab(await getPopupTabId());
+    getPopupTabId(){
+        var resolver = new PromiseResolver();
+        chrome.tabs.query({lastFocusedWindow: true, active: true}, tabs => {
+            if(tabs.length !== 1){
+                resolver.reject(new Error(`looked for the single active tab, but found ${tabs.length} tabs`));
+                return;
+            }
+            resolver.resolve(tabs[0].id);
+        });
+        return resolver.promise;
     },
     getAllForTab(tabId){
         var resolver = new PromiseResolver();
