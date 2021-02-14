@@ -201,9 +201,7 @@ class ContentScriptRuleCollection{
 		for(let newDefinition of newDefinitions){
 			this.addRuleForDefinition(newDefinition);
 		}
-		if(oldRuleIds.length > 0 || newDefinitions.length > 0){
-			this.collectionUpdated.dispatch();
-		}
+		this.collectionUpdated.dispatch();
 	}
 	stopAutomaticRuleExecution(ruleId){
 		var index = this.automaticExecutions.findIndex(e => e.ruleId === ruleId);

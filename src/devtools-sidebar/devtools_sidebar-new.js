@@ -26,13 +26,31 @@
 		},
 		methods: {
 			removeNavigation(navigationId){
+				console.log(`removing navigation id ${navigationId}`)
 				var index = this.navigations.findIndex(n => n.navigationId === navigationId);
 				if(index === -1){
 					return;
 				}
-				this.navigations.splice(index, 1);
+				var [removed] = this.navigations.splice(index, 1);
+				if(this.selectedNavigation === removed){
+					this.selectedNavigation = undefined;
+				}
+			},
+			replaceNavigationAtIndex(navigation, index){
+				navigation.origin = new URL(navigation.url).origin;
+				var [removed] = this.navigations.splice(index, 1, navigation);
+				if(removed === this.selectedNavigation){
+					this.selectedNavigation = navigation;
+				}
 			},
 			async addNavigation(notification){
+				var existingIndex = this.navigations.findIndex(n => n.navigationId === notification.navigationId);
+				if(existingIndex > -1){
+					console.log(`replacing navigation with id ${notification.navigationId}`)
+					this.replaceNavigationAtIndex(notification, existingIndex);
+					return;
+				}
+				console.log(`adding new navigation with id ${notification.navigationId}`)
 				var navigation = await macros.navigation.getNavigation(notification.navigationId);
 				if(!navigation){
 					return;
@@ -52,6 +70,7 @@
 					}
 					this.addNavigation(notification);
 				});
+				macros.navigation.onReplaced(({navigationHistoryId, newNavigationId}) => {console.log(`replacement for ${navigationHistoryId}: ${newNavigationId}`)})
 				macros.requestToEmitRules({tabId});
 			}
 		}
