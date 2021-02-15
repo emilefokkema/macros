@@ -10,6 +10,7 @@ var ruleCollection = new ContentScriptRuleCollection(() => macros.getRulesForUrl
 
 var elementSelectedInDevtools = function(element){
 	currentlySelectedElement = element;
+	sendNotification(ruleCollection.getNotification(), getSelectedElementNotification());
 }
 
 function sendNotification(ruleCollectionNotification, selectedElementNotification){

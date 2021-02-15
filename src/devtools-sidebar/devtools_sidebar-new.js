@@ -50,7 +50,7 @@
 					this.replaceNavigationAtIndex(notification, existingIndex);
 					return;
 				}
-				console.log(`adding new navigation with id ${notification.navigationId}`)
+				console.log(`adding new navigation with id ${notification.navigationId}:`, notification)
 				var navigation = await macros.navigation.getNavigation(notification.navigationId);
 				if(!navigation){
 					return;
@@ -72,6 +72,76 @@
 				});
 				macros.navigation.onReplaced(({navigationHistoryId, newNavigationId}) => {console.log(`replacement for ${navigationHistoryId}: ${newNavigationId}`)})
 				macros.requestToEmitRules({tabId});
+			}
+		},
+		components: {
+			navigation: {
+				template: document.getElementById('navigationTemplate').innerHTML,
+				props: {
+					navigation: Object
+				},
+				data: function(){
+					return {
+						rulesAndEffects: []
+					};
+				},
+				mounted: function(){
+					this.setRulesAndEffects();
+				},
+				watch: {
+					navigation: function(){
+						this.setRulesAndEffects();
+					}
+				},
+				methods: {
+					setRulesAndEffects(){
+						if(this.navigation.selectedElement){
+							this.rulesAndEffects = this.navigation.rules.map(rule => ({
+								rule,
+								effects: this.navigation.selectedElement.effect.find(e => e.ruleId === rule.id).effect
+							}))
+						}
+					}
+				},
+				components: {
+					selector: {
+						template: document.getElementById('selectorTemplate').innerHTML,
+						props: {
+							selector: Object
+						}
+					},
+					rule: {
+						template: document.getElementById('ruleTemplate').innerHTML,
+						props: {
+							rule: Object,
+							effects: Array,
+							navigationid: String
+						},
+						data: function(){
+							return {
+								editable: false
+							};
+						},
+						mounted: function(){
+							this.initialize();
+						},
+						methods: {
+							async initialize(){
+								var editedStatus = await macros.getEditedStatusAsync(this.rule.id);
+								this.editable = !editedStatus.edited || editedStatus.navigationId === this.navigationid;
+								macros.onEditedStatusChanged(({ruleId, edited, otherNavigationId}) => {
+									if(ruleId !== this.rule.id){
+										return;
+									}
+									this.editable = !edited || otherNavigationId === this.navigationid;
+								});
+							},
+							onAddActionClicked(){
+
+							}
+						}
+					}
+				}
 			}
 		}
 	})

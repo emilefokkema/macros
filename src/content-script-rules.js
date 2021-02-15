@@ -176,7 +176,7 @@ class ContentScriptRule{
 		this.hasExecuted = true;
 	}
 	getEffectOnNode(node){
-		return this.actions.map(a => a.getEffectOnNode(node));
+		return this.actions.map(a => a.getEffectOnNode(node)).filter(e => !!e);
 	}
 }
 
