@@ -28,7 +28,13 @@
 	<template id="navigationTemplate">
 		<div>
 			<selector v-bind:selector="navigation.selectedElement.selector" v-if="navigation.selectedElement"></selector>
-			<rule v-if="navigation.selectedElement" v-for="ruleAndEffects of rulesAndEffects" v-bind:rule="ruleAndEffects.rule" v-bind:effects="ruleAndEffects.effects" v-bind:navigationid="navigation.navigationId"></rule>
+			<rule v-if="navigation.selectedElement" v-for="ruleAndEffects of rulesAndEffects" v-bind:rule="ruleAndEffects.rule" v-bind:effects="ruleAndEffects.effects" v-bind:navigationid="navigation.navigationId" v-bind:selectortext="navigation.selectedElement.selector.text"></rule>
+			<div  v-if="navigation.selectedElement" class="row">
+				<div class="row-part rule-description">(New macro)</div>
+				<div class="row-part">
+					<div class="add-action-button" v-on:click="addActionToNewRule()">add action</div>
+				</div>
+			</div>
 		</div>
 	</template>
 	<div id="app">

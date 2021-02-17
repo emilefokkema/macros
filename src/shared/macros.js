@@ -24,6 +24,7 @@ class Macros{
 		this.ruleAddedNotification = crossBoundaryEventFactory.create('notifyRuleAdded');
 		this.ruleDeletedNotification = crossBoundaryEventFactory.create('notifyRuleDeleted');
 		this.ruleUpdatedNotification = crossBoundaryEventFactory.create('notifyRuleUpdated');
+		this.addActionForSelectorRequest = crossBoundaryEventFactory.create('requestToAddActionForSelector');
 	}
 	forBackground(){
 		crossBoundaryEventFactory.manageSubscriptions();
@@ -73,8 +74,18 @@ class Macros{
 	onRequestToOpenEditor(listener, cancellationToken){
 		return this.openEditorRequest.source.onMessage(listener, cancellationToken);
 	}
-	requestToOpenEditor(req){
-		this.openEditorRequest.target.sendMessage(req);
+	async requestToOpenEditor({navigationId, ruleId}){
+		var alreadyOpen = await this.openEditorRequest.target.sendMessageAsync({navigationId, ruleId});
+		if(alreadyOpen){
+			return;
+		}
+		await new Promise((resolve) => {
+			this.editedStatusChangedMessage.source.onMessage(({ruleId: _ruleId, otherNavigationId, edited}) => {
+				if(edited && (ruleId !== undefined && _ruleId === ruleId || otherNavigationId === navigationId)){
+					resolve();
+				}
+			});
+		});
 	}
 	openManagementPage(){
 		this.navigation.openTab('management.html')
@@ -126,6 +137,12 @@ class Macros{
 	}
 	onRuleUpdated(listener, cancellationToken){
 		return this.ruleUpdatedNotification.source.onMessage(listener, cancellationToken);
+	}
+	requestToAddActionForSelector(req){
+		this.addActionForSelectorRequest.target.sendMessage(req);
+	}
+	onRequestToAddActionForSelector(listener, cancellationToken){
+		this.addActionForSelectorRequest.source.onMessage(listener, cancellationToken);
 	}
 }
 

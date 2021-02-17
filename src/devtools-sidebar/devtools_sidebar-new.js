@@ -101,6 +101,11 @@
 								effects: this.navigation.selectedElement.effect.find(e => e.ruleId === rule.id).effect
 							}))
 						}
+					},
+					async addActionToNewRule(){
+						await macros.requestToOpenEditor({navigationId: this.navigation.navigationId});
+						console.log(`editor for new rule is open`)
+						macros.requestToAddActionForSelector({navigationId: this.navigation.navigationId, text: this.navigation.selectedElement.selector.text});
 					}
 				},
 				components: {
@@ -115,7 +120,8 @@
 						props: {
 							rule: Object,
 							effects: Array,
-							navigationid: String
+							navigationid: String,
+							selectortext: String
 						},
 						data: function(){
 							return {
@@ -136,8 +142,9 @@
 									this.editable = !edited || otherNavigationId === this.navigationid;
 								});
 							},
-							onAddActionClicked(){
-
+							async onAddActionClicked(){
+								await macros.requestToOpenEditor({ruleId: this.rule.id, navigationId: this.navigationid});
+								macros.requestToAddActionForSelector({ruleId: this.rule.id, navigationId: this.navigationid, text: this.selectortext});
 							}
 						}
 					}

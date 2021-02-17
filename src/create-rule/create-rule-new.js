@@ -59,6 +59,11 @@
 							});
 						}
 					}
+					macros.onRequestToAddActionForSelector(({ruleId, navigationId, text}) => {
+						if(this.ruleId !== undefined && ruleId === this.ruleId || this.otherNavigationId !== undefined && navigationId === this.otherNavigationId){
+							console.log(`going to add action for selector '${text}'`)
+						}
+					});
 					macros.notifyEditorLoaded({ruleId, otherNavigationId});
 				},
 				addActionsForSelectors(selectors){

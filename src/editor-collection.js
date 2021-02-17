@@ -73,16 +73,17 @@ class EditorCollection{
 			var editorForRule = this.editors.find(e => e.ruleId === ruleId);
 			if(editorForRule){
 				editorForRule.focus();
-				return;
+				return true;
 			}
 		}else if(otherNavigationId !== undefined){
 			var editorForOtherNavigation = this.editors.find(e => e.otherNavigationId === otherNavigationId);
 			if(editorForOtherNavigation){
 				editorForOtherNavigation.focus();
-				return;
+				return true;
 			}
 		}
 		macros.navigation.openTab(editors.createEditorUrl(otherNavigationId, ruleId));
+		return false;
 	}
 	removeEditor(editor){
 		var index = this.editors.indexOf(editor);
