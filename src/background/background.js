@@ -1,8 +1,8 @@
-import { macros } from './shared/macros';
+import { macros } from '../shared/macros';
 import { rules } from './rules';
-import { buttons } from './shared/button';
+import { buttons } from './button';
 import { editorCollection } from './editor-collection';
-import { setPopup } from './shared/set-popup';
+import { setPopup } from './set-popup';
 
 macros.forBackground();
 

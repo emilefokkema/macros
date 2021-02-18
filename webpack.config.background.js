@@ -1,7 +1,7 @@
 const path = require('path');
 
 module.exports = {
-	entry: './src/background.js',
+	entry: './src/background/background.js',
 	resolve: {
 	  extensions: [ '.js' ]
 	},

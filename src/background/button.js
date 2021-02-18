@@ -1,7 +1,7 @@
-import { macros } from './macros';
-import { Event, CancellationToken } from './events';
+import { macros } from '../shared/macros';
+import { Event, CancellationToken } from '../shared/events';
 import { buttonInteraction } from './button-interaction';
-import { storage } from './storage';
+import { storage } from '../shared/storage';
 
 class ButtonNotification{
     constructor(navigation, {numberOfRules, numberOfRulesThatHaveSomethingToDo, numberOfRulesThatHaveExecuted}){

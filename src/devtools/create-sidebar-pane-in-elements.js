@@ -1,4 +1,4 @@
-import { PromiseResolver } from '../promise-resolver';
+import { PromiseResolver } from '../shared/promise-resolver';
 
 export function createSidebarPaneInElements(title, url){
     var resolver = new PromiseResolver();

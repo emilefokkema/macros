@@ -1,4 +1,4 @@
-import { EventSource } from '../events';
+import { EventSource } from '../shared/events';
 
 class ElementSelectionChanged extends EventSource{
     addListener(listener){

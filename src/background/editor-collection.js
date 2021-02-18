@@ -1,7 +1,7 @@
-import { macros } from './shared/macros';
-import { storage } from './shared/storage';
-import { Event } from './shared/events';
-import { editors } from './shared/editors';
+import { macros } from '../shared/macros';
+import { storage } from '../shared/storage';
+import { Event } from '../shared/events';
+import { editors } from '../shared/editors';
 
 class Editor{
 	constructor(ruleId, ownNavigation, otherNavigationId){

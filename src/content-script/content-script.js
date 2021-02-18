@@ -1,6 +1,6 @@
-import { macros } from './shared/macros';
+import { macros } from '../shared/macros';
 import { ContentScriptRuleCollection, createAction } from './content-script-rules';
-import { Selector } from './shared/selector';
+import { Selector } from './selector';
 
 var currentlySelectedElement;
 var navigationId;

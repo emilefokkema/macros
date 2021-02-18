@@ -1,5 +1,5 @@
-import { Event } from './shared/events';
-import { storage } from './shared/storage';
+import { Event } from '../shared/events';
+import { storage } from '../shared/storage';
 
 function urlMatchesPattern(url, pattern){
 	var regexPattern = pattern.replace(/[.+?^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '[\\S]*?');

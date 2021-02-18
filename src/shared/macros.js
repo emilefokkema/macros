@@ -1,7 +1,7 @@
 import { navigation } from './navigation/navigation-interface';
 import { crossBoundaryEventFactory } from './cross-boundary-events';
 import { editors } from './editors';
-import { inspectedWindow } from './devtools/inspected-window';
+import { inspectedWindow } from './inspected-window';
 
 class Macros{
 	constructor(){

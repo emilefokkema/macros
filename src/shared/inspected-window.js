@@ -1,4 +1,4 @@
-import { PromiseResolver } from '../promise-resolver';
+import { PromiseResolver } from './promise-resolver';
 
 var inspectedWindow = {
     get tabId(){return chrome.devtools.inspectedWindow.tabId;},

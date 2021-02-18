@@ -1,6 +1,6 @@
-import { CombinedEventSource, Event, CancellationToken } from './shared/events';
+import { CombinedEventSource, Event, CancellationToken } from '../shared/events';
 import { DocumentMutations } from './document-mutations'
-import { Selector } from './shared/selector';
+import { Selector } from './selector';
 
 class DeleteNode{
 	getEffectOnNode(node){

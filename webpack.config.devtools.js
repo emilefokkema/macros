@@ -1,7 +1,7 @@
 const path = require('path');
 
 module.exports = {
-	entry: './src/devtools.js',
+	entry: './src/devtools/devtools.js',
 	resolve: {
 	  extensions: [ '.js' ]
 	},

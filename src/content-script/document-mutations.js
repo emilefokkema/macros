@@ -1,4 +1,4 @@
-import { EventSource } from './shared/events';
+import { EventSource } from '../shared/events';
 
 class DocumentMutations extends EventSource{
 	constructor(attributeNames){
