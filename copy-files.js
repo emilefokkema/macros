@@ -24,7 +24,6 @@ copyFile('./src/devtools-sidebar/devtools_sidebar.html', './dist/devtools_sideba
 
 copyFile('./src/shared/shared.css', './dist/shared.css');
 copyFile('./src/devtools.html', './dist/devtools.html');
-copyFile('./src/devtools.js', './dist/devtools.js');
 
 function copyFile(src, dest){
 	fs.copyFile(src, dest, (err) => {

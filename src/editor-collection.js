@@ -1,6 +1,6 @@
 import { macros } from './shared/macros';
 import { storage } from './shared/storage';
-import { Event, CancellationToken } from './shared/events';
+import { Event } from './shared/events';
 import { editors } from './shared/editors';
 
 class Editor{

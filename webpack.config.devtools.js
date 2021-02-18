@@ -1,14 +1,14 @@
 const path = require('path');
 
 module.exports = {
-	entry: './src/content-script-main-new.js',
+	entry: './src/devtools.js',
 	resolve: {
 	  extensions: [ '.js' ]
 	},
 	output: {
-	  filename: 'content-script.js',
+	  filename: 'devtools.js',
 	  path: path.resolve(__dirname, 'dist'),
-	  library: 'contentScript',
+	  library: 'devtools',
 	  libraryTarget: 'umd',
 	  globalObject: 'this'
 	}

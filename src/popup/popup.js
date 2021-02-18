@@ -4,95 +4,123 @@
 		el: '#app',
 		data: function(){
 			return {
-				pageId: undefined,
-				tabId: undefined,
-				rules: [],
-				executingRule: undefined
+				navigations: [],
+				selectedNavigation: undefined,
+				ruleCurrentlyExecuting: undefined
 			};
 		},
 		mounted: function(){
 			this.initialize();
 		},
+		computed: {
+			navigationIdOption: {
+				get: function(){
+					return this.selectedNavigation && this.selectedNavigation.navigationId;
+				},
+				set: function(value){
+					var navigation = this.navigations.find(n => n.navigationId === value);
+					if(navigation){
+						this.selectedNavigation = navigation;
+					}
+				}
+			}
+		},
 		methods: {
-			onExecuteClicked: function(rule){
-				this.executingRule = rule;
-				chrome.runtime.sendMessage(undefined, {executeRule: true, pageId: this.pageId, ruleId: rule.ruleId}, resp => {
-					this.executingRule = undefined;
-				});
+			onExecuteClicked: async function({rule, navigationId}){
+				this.ruleCurrentlyExecuting = rule;
+				await macros.executeRuleAsync(navigationId, rule.id);
+				this.ruleCurrentlyExecuting = undefined;
 			},
-			onEditClicked: function(rule){
-				chrome.runtime.sendMessage(undefined, {editRule: true, pageId: this.pageId, ruleId: rule.ruleId});
-				window.close();
+			onEditClicked: function({rule, navigationId}){
+				macros.requestToOpenEditor({ruleId: rule.id, navigationId});
 			},
-			addRule: function(){
-				chrome.runtime.sendMessage(undefined, {createRuleForPage: true, pageId: this.pageId});
-				window.close();
+			addRule(){
+				macros.requestToOpenEditor({navigationId: this.selectedNavigation.navigationId});
 			},
 			goToManagementPage: function(){
-				chrome.runtime.sendMessage(undefined, {goToManagementPage: true});
-				window.close();
+				macros.openManagementPage();
 			},
-			setExecutionStates: function(executionStates){
-				for(let state of executionStates){
-					const rule = this.rules.find(r => r.ruleId === state.ruleId);
-					if(!rule){
-						continue;
+			addNavigation(navigation){
+				navigation.origin = new URL(navigation.url).origin;
+				var existingIndex = this.navigations.findIndex(n => n.navigationId === navigation.navigationId);
+				if(existingIndex > -1){
+					if(!!this.selectedNavigation && this.selectedNavigation.navigationId === navigation.navigationId){
+						this.selectedNavigation = navigation;
 					}
-					rule.hasExecuted = state.hasExecuted;
-					rule.hasSomethingToDo = state.hasSomethingToDo;
+					this.navigations.splice(existingIndex, 1, navigation)
+				}else{
+					this.navigations.push(navigation);
+					if(!this.selectedNavigation || navigation.rules.length > 0 && this.selectedNavigation.rules.length === 0){
+						this.selectedNavigation = navigation;
+					}
 				}
 			},
 			initialize: async function(){
-				chrome.runtime.sendMessage(undefined, {initializePopup: true}, resp => {
-					this.pageId = resp.pageId;
-					this.tabId = resp.tabId;
-					this.rules = resp.rules.map(r => {
-						return {
-							ruleId: r.ruleId,
-							rule: r.rule,
-							editable: r.editable,
-							hasExecuted: resp.executionStates.some(s => s.ruleId === r.ruleId && s.hasExecuted),
-							hasSomethingToDo: resp.executionStates.some(s => s.ruleId === r.ruleId && s.hasSomethingToDo)
-						};
-					});
-				});
-				chrome.runtime.onMessage.addListener((msg) => {
-					if(msg.pageExecutedRule && msg.pageId === this.pageId){
-						this.setExecutionStates(msg.executionStates);
+				var tabId = await macros.navigation.getPopupTabId();
+				macros.onNotifyRulesForNavigation(navigation => {
+					if(navigation.tabId !== tabId){
+						return;
 					}
+					this.addNavigation(navigation);
 				});
+				macros.requestToEmitRules({tabId});
 			}
 		},
 		components: {
-			rule: {
-				template: document.getElementById("ruleTemplate").innerHTML,
+			navigation: {
+				template: document.getElementById("navigationTemplate").innerHTML,
 				props: {
-					rule: Object,
-					executingrule: Object
+					navigation: Object,
+					rulecurrentlyexecuting: Object
 				},
-				computed: {
-					editable: function(){
-						return !!this.rule && this.rule.editable
+				methods:{
+					onEditClicked(rule){
+						this.$emit('editclicked', {rule, navigationId: this.navigation.navigationId});
 					},
-					isExecuting: function(){
-						return !!this.executingrule && this.executingrule === this.rule;
-					},
-					canExecute: function(){
-						return !this.executingrule && !!this.rule && this.rule.hasSomethingToDo;
-					},
-					hasExecuted: function(){
-						return !!this.rule && this.rule.hasExecuted;
+					onExecuteClicked(rule){
+						this.$emit('executeclicked', {rule, navigationId: this.navigation.navigationId});
 					}
 				},
-				methods: {
-					onExecuteClicked: function(){
-						this.$emit('executeclicked');
-					},
-					onEditClicked: function(){
-						this.$emit('editclicked');
-					},
+				components: {
+					rule: {
+						template: document.getElementById("ruleTemplate").innerHTML,
+						props: {
+							rule: Object,
+							rulecurrentlyexecuting: Object,
+							navigationid: String
+						},
+						data: function(){
+							return {
+								editable: false
+							};
+						},
+						computed: {
+							isExecuting: function(){
+								return this.rulecurrentlyexecuting === this.rule;
+							},
+							canExecute: function(){
+								return this.rule.hasSomethingToDo && !this.rulecurrentlyexecuting;
+							},
+							hasExecuted: function(){
+								return this.rule.hasExecuted;
+							}
+						},
+						mounted: async function(){
+							var editedStatus = await macros.getEditedStatusAsync(this.rule.id);
+							this.editable = !editedStatus.edited || editedStatus.navigationId === this.navigationid;
+						},
+						methods: {
+							onExecuteClicked: function(){
+								this.$emit('executeclicked');
+							},
+							onEditClicked: function(){
+								this.$emit('editclicked');
+							},
+						}
+					}
 				}
-			}
+			},
+			
 		}
 	})
 })();

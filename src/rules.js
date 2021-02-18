@@ -1,4 +1,5 @@
 import { Event } from './shared/events';
+import { storage } from './shared/storage';
 
 function urlMatchesPattern(url, pattern){
 	var regexPattern = pattern.replace(/[.+?^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '[\\S]*?');
@@ -8,66 +9,76 @@ function urlMatchesPattern(url, pattern){
 
 class RuleCollection{
 	constructor(){
+		this.loaded = false;
 		this.latestRuleId = 0;
-		this.records = [];
+		this.rules = [];
 		this.ruleUpdated = new Event();
 		this.ruleAdded = new Event();
 		this.ruleDeleted = new Event();
-		this.load();
 	}
 	load(){
-		var item = localStorage.getItem('rules');
-		var parsed = JSON.parse(item);
-		if(!Array.isArray(parsed)){
+		this.rules = storage.getItem('rules') || [];
+		this.latestRuleId = Math.max.apply(Math, this.rules.map(r => r.id));
+		console.log(`loaded ${this.rules.length} rules. Highest id: ${this.latestRuleId}`)
+		this.loaded = true;
+	}
+	ensureLoaded(){
+		if(this.loaded){
 			return;
 		}
-		for(var rule of parsed){
-			this.saveNewRule(rule);
-		}
-		console.log(`loaded ${this.records.length} rules`)
+		this.load();
 	}
 	save(){
-		var rules = this.records.map(r => r.rule);
-		localStorage.setItem('rules', JSON.stringify(rules));
+		storage.setItem('rules', this.rules);
 	}
 	deleteRule(ruleId){
-		var index = this.records.findIndex(r => r.ruleId === ruleId);
+		this.ensureLoaded();
+		var index = this.rules.findIndex(r => r.id === ruleId);
 		if(index > -1){
-			this.records.splice(index, 1);
+			this.rules.splice(index, 1);
 			this.save();
-			this.ruleDeleted.dispatch();
+			this.ruleDeleted.dispatch({ruleId});
 		}
+	}
+	saveRule(rule){
+		this.ensureLoaded();
+		if(rule.id === undefined){
+			return this.saveNewRule(rule);
+		}
+		this.updateRule(rule);
+		return rule.id;
 	}
 	saveNewRule(rule){
-		var ruleId = ++this.latestRuleId;
-		this.records.push({ruleId: ruleId, rule: rule});
+		rule.id = ++this.latestRuleId;
+		this.rules.push(rule);
 		this.save();
 		this.ruleAdded.dispatch();
-		return ruleId;
+		return rule.id;
 	}
-	updateRule(ruleId, rule){
-		var record = this.getRecord(ruleId);
-		if(!record){
+	updateRule(rule){
+		if(rule.id === undefined){
 			return;
 		}
-		record.rule = rule;
+		var index = this.rules.findIndex(r => r.id == rule.id);
+		if(index == -1){
+			return;
+		}
+		this.rules.splice(index, 1);
+		this.rules.push(rule);
 		this.save();
-		this.ruleUpdated.dispatch();
+		this.ruleUpdated.dispatch({ruleId: rule.id});
 	}
 	getAll(){
-		return this.records.slice();
-	}
-	getRecord(ruleId){
-		return this.records.find(r => r.ruleId === ruleId);
-	}
-	getRulesForUrl(url){
-		return this.records.filter(r => urlMatchesPattern(url, r.rule.urlPattern));
+		this.ensureLoaded();
+		return this.rules.slice();
 	}
 	getRule(ruleId){
-		var record = this.getRecord(ruleId);
-		if(record){
-			return record.rule;
-		}
+		this.ensureLoaded();
+		return this.rules.find(r => r.id === ruleId);
+	}
+	getRulesForUrl(url){
+		this.ensureLoaded();
+		return this.rules.filter(r => urlMatchesPattern(url, r.urlPattern));
 	}
 }
 var rules = new RuleCollection();

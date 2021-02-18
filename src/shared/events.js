@@ -238,24 +238,7 @@ class Event extends EventSource{
 		}
 	}
 }
-class MessageSender extends Event{
-	sendMessage(message, responseCallback){
-		var responseGiven = false;
-		for(let listener of this.listeners){
-			listener(message, sendResponse);
-		}
-		function sendResponse(resp){
-			if(responseGiven){
-				console.log(`a response was already given, so ignoring`)
-				return;
-			}
-			responseGiven = true;
-			if(responseCallback){
-				responseCallback(resp);
-			}
-		}
-	}
-}
+
 class CancellationToken extends Event{
 	constructor(){
 		super();
@@ -349,13 +332,7 @@ class EventMessagesTarget extends MessagesTarget{
 		this.event.dispatch(msg);
 	}
 }
-class MessagesSourceAndTarget{
-	constructor(){
-		var dispatcher = new Event();
-		this.source = new EventMessagesSource(dispatcher);
-		this.target = new EventMessagesTarget(dispatcher);
-	}
-}
+
 class MessagesSourceOfType extends MessagesSource{
 	constructor(messagesSource, messageType){
 		super();
@@ -385,4 +362,4 @@ class MessagesTargetOfType extends MessagesTarget{
 	}
 }
 
-export {EventSource, Event, CancellationToken, FilteredEventSource, MessageSender, MessageType, MessagesSource, MessagesTarget, MessagesSourceAndTarget, CombinedEventSource};
+export {EventSource, Event, CancellationToken, MessageType, MessagesSource, MessagesTarget, CombinedEventSource};

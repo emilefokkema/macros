@@ -11,35 +11,18 @@
 			this.initialize();
 		},
 		methods: {
-			initialize: function(){
-				chrome.runtime.sendMessage(undefined, {initialize: true}, initMsg => {
-					console.log(`got response from initialize message:`, initMsg);
-					this.rules = initMsg.rules;
-					chrome.runtime.onMessage.addListener((msg) => {
-						if(msg.deletableRulesChange){
-							this.setNonDeletable(msg.nonDeletable);
-						}else if(msg.rulesChanged){
-							this.rules = msg.rules;
-						}
-					});
-				});
+			initialize: async function(){
+				await this.refresh();
+				macros.onRuleAdded(() => this.refresh());
+				macros.onRuleUpdated(() => this.refresh());
 			},
-			setNonDeletable: function(nonDeletableRuleIds){
-				for(var rule of this.rules){
-					rule.deletable = !nonDeletableRuleIds.some(id => id === rule.ruleId);
-				}
+			refresh: async function(){
+				this.rules = await macros.getAllRules();
 			},
-			onEditRuleClicked: function(rule){
-				chrome.runtime.sendMessage(undefined, {editRule: true, ruleId: rule.ruleId});
-			},
-			onDeleteRuleClicked: function(rule){
-				if(confirm(`Are you sure you want to delete '${rule.rule.name}'?`)){
-					chrome.runtime.sendMessage(undefined, {deleteRule: true, ruleId: rule.ruleId}, resp => {
-						var index = this.rules.indexOf(rule);
-						if(index > -1){
-							this.rules.splice(index, 1);
-						}
-					});
+			onDeleteRuleClicked: async function(rule){
+				if(confirm(`Are you sure you want to delete '${rule.name}'?`)){
+					await macros.deleteRuleAsync(rule.id);
+					this.refresh();
 				}
 			}
 		},
@@ -49,12 +32,30 @@
 				props: {
 					rule: Object
 				},
+				data: function(){
+					return {
+						deletable: true
+					};
+				},
+				mounted: function(){
+					this.initialize();
+				},
 				methods: {
+					async initialize(){
+						var editedStatus = await macros.getEditedStatusAsync(this.rule.id);
+						this.deletable = !editedStatus.edited;
+						macros.onEditedStatusChanged(({ruleId, edited}) => {
+							if(ruleId !== this.rule.id){
+								return;
+							}
+							this.deletable = !edited;
+						});
+					},
 					onDeleteClicked: function(){
 						this.$emit('deleteruleclicked')
 					},
 					onEditClicked: function(){
-						this.$emit('editruleclicked')
+						macros.requestToOpenEditor({ruleId: this.rule.id});
 					}
 				}
 			}
