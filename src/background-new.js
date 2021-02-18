@@ -29,8 +29,11 @@ macros.onRequestRulesForUrl((url, sendResponse) => {
 macros.onNotifyRulesForNavigation(notification => {
 	buttons.addNotification(notification);
 });
-macros.onRequestToOpenEditor((req) => {
-	editorCollection.openEditor(req);
+macros.onRequestToOpenEditor((req, sendResponse) => {
+	editorCollection.openEditor(req).then((alreadyOpen) => {
+		sendResponse(alreadyOpen);
+	});
+	return true;
 });
 macros.onEditedStatusRequest(({ruleId}, sendResponse) => {
 	editorCollection.getEditedStatus(ruleId).then(st => sendResponse(st));

@@ -20,11 +20,10 @@ copyFile('./src/popup/popup-new.html', './dist/popup.html');
 
 copyFile('./src/devtools-sidebar/devtools_sidebar.css', './dist/devtools_sidebar.css');
 copyFile('./src/devtools-sidebar/devtools_sidebar-new.js', './dist/devtools_sidebar.js');
-copyFile('./src/devtools-sidebar/devtools_sidebar.html', './dist/devtools_sidebar.html');
+copyFile('./src/devtools-sidebar/devtools_sidebar-new.html', './dist/devtools_sidebar.html');
 
 copyFile('./src/shared/shared.css', './dist/shared.css');
 copyFile('./src/devtools.html', './dist/devtools.html');
-copyFile('./src/devtools.js', './dist/devtools.js');
 
 function copyFile(src, dest){
 	fs.copyFile(src, dest, (err) => {

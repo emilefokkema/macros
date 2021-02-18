@@ -1,35 +1,6 @@
 import { CombinedEventSource, Event, CancellationToken } from './shared/events';
 import { DocumentMutations } from './document-mutations'
-
-class Selector{
-	constructor(text, attributeNames){
-		this.text = text;
-		this.attributeNames = attributeNames;
-	}
-	static create(text){
-		var attributeNames = [];
-		var hasId = false;
-		var hasClass = false;
-		var rgx = /(?:#([^\.\[]+))|(?:\.([^#\.\[]+))|\[([^=]+)(?:=(?:"[^"]*"|[^\]]+))?\]/g;
-		var match;
-		while((match = rgx.exec(text)) !== null){
-			if(match[1]){
-				hasId = true;
-			}else if(match[2]){
-				hasClass = true;
-			}else if(match[3]){
-				attributeNames.push(match[3])
-			}
-		}
-		if(hasId && !attributeNames.some(n => n === 'id')){
-			attributeNames.push('id');
-		}
-		if(hasClass && !attributeNames.some(n => n === 'class')){
-			attributeNames.push('class');
-		}
-		return new Selector(text, attributeNames);
-	}
-}
+import { Selector } from './shared/selector';
 
 class DeleteNode{
 	getEffectOnNode(node){
@@ -204,6 +175,9 @@ class ContentScriptRule{
 		}
 		this.hasExecuted = true;
 	}
+	getEffectOnNode(node){
+		return this.actions.map(a => a.getEffectOnNode(node)).filter(e => !!e);
+	}
 }
 
 class ContentScriptRuleCollection{
@@ -227,9 +201,7 @@ class ContentScriptRuleCollection{
 		for(let newDefinition of newDefinitions){
 			this.addRuleForDefinition(newDefinition);
 		}
-		if(oldRuleIds.length > 0 || newDefinitions.length > 0){
-			this.collectionUpdated.dispatch();
-		}
+		this.collectionUpdated.dispatch();
 	}
 	stopAutomaticRuleExecution(ruleId){
 		var index = this.automaticExecutions.findIndex(e => e.ruleId === ruleId);
@@ -297,6 +269,12 @@ class ContentScriptRuleCollection{
 			numberOfRulesThatHaveSomethingToDo: ruleNotifications.filter(r => r.hasSomethingToDo).length,
 			numberOfRulesThatHaveExecuted: ruleNotifications.filter(r => r.hasExecuted).length
 		};
+	}
+	getEffectOnNode(node){
+		return this.rules.map(rule => ({
+			ruleId: rule.id,
+			effect: rule.getEffectOnNode(node)
+		}));
 	}
 }
 

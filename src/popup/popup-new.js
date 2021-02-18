@@ -56,11 +56,14 @@
 				}
 			},
 			initialize: async function(){
+				var tabId = await macros.navigation.getPopupTabId();
 				macros.onNotifyRulesForNavigation(navigation => {
+					if(navigation.tabId !== tabId){
+						return;
+					}
 					this.addNavigation(navigation);
 				});
-				var navigationsOnPopupTab = await macros.navigation.getAllForPopupTab();
-				macros.requestToEmitRules({navigationIds: navigationsOnPopupTab.map(n => n.id)});
+				macros.requestToEmitRules({tabId});
 			}
 		},
 		components: {

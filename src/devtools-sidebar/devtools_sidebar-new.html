@@ -1,0 +1,49 @@
+<html>
+<head>
+	<title>Macros</title>
+	<script src="https://cdn.jsdelivr.net/npm/vue@2.6.12"></script>
+	<script src="macros.js"></script>
+	<link rel="stylesheet" type="text/css" href="shared.css" />
+	<link rel="stylesheet" type="text/css" href="devtools_sidebar.css" />
+</head>
+<body>
+	<template id="selectorTemplate">
+		<div>
+			<pre><span class="node-name">{{selector.nodeName}}</span><span v-if="selector.id" class="node-id">#{{selector.id}}</span><span class="class-name" v-for="className of selector.classes"><wbr />.{{className}}</span><span class="attribute" v-for="attributeName of selector.attributeNames"><wbr />[{{attributeName}}]</span></pre>
+		</div>
+	</template>
+	<template id="ruleTemplate">
+		<div class="row">
+			<div class="row-part rule-description">
+				<div class="rule-name">{{rule.name}}</div>
+				<div>
+					<div v-for="effect of effects" class="effect">{{effect}}</div>
+				</div>
+			</div>
+			<div class="row-part" v-if="editable">
+				<div class="add-action-button" v-on:click="onAddActionClicked()">add action</div>
+			</div>
+		</div>
+	</template>
+	<template id="navigationTemplate">
+		<div>
+			<selector v-bind:selector="navigation.selectedElement.selector" v-if="navigation.selectedElement"></selector>
+			<rule v-if="navigation.selectedElement" v-for="ruleAndEffects of rulesAndEffects" v-bind:rule="ruleAndEffects.rule" v-bind:effects="ruleAndEffects.effects" v-bind:navigationid="navigation.navigationId" v-bind:selectortext="navigation.selectedElement.selector.text"></rule>
+			<div  v-if="navigation.selectedElement" class="row">
+				<div class="row-part rule-description">(New macro)</div>
+				<div class="row-part">
+					<div class="add-action-button" v-on:click="addActionToNewRule()">add action</div>
+				</div>
+			</div>
+		</div>
+	</template>
+	<div id="app">
+		<select class="navigation-selector" v-if="navigations.length > 0" v-model="navigationIdOption">
+			<option v-for="navigation of navigations" v-bind:value="navigation.navigationId">{{navigation.origin}}</option>
+		</select>
+		<navigation v-bind:navigation="selectedNavigation" v-if="selectedNavigation"></navigation>
+	</div>
+	<script src="devtools_sidebar.js">
+	</script>
+</body>
+</html>

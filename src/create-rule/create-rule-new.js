@@ -59,18 +59,21 @@
 							});
 						}
 					}
+					macros.onRequestToAddActionForSelector(({ruleId, navigationId, text}) => {
+						if(this.ruleId !== undefined && ruleId === this.ruleId || this.otherNavigationId !== undefined && navigationId === this.otherNavigationId){
+							this.addActionsForSelector(text);
+						}
+					});
 					macros.notifyEditorLoaded({ruleId, otherNavigationId});
 				},
-				addActionsForSelectors(selectors){
-					for(let selector of selectors){
-						this.actions.push({
-							type: "select",
-							selector: selector,
-							action: {
-								type: "delete"
-							}
-						});
-					}
+				addActionsForSelector(selector){
+					this.actions.push({
+						type: "select",
+						selector: selector,
+						action: {
+							type: "delete"
+						}
+					});
 				},
 				setRule: function(rule){
 					this.name = rule.name;

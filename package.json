@@ -5,8 +5,8 @@
   "main": "background.js",
   "scripts": {
     "build": "node ./copy-files.js && npm run build:macros && npm run build:background && npm run build:content-script",
-    "build-new": "node ./copy-files-new.js && npm run build:macros && npm run build:background-new && npm run build:content-script-new",
-    "build-new-dev": "node ./copy-files-new.js && npm run build:macros-dev && npm run build:background-new-dev && npm run build:content-script-new-dev",
+    "build-new": "node ./copy-files-new.js && npm run build:macros && npm run build:background-new && npm run build:content-script-new && npm run build:devtools-new",
+    "build-new-dev": "node ./copy-files-new.js && npm run build:macros-dev && npm run build:background-new-dev && npm run build:content-script-new-dev && npm run build:devtools-new-dev",
     "build:macros": "npx webpack --config ./webpack.config.macros.js",
     "build:macros-dev": "npx webpack --config ./webpack.config.macros.js  --mode development",
     "build:background": "npx webpack --config ./webpack.config.background.js",
@@ -14,7 +14,9 @@
     "build:background-new": "npx webpack --config ./webpack.config.background-new.js",
     "build:background-new-dev": "npx webpack --config ./webpack.config.background-new.js  --mode development",
     "build:content-script-new": "npx webpack --config ./webpack.config.content-script-new.js",
-    "build:content-script-new-dev": "npx webpack --config ./webpack.config.content-script-new.js --mode development"
+    "build:content-script-new-dev": "npx webpack --config ./webpack.config.content-script-new.js --mode development",
+    "build:devtools-new": "npx webpack --config ./webpack.config.devtools-new.js",
+    "build:devtools-new-dev": "npx webpack --config ./webpack.config.devtools-new.js --mode development"
   },
   "repository": {
     "type": "git",
