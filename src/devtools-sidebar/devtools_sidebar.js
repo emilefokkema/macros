@@ -25,7 +25,15 @@
 			}
 		},
 		methods: {
-			removeNavigation(navigationId){
+			pruneNavigations(){
+				for(var navigation of this.navigations){
+					this.removeNavigationIfNecessary(navigation.navigationId);
+				}
+			},
+			async removeNavigationIfNecessary(navigationId){
+				if(await macros.navigation.navigationExists(navigationId)){
+					return;
+				}
 				console.log(`removing navigation id ${navigationId}`)
 				var index = this.navigations.findIndex(n => n.navigationId === navigationId);
 				if(index === -1){
@@ -57,7 +65,6 @@
 				}
 				notification.origin = new URL(notification.url).origin;
 				this.navigations.push(notification);
-				navigation.disappeared.next().then(() => this.removeNavigation(notification.navigationId));
 				if(!this.selectedNavigation){
 					this.selectedNavigation = notification;
 				}
@@ -70,7 +77,7 @@
 					}
 					this.addNavigation(notification);
 				});
-				macros.navigation.onReplaced(({navigationHistoryId, newNavigationId}) => {console.log(`replacement for ${navigationHistoryId}: ${newNavigationId}`)})
+				macros.navigation.onDisappeared(() => this.pruneNavigations());
 				macros.requestToEmitRules({tabId});
 			}
 		},

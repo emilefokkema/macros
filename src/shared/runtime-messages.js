@@ -1,6 +1,5 @@
 import { EventSource, MessagesSource, MessagesTarget, Event } from './events';
 import { PromiseResolver } from './promise-resolver';
-import { tabRemoved } from './tab-removed';
 
 function tabExists(tabId){
 	var resolver = new PromiseResolver();
@@ -35,10 +34,6 @@ class TabMessagesTarget extends MessagesTarget{
 	constructor(tabId){
 		super();
 		this.tabId = tabId;
-		this.disappeared = new Event();
-		tabRemoved.when((_tabId) => _tabId === this.tabId).then(() => {
-            this.disappeared.dispatch();
-        });
 	}
 	sendMessage(msg){
 		chrome.tabs.sendMessage(this.tabId, msg);
@@ -54,6 +49,9 @@ class TabMessagesTarget extends MessagesTarget{
 			}
 		});
 		return resolver.promise;
+	}
+	exists(){
+		return tabExists(this.tabId);
 	}
 	static async tryCreate(tabId){
 		if(await tabExists(tabId)){
@@ -94,6 +92,19 @@ class CombinedMessagesTarget extends MessagesTarget{
 	getTargets(){
 		return [runtimeMessagesTarget].concat(this.tabMessagesTargets);
 	}
+	prune(){
+		return Promise.all(this.tabMessagesTargets.map(t => this.removeTabMessagesTargetIfNecessary(t)));
+	}
+	async removeTabMessagesTargetIfNecessary(target){
+		if(await target.exists()){
+			return;
+		}
+		var index = this.tabMessagesTargets.indexOf(target);
+		if(index === -1){
+			return;
+		}
+		this.tabMessagesTargets.splice(index, 1);
+	}
 	sendMessageAsync(msg){
 		var resolver = new PromiseResolver();
 		var targets = this.getTargets();
@@ -110,17 +121,9 @@ class CombinedMessagesTarget extends MessagesTarget{
 	toJSON(){
 		return this.tabMessagesTargets.map(tt => tt.tabId);
 	}
-	removeTarget(target){
-		var index = this.tabMessagesTargets.indexOf(target);
-		if(index > -1){
-			this.tabMessagesTargets.splice(index, 1);
-			this.updated.dispatch();
-		}
-	}
 	addTarget(target){
 		if(target instanceof TabMessagesTarget && !this.tabMessagesTargets.some(tt => tt.tabId === target.tabId)){
 			this.tabMessagesTargets.push(target);
-			target.disappeared.listen(() => this.removeTarget(target));
 			this.updated.dispatch();
 		}
 	}

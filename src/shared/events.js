@@ -15,9 +15,6 @@ class EventSource {
 	map(map){
 		return new MappedEventSourceWithDelegate(this, map);
 	}
-	once(){
-		return new OneEventSource(this);
-	}
 	mapAsync(mapAsync){
 		return new AsyncMappedEventSource(this, mapAsync);
 	}
@@ -55,24 +52,6 @@ class ComparingEventSource extends EventSource{
 			latestArgs = args;
 			return result; 
 		}, cancellationToken);
-	}
-}
-class OneEventSource extends EventSource{
-	constructor(source){
-		super();
-		this.source = source;
-		this.hasEmitted = false;
-	}
-	listen(listener, cancellationToken){
-		var self = this;
-		var sub = this.source.listen(function(){
-			var args = Array.prototype.slice.apply(arguments);
-			self.hasEmitted = true;
-			var result = listener(...args);
-			sub.cancel();
-			return result;
-		}, cancellationToken);
-		return sub;
 	}
 }
 
@@ -169,7 +148,11 @@ class AsyncMappedEventSource extends EventSource{
 		return this.eventSource.listen(function(){
 			var args = Array.prototype.slice.apply(arguments);
 			self.mapAsync(...args).then(mapped => {
-				listener(...mapped)
+				if(mapped){
+					listener(...mapped)
+				}else{
+					listener();
+				}
 			});
 		}, cancellationToken)
 	}

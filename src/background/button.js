@@ -11,12 +11,6 @@ class ButtonNotification{
         this.numberOfRulesThatHaveExecuted = numberOfRulesThatHaveExecuted;
         this.disappeared = new Event();
         this.updated = new Event();
-        this.initialize();
-    }
-    initialize(){
-        this.navigation.disappeared.next().then(() => {
-            this.disappear();
-        });
     }
     update({numberOfRules, numberOfRulesThatHaveSomethingToDo, numberOfRulesThatHaveExecuted}){
         this.numberOfRules = numberOfRules;
@@ -27,6 +21,9 @@ class ButtonNotification{
         }else{
             this.updated.dispatch();
         }
+    }
+    exists(){
+        return macros.navigation.navigationExists(this.navigation.id);
     }
     disappear(){
         this.disappeared.dispatch();
@@ -66,20 +63,24 @@ class Button{
     addNotification(navigation, info){
         var notification = this.notifications.find(n => n.navigation.id === navigation.id);
         if(!notification){
-            notification = ButtonNotification.create(navigation, info);//new ButtonNotification(navigation, info);
+            notification = ButtonNotification.create(navigation, info);
             if(!notification){
                 return;
             }
             this.notifications.push(notification);
-            notification.disappeared.next(this.cancellationToken).then(() => {
-                this.removeNotification(notification);
-            });
             notification.updated.listen(() => {
                 this.update();
             }, this.cancellationToken);
+            notification.disappeared.next(this.cancellationToken).then(() => {
+                this.removeNotification(notification);
+            });
         }else{
             notification.update(info);
         }
+        this.update();
+    }
+    async prune(){
+        await Promise.all(this.notifications.map(n => this.removeNotificationIfNecessary(n)));
         this.update();
     }
     removeNotification(notification){
@@ -87,6 +88,15 @@ class Button{
         if(index > -1){
             this.notifications.splice(index, 1);
             this.update();
+        }
+    }
+    async removeNotificationIfNecessary(notification){
+        if(await notification.exists()){
+            return;
+        }
+        var index = this.notifications.indexOf(notification);
+        if(index > -1){
+            this.notifications.splice(index, 1);
         }
     }
     disappear(){
@@ -143,6 +153,15 @@ class ButtonCollection{
     constructor(){
         this.loaded = false;
         this.buttons = [];
+        this.initialize();
+    }
+    initialize(){
+        macros.navigation.onDisappeared(() => this.prune());
+    }
+    async prune(){
+        await this.ensureLoaded();
+        await Promise.all(this.buttons.map(b => b.prune()));
+        this.save();
     }
     async ensureLoaded(){
         if(this.loaded){

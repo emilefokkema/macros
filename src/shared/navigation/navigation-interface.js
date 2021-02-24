@@ -1,7 +1,7 @@
 import { PromiseResolver } from '../promise-resolver';
 import { MessageType, CancellationToken } from '../events';
 import { runtimeMessagesEventSource, runtimeMessagesTarget } from '../runtime-messages';
-import { Navigation, getNavigationId, getNavigationHistoryId, navigationCreated, navigationReplaced} from './navigations';
+import { Navigation, getNavigationId, getNavigationHistoryId, navigationCreated, navigationReplaced, navigationDisappeared} from './navigations';
 import { crossBoundaryEventFactory } from '../cross-boundary-events';
 
 var navigationReplacedMessage = crossBoundaryEventFactory.create('navigationReplaced');
@@ -28,6 +28,24 @@ runtimeMessagesEventSource.filter((msg, sender) => !!sender.tab && sender.tab.id
         tabId: sender.tab.id
     })
 });
+
+async function navigationExistsInTab(tabId, tabUrl, navigationId, cancellationToken){
+    if(getNavigationId(tabId, 0, tabUrl) === navigationId){
+        return true;
+    }
+    var frameInfos = await new Promise((resolve) => {
+        chrome.webNavigation.getAllFrames({tabId}, resolve);
+    });
+    if(!frameInfos || cancellationToken.cancelled){
+        return false;
+    }
+    for(let frameInfo of frameInfos){
+        if(getNavigationId(tabId, frameInfo.frameId, frameInfo.url) === navigationId){
+            return true;
+        }
+    }
+    return false;
+}
 
 function findNavigationInTab(tabId, tabUrl, navigationId, cancellationToken){
     if(getNavigationId(tabId, 0, tabUrl) === navigationId){
@@ -59,6 +77,26 @@ var navigation = {
     },
     openTab(url){
         chrome.tabs.create({url});
+    },
+    navigationExists(navigationId){
+        var cancellationToken = new CancellationToken();
+        return new Promise((resolve) => {
+            chrome.tabs.query({}, async tabs => {
+                var found = false;
+                var existsForEachTab = tabs.map(async t => {
+                    var result = await navigationExistsInTab(t.id, t.url, navigationId, cancellationToken);
+                    if(result){
+                        cancellationToken.cancel();
+                        found = true;
+                        resolve(true);
+                    }
+                });
+                await Promise.all(existsForEachTab);
+                if(!found){
+                    resolve(false);
+                }
+            });
+        });
     },
     getNavigation(navigationId){
         var resolver = new PromiseResolver();
@@ -103,6 +141,12 @@ var navigation = {
     },
     onReplaced(listener, cancellationToken){
         return navigationReplacedMessage.source.onMessage(listener, cancellationToken);
+    },
+    onDisappeared(listener, cancellationToken){
+        return navigationDisappeared.listen(listener, cancellationToken);
+    },
+    whenDisappeared(navigationId){
+        return navigationDisappeared.mapAsync(() => this.navigationExists(navigationId)).filter(e => !e).next();
     }
 };
 

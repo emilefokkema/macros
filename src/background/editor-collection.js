@@ -1,6 +1,5 @@
 import { macros } from '../shared/macros';
 import { storage } from '../shared/storage';
-import { Event } from '../shared/events';
 import { editors } from '../shared/editors';
 
 class Editor{
@@ -8,13 +7,6 @@ class Editor{
 		this.otherNavigationId = otherNavigationId;
 		this.ownNavigation = ownNavigation;
 		this.ruleId = ruleId;
-		this.disappeared = new Event();
-		this.initialize();
-	}
-	initialize(){
-		this.ownNavigation.disappeared.next().then(() => {
-            this.disappeared.dispatch();
-		});
 	}
 	focus(){
 		this.ownNavigation.focus();
@@ -25,6 +17,9 @@ class Editor{
 			ownNavigationId: this.ownNavigation && this.ownNavigation.id,
 			otherNavigationId: this.otherNavigationId
 		};
+	}
+	exists(){
+		return macros.navigation.navigationExists(this.ownNavigation.id);
 	}
 	static async recreate({ruleId, ownNavigationId, otherNavigationId}){
 		var ownNavigation = await macros.navigation.getNavigation(ownNavigationId);
@@ -39,9 +34,29 @@ class EditorCollection{
 	constructor(){
 		this.loaded = false;
 		this.editors = [];
+		this.initialize();
+	}
+	initialize(){
+		macros.navigation.onDisappeared(() => this.prune())
 	}
 	save(){
 		storage.setItem('editors', this.editors);
+	}
+	async prune(){
+		await this.ensureLoaded();
+		await Promise.all(this.editors.map(e => this.removeEditorIfNecessary(e)))
+		this.save();
+	}
+	async removeEditorIfNecessary(editor){
+		if(await editor.exists()){
+			return;
+		}
+		var index = this.editors.indexOf(editor);
+		if(index === -1){
+			return;
+		}
+		this.editors.splice(index, 1);
+		macros.notifyEditedStatusChanged({ruleId: editor.ruleId, edited: false});
 	}
 	async ensureLoaded(){
 		if(this.loaded){
@@ -57,15 +72,15 @@ class EditorCollection{
 		this.loaded = true;
 	}
 	addOpenedEditor(ruleId, navigation, otherNavigationId){
+		if(ruleId !== undefined && this.editors.some(e => e.ruleId === ruleId) || this.editors.some(e => e.otherNavigationId === otherNavigationId)){
+			return;
+		}
 		this.addEditor(new Editor(ruleId, navigation, otherNavigationId));
 		this.save();
 		macros.notifyEditedStatusChanged({ruleId, otherNavigationId, edited: true});
 	}
 	addEditor(editor){
 		this.editors.push(editor);
-		editor.disappeared.next().then(() => {
-			this.removeEditor(editor);
-		});
 	}
 	async openEditor({navigationId: otherNavigationId, ruleId}){
 		await this.ensureLoaded();
@@ -84,14 +99,6 @@ class EditorCollection{
 		}
 		macros.navigation.openTab(editors.createEditorUrl(otherNavigationId, ruleId));
 		return false;
-	}
-	removeEditor(editor){
-		var index = this.editors.indexOf(editor);
-		if(index > -1){
-			this.editors.splice(index, 1);
-			macros.notifyEditedStatusChanged({ruleId: editor.ruleId, edited: false});
-			this.save();
-		}
 	}
 	async getEditedStatus(ruleId){
 		await this.ensureLoaded();

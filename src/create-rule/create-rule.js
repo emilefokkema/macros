@@ -46,17 +46,15 @@
 						this.setRule(rule);
 					}
 					if(otherNavigationId){
-						this.otherNavigationId = otherNavigationId;
 						var otherNavigation = await macros.navigation.getNavigation(otherNavigationId);
 						if(otherNavigation){
 							this.hasPage = true;
+							this.otherNavigationId = otherNavigationId;
 							this.url = otherNavigation.url;
 							if(this.isNew){
 								this.urlPattern = this.url;
 							}
-							otherNavigation.disappeared.listen(() => {
-								this.removePage();
-							});
+							macros.navigation.whenDisappeared(otherNavigationId).then(() => this.removePage());
 						}
 					}
 					macros.onRequestToAddActionForSelector(({ruleId, navigationId, text}) => {

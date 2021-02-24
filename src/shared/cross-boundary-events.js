@@ -1,7 +1,8 @@
 import { MessageType, MessagesSource, MessagesTarget, Event } from './events';
 import { runtimeMessagesTarget, runtimeMessagesSource, CombinedMessagesTarget } from './runtime-messages';
 import { navigationMessagesEventSource } from './navigation/navigations';
-import { storage } from './storage'
+import { storage } from './storage';
+import { tabRemoved } from './tab-removed';
 
 var subscriptionMessageType = new MessageType('crossBoundarySubscription');
 var targetRequestType = new MessageType('requestTarget');
@@ -54,6 +55,9 @@ class CrossBoundarySubscriptionForType{
             target: this.combinedTarget 
         };
     }
+    prune(){
+        return this.combinedTarget.prune();
+    }
     addTarget(target){
         this.combinedTarget.addTarget(target);
     }
@@ -70,6 +74,11 @@ class CrossBoundarySubscriptionCollection{
     constructor(){
         this.subscriptions = [];
         this.loadingPromise = undefined;
+    }
+    async pruneSubscriptions(){
+        await this.ensureLoaded();
+        await Promise.all(this.subscriptions.map(s => s.prune()));
+        this.save();
     }
     save(){
         var nonEmpty = this.subscriptions.filter(s => !s.empty);
@@ -149,6 +158,7 @@ class Factory{
     }
     manageSubscriptions(){
         managed = true;
+        tabRemoved.listen(() => subscriptionCollection.pruneSubscriptions());
         targetRequestSource.onMessage(({type}, sendResponse) => {
             subscriptionCollection.getTargetForType(type).then(sendResponse);
             return true;
