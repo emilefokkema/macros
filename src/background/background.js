@@ -1,8 +1,12 @@
 import { macros } from '../shared/macros';
-import { rules } from './rules';
-import { buttons } from './button';
-import { editorCollection } from './editor-collection';
+import { RuleCollection } from './rules';
+import { ButtonCollection } from './button';
+import { EditorCollection } from './editor-collection';
 import { setPopup } from './set-popup';
+
+var rules = new RuleCollection();
+var editorCollection = new EditorCollection(macros.navigation);
+var buttons = new ButtonCollection(macros.navigation);
 
 macros.forBackground();
 

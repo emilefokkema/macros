@@ -1,13 +1,13 @@
-import { macros } from '../shared/macros';
 import { storage } from '../shared/storage';
 import { editors } from '../shared/editors';
 import { Event } from '../shared/events';
 
 class Editor{
-	constructor(ruleId, ownNavigation, otherNavigationId){
+	constructor(navigationInterface, ruleId, ownNavigation, otherNavigationId){
 		this.otherNavigationId = otherNavigationId;
 		this.ownNavigation = ownNavigation;
 		this.ruleId = ruleId;
+		this.navigationInterface = navigationInterface;
 	}
 	focus(){
 		this.ownNavigation.focus();
@@ -20,22 +20,23 @@ class Editor{
 		};
 	}
 	exists(){
-		return macros.navigation.navigationExists(this.ownNavigation.id);
+		return this.navigationInterface.navigationExists(this.ownNavigation.id);
 	}
-	static async recreate({ruleId, ownNavigationId, otherNavigationId}){
-		var ownNavigation = await macros.navigation.getNavigation(ownNavigationId);
+	static async recreate(navigationInterface, {ruleId, ownNavigationId, otherNavigationId}){
+		var ownNavigation = await navigationInterface.getNavigation(ownNavigationId);
 		if(!ownNavigation){
 			return null;
 		}
-		return new Editor(ruleId, ownNavigation, otherNavigationId);
+		return new Editor(navigationInterface, ruleId, ownNavigation, otherNavigationId);
 	}
 }
 
 class EditorCollection{
-	constructor(){
+	constructor(navigationInterface){
 		this.loaded = false;
 		this.editors = [];
 		this.editedStatusChanged = new Event();
+		this.navigationInterface = navigationInterface;
 	}
 	save(){
 		storage.setItem('editors', this.editors);
@@ -61,7 +62,7 @@ class EditorCollection{
 			return;
 		}
 		var stringifiedEditors = storage.getItem('editors') || [];
-		for(var editorMaybe of await Promise.all(stringifiedEditors.map(e => Editor.recreate(e)))){
+		for(var editorMaybe of await Promise.all(stringifiedEditors.map(e => Editor.recreate(this.navigationInterface, e)))){
 			if(!editorMaybe){
 				continue;
 			}
@@ -73,7 +74,7 @@ class EditorCollection{
 		if(ruleId !== undefined && this.editors.some(e => e.ruleId === ruleId) || this.editors.some(e => e.otherNavigationId === otherNavigationId)){
 			return;
 		}
-		this.addEditor(new Editor(ruleId, navigation, otherNavigationId));
+		this.addEditor(new Editor(this.navigationInterface, ruleId, navigation, otherNavigationId));
 		this.save();
 		this.editedStatusChanged.dispatch({ruleId, otherNavigationId, edited: true});
 	}
@@ -95,7 +96,7 @@ class EditorCollection{
 				return true;
 			}
 		}
-		macros.navigation.openTab(editors.createEditorUrl(otherNavigationId, ruleId));
+		this.navigationInterface.openTab(editors.createEditorUrl(otherNavigationId, ruleId));
 		return false;
 	}
 	async getEditedStatus(ruleId){
@@ -111,6 +112,4 @@ class EditorCollection{
 	}
 }
 
-var editorCollection = new EditorCollection();
-
-export { editorCollection };
+export { EditorCollection };

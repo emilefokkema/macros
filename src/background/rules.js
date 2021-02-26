@@ -81,6 +81,5 @@ class RuleCollection{
 		return this.rules.filter(r => urlMatchesPattern(url, r.urlPattern));
 	}
 }
-var rules = new RuleCollection();
 
-export { rules };
+export { RuleCollection };

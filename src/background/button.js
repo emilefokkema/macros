@@ -1,16 +1,16 @@
-import { macros } from '../shared/macros';
 import { Event, CancellationToken } from '../shared/events';
 import { buttonInteraction } from './button-interaction';
 import { storage } from '../shared/storage';
 
 class ButtonNotification{
-    constructor(navigation, {numberOfRules, numberOfRulesThatHaveSomethingToDo, numberOfRulesThatHaveExecuted}){
+    constructor(navigationInterface, navigation, {numberOfRules, numberOfRulesThatHaveSomethingToDo, numberOfRulesThatHaveExecuted}){
         this.navigation = navigation;
         this.numberOfRules = numberOfRules;
         this.numberOfRulesThatHaveSomethingToDo = numberOfRulesThatHaveSomethingToDo;
         this.numberOfRulesThatHaveExecuted = numberOfRulesThatHaveExecuted;
         this.disappeared = new Event();
         this.updated = new Event();
+        this.navigationInterface = navigationInterface;
     }
     update({numberOfRules, numberOfRulesThatHaveSomethingToDo, numberOfRulesThatHaveExecuted}){
         this.numberOfRules = numberOfRules;
@@ -23,7 +23,7 @@ class ButtonNotification{
         }
     }
     exists(){
-        return macros.navigation.navigationExists(this.navigation.id);
+        return this.navigationInterface.navigationExists(this.navigation.id);
     }
     disappear(){
         this.disappeared.dispatch();
@@ -36,34 +36,35 @@ class ButtonNotification{
             numberOfRulesThatHaveExecuted: this.numberOfRulesThatHaveExecuted
         };
     }
-    static create(navigation, {numberOfRules, ...rest}){
+    static create(navigationInterface, navigation, {numberOfRules, ...rest}){
         if(numberOfRules === 0){
             return null;
         }
-        return new ButtonNotification(navigation, {numberOfRules, ...rest});
+        return new ButtonNotification(navigationInterface, navigation, {numberOfRules, ...rest});
     }
-    static async recreate({navigationId, ...info}){
-        var navigation = await macros.navigation.getNavigation(navigationId);
+    static async recreate(navigationInterface, {navigationId, ...info}){
+        var navigation = await navigationInterface.getNavigation(navigationId);
         if(!navigation){
             console.log(`could not recreate notification for navigation '${navigationId}'`)
             return null;
         }
-        var notification = new ButtonNotification(navigation, info);
+        var notification = new ButtonNotification(navigationInterface, navigation, info);
         return notification;
     }
 }
 
 class Button{
-    constructor(tabId, notifications){
+    constructor(navigationInterface, tabId, notifications){
         this.tabId = tabId;
         this.notifications = notifications || [];
         this.disappeared = new Event();
         this.cancellationToken = new CancellationToken();
+        this.navigationInterface = navigationInterface;
     }
     addNotification(navigation, info){
         var notification = this.notifications.find(n => n.navigation.id === navigation.id);
         if(!notification){
-            notification = ButtonNotification.create(navigation, info);
+            notification = ButtonNotification.create(this.navigationInterface, navigation, info);
             if(!notification){
                 return;
             }
@@ -129,30 +130,31 @@ class Button{
             notifications: this.notifications
         };
     }
-    static create(navigation, notificationInfo){
-        var notification = ButtonNotification.create(navigation, notificationInfo);
+    static create(navigationInterface, navigation, notificationInfo){
+        var notification = ButtonNotification.create(navigationInterface, navigation, notificationInfo);
         if(notification === null){
             return null;
         }
-        var button = new Button(navigation.tabId);
+        var button = new Button(navigationInterface, navigation.tabId);
         button.addNotification(navigation, notificationInfo);
         return button;
     }
-    static async recreate({tabId, notifications}){
-        var notifications = (await Promise.all(notifications.map(n => ButtonNotification.recreate(n)))).filter(n => !!n);
+    static async recreate(navigationInterface, {tabId, notifications}){
+        var notifications = (await Promise.all(notifications.map(n => ButtonNotification.recreate(navigationInterface, n)))).filter(n => !!n);
         if(notifications.length === 0){
             return null;
         }
-        var button = new Button(tabId, notifications);
+        var button = new Button(navigationInterface, tabId, notifications);
         button.update();
         return button;
     }
 }
 
 class ButtonCollection{
-    constructor(){
+    constructor(navigationInterface){
         this.loaded = false;
         this.buttons = [];
+        this.navigationInterface = navigationInterface;
     }
     async prune(){
         await this.ensureLoaded();
@@ -165,21 +167,21 @@ class ButtonCollection{
         }
         var stringifiedButtons = storage.getItem('buttons') || [];
         console.log(`going to recreate buttons:`, stringifiedButtons);
-        this.buttons = (await Promise.all(stringifiedButtons.map(b => Button.recreate(b)))).filter(n => !!n);
+        this.buttons = (await Promise.all(stringifiedButtons.map(b => Button.recreate(this.navigationInterface, b)))).filter(n => !!n);
         this.save();
         console.log(`button collection loaded ${this.buttons.length} buttons:`, JSON.parse(JSON.stringify(this.buttons)))
         this.loaded = true;
     }
     async addNotification({navigationId, ...info}){
         await this.ensureLoaded();
-        var navigation = await macros.navigation.getNavigation(navigationId);
+        var navigation = await this.navigationInterface.getNavigation(navigationId);
         if(!navigation){
             console.warn(`could not find navigation '${navigationId}'`);
             return;
         }
         var button = this.buttons.find(b => b.tabId === navigation.tabId);
         if(!button){
-            button = Button.create(navigation, info);
+            button = Button.create(this.navigationInterface, navigation, info);
             if(button === null){
                 return;
             }
@@ -205,6 +207,4 @@ class ButtonCollection{
     }
 }
 
-var buttons = new ButtonCollection();
-
-export { buttons };
+export { ButtonCollection };
