@@ -20,6 +20,10 @@ async function tryExecuteContentScript(navigation){
 	}
 }
 
+macros.navigation.onDisappeared(() => {
+	editorCollection.prune();
+	buttons.prune();
+});
 macros.navigation.onCreated(navigation => {
 	tryExecuteContentScript(navigation);
 });
@@ -64,4 +68,7 @@ rules.ruleDeleted.listen((msg) => {
 });
 rules.ruleUpdated.listen((msg) => {
 	macros.notifyRuleUpdated(msg);
+});
+editorCollection.editedStatusChanged.listen(({ruleId, otherNavigationId, edited}) => {
+	macros.notifyEditedStatusChanged({ruleId, otherNavigationId, edited});
 });

@@ -1,6 +1,7 @@
 import { macros } from '../shared/macros';
 import { storage } from '../shared/storage';
 import { editors } from '../shared/editors';
+import { Event } from '../shared/events';
 
 class Editor{
 	constructor(ruleId, ownNavigation, otherNavigationId){
@@ -34,10 +35,7 @@ class EditorCollection{
 	constructor(){
 		this.loaded = false;
 		this.editors = [];
-		this.initialize();
-	}
-	initialize(){
-		macros.navigation.onDisappeared(() => this.prune())
+		this.editedStatusChanged = new Event();
 	}
 	save(){
 		storage.setItem('editors', this.editors);
@@ -56,7 +54,7 @@ class EditorCollection{
 			return;
 		}
 		this.editors.splice(index, 1);
-		macros.notifyEditedStatusChanged({ruleId: editor.ruleId, edited: false});
+		this.editedStatusChanged.dispatch({ruleId: editor.ruleId, edited: false});
 	}
 	async ensureLoaded(){
 		if(this.loaded){
@@ -77,7 +75,7 @@ class EditorCollection{
 		}
 		this.addEditor(new Editor(ruleId, navigation, otherNavigationId));
 		this.save();
-		macros.notifyEditedStatusChanged({ruleId, otherNavigationId, edited: true});
+		this.editedStatusChanged.dispatch({ruleId, otherNavigationId, edited: true});
 	}
 	addEditor(editor){
 		this.editors.push(editor);

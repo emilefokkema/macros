@@ -153,10 +153,6 @@ class ButtonCollection{
     constructor(){
         this.loaded = false;
         this.buttons = [];
-        this.initialize();
-    }
-    initialize(){
-        macros.navigation.onDisappeared(() => this.prune());
     }
     async prune(){
         await this.ensureLoaded();
