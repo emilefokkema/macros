@@ -1,4 +1,3 @@
-import { storage } from '../shared/storage';
 import { editors } from '../shared/editors';
 import { Event } from '../shared/events';
 
@@ -32,14 +31,15 @@ class Editor{
 }
 
 class EditorCollection{
-	constructor(navigationInterface){
+	constructor(navigationInterface, storage){
 		this.loaded = false;
 		this.editors = [];
 		this.editedStatusChanged = new Event();
 		this.navigationInterface = navigationInterface;
+		this.storage = storage;
 	}
 	save(){
-		storage.setItem('editors', this.editors);
+		this.storage.setItem('editors', this.editors);
 	}
 	async prune(){
 		await this.ensureLoaded();
@@ -61,7 +61,7 @@ class EditorCollection{
 		if(this.loaded){
 			return;
 		}
-		var stringifiedEditors = storage.getItem('editors') || [];
+		var stringifiedEditors = this.storage.getItem('editors') || [];
 		for(var editorMaybe of await Promise.all(stringifiedEditors.map(e => Editor.recreate(this.navigationInterface, e)))){
 			if(!editorMaybe){
 				continue;

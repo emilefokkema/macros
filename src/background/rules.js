@@ -1,5 +1,4 @@
 import { Event } from '../shared/events';
-import { storage } from '../shared/storage';
 
 function urlMatchesPattern(url, pattern){
 	var regexPattern = pattern.replace(/[.+?^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '[\\S]*?');
@@ -8,16 +7,17 @@ function urlMatchesPattern(url, pattern){
 }
 
 class RuleCollection{
-	constructor(){
+	constructor(storage){
 		this.loaded = false;
 		this.latestRuleId = 0;
 		this.rules = [];
 		this.ruleUpdated = new Event();
 		this.ruleAdded = new Event();
 		this.ruleDeleted = new Event();
+		this.storage = storage;
 	}
 	load(){
-		this.rules = storage.getItem('rules') || [];
+		this.rules = this.storage.getItem('rules') || [];
 		this.latestRuleId = Math.max.apply(Math, this.rules.map(r => r.id));
 		console.log(`loaded ${this.rules.length} rules. Highest id: ${this.latestRuleId}`)
 		this.loaded = true;
@@ -29,7 +29,7 @@ class RuleCollection{
 		this.load();
 	}
 	save(){
-		storage.setItem('rules', this.rules);
+		this.storage.setItem('rules', this.rules);
 	}
 	deleteRule(ruleId){
 		this.ensureLoaded();

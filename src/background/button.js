@@ -1,6 +1,4 @@
 import { Event, CancellationToken } from '../shared/events';
-import { buttonInteraction } from './button-interaction';
-import { storage } from '../shared/storage';
 
 class ButtonNotification{
     constructor(navigationInterface, navigation, {numberOfRules, numberOfRulesThatHaveSomethingToDo, numberOfRulesThatHaveExecuted}){
@@ -54,12 +52,13 @@ class ButtonNotification{
 }
 
 class Button{
-    constructor(navigationInterface, tabId, notifications){
+    constructor(navigationInterface, buttonInteraction, tabId, notifications){
         this.tabId = tabId;
         this.notifications = notifications || [];
         this.disappeared = new Event();
         this.cancellationToken = new CancellationToken();
         this.navigationInterface = navigationInterface;
+        this.buttonInteraction = buttonInteraction;
     }
     addNotification(navigation, info){
         var notification = this.notifications.find(n => n.navigation.id === navigation.id);
@@ -106,7 +105,7 @@ class Button{
     }
     update(){
         if(this.notifications.length === 0){
-            buttonInteraction.setBadgeText({tabId: this.tabId, text: ``});
+            this.buttonInteraction.setBadgeText({tabId: this.tabId, text: ``});
             this.disappear();
             return;
         }
@@ -114,14 +113,14 @@ class Button{
         var numberOfRulesThatHaveSomethingToDo = this.notifications.map(n => n.numberOfRulesThatHaveSomethingToDo).reduce((a, b) => a + b, 0);
         var numberOfRulesThatHaveExecuted = this.notifications.map(n => n.numberOfRulesThatHaveExecuted).reduce((a, b) => a + b, 0);
         if(numberOfRulesThatHaveExecuted > 0){
-            buttonInteraction.setBadgeText({tabId: this.tabId, text: `${numberOfRulesThatHaveExecuted}`});
-            buttonInteraction.setBadgeBackgroundColor({tabId: this.tabId, color: '#28a745'});
+            this.buttonInteraction.setBadgeText({tabId: this.tabId, text: `${numberOfRulesThatHaveExecuted}`});
+            this.buttonInteraction.setBadgeBackgroundColor({tabId: this.tabId, color: '#28a745'});
         }else if(numberOfRulesThatHaveSomethingToDo > 0){
-            buttonInteraction.setBadgeText({tabId: this.tabId, text: `${numberOfRulesThatHaveSomethingToDo}`});
-            buttonInteraction.setBadgeBackgroundColor({tabId: this.tabId, color: '#007bff'});
+            this.buttonInteraction.setBadgeText({tabId: this.tabId, text: `${numberOfRulesThatHaveSomethingToDo}`});
+            this.buttonInteraction.setBadgeBackgroundColor({tabId: this.tabId, color: '#007bff'});
         }else if(numberOfRules > 0){
-            buttonInteraction.setBadgeText({tabId: this.tabId, text: `${numberOfRules}`});
-            buttonInteraction.setBadgeBackgroundColor({tabId: this.tabId, color: '#6c757d'});
+            this.buttonInteraction.setBadgeText({tabId: this.tabId, text: `${numberOfRules}`});
+            this.buttonInteraction.setBadgeBackgroundColor({tabId: this.tabId, color: '#6c757d'});
         }
     }
     toJSON(){
@@ -130,31 +129,33 @@ class Button{
             notifications: this.notifications
         };
     }
-    static create(navigationInterface, navigation, notificationInfo){
+    static create(navigationInterface, buttonInteraction, navigation, notificationInfo){
         var notification = ButtonNotification.create(navigationInterface, navigation, notificationInfo);
         if(notification === null){
             return null;
         }
-        var button = new Button(navigationInterface, navigation.tabId);
+        var button = new Button(navigationInterface, buttonInteraction, navigation.tabId);
         button.addNotification(navigation, notificationInfo);
         return button;
     }
-    static async recreate(navigationInterface, {tabId, notifications}){
+    static async recreate(navigationInterface, buttonInteraction, {tabId, notifications}){
         var notifications = (await Promise.all(notifications.map(n => ButtonNotification.recreate(navigationInterface, n)))).filter(n => !!n);
         if(notifications.length === 0){
             return null;
         }
-        var button = new Button(navigationInterface, tabId, notifications);
+        var button = new Button(navigationInterface, buttonInteraction, tabId, notifications);
         button.update();
         return button;
     }
 }
 
 class ButtonCollection{
-    constructor(navigationInterface){
+    constructor(navigationInterface, storage, buttonInteraction){
         this.loaded = false;
         this.buttons = [];
         this.navigationInterface = navigationInterface;
+        this.storage = storage;
+        this.buttonInteraction = buttonInteraction;
     }
     async prune(){
         await this.ensureLoaded();
@@ -165,9 +166,9 @@ class ButtonCollection{
         if(this.loaded){
             return;
         }
-        var stringifiedButtons = storage.getItem('buttons') || [];
+        var stringifiedButtons = this.storage.getItem('buttons') || [];
         console.log(`going to recreate buttons:`, stringifiedButtons);
-        this.buttons = (await Promise.all(stringifiedButtons.map(b => Button.recreate(this.navigationInterface, b)))).filter(n => !!n);
+        this.buttons = (await Promise.all(stringifiedButtons.map(b => Button.recreate(this.navigationInterface, this.buttonInteraction, b)))).filter(n => !!n);
         this.save();
         console.log(`button collection loaded ${this.buttons.length} buttons:`, JSON.parse(JSON.stringify(this.buttons)))
         this.loaded = true;
@@ -181,7 +182,7 @@ class ButtonCollection{
         }
         var button = this.buttons.find(b => b.tabId === navigation.tabId);
         if(!button){
-            button = Button.create(this.navigationInterface, navigation, info);
+            button = Button.create(this.navigationInterface, this.buttonInteraction, navigation, info);
             if(button === null){
                 return;
             }
@@ -203,7 +204,7 @@ class ButtonCollection{
         }
     }
     save(){
-        storage.setItem('buttons', this.buttons);
+        this.storage.setItem('buttons', this.buttons);
     }
 }
 
