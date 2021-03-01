@@ -31,6 +31,7 @@
   },
   "homepage": "https://github.com/emilefokkema/macros#readme",
   "devDependencies": {
+    "jest": "^26.6.3",
     "webpack": "^5.11.0",
     "webpack-cli": "^4.2.0"
   }
