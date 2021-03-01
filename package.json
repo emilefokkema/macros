@@ -13,7 +13,8 @@
     "build:content-script": "npx webpack --config ./webpack.config.content-script.js",
     "build:content-script-dev": "npx webpack --config ./webpack.config.content-script.js --mode development",
     "build:devtools": "npx webpack --config ./webpack.config.devtools.js",
-    "build:devtools-dev": "npx webpack --config ./webpack.config.devtools.js --mode development"
+    "build:devtools-dev": "npx webpack --config ./webpack.config.devtools.js --mode development",
+    "test": "jest"
   },
   "repository": {
     "type": "git",
