@@ -1,4 +1,10 @@
+import { Event } from '../src/shared/events';
+
 export class FakeNavigationInterface{
+    constructor(){
+        this.navigationHasDisappeared = new Event();
+    }
+
     getCurrent(){
 
     }
@@ -26,8 +32,8 @@ export class FakeNavigationInterface{
     onReplaced(){
 
     }
-    onDisappeared(){
-
+    onDisappeared(listener, cancellationToken){
+        return this.navigationHasDisappeared.listen(listener, cancellationToken);
     }
     whenDisappeared(){
         

@@ -167,10 +167,8 @@ class ButtonCollection{
             return;
         }
         var stringifiedButtons = this.storage.getItem('buttons') || [];
-        console.log(`going to recreate buttons:`, stringifiedButtons);
         this.buttons = (await Promise.all(stringifiedButtons.map(b => Button.recreate(this.navigationInterface, this.buttonInteraction, b)))).filter(n => !!n);
         this.save();
-        console.log(`button collection loaded ${this.buttons.length} buttons:`, JSON.parse(JSON.stringify(this.buttons)))
         this.loaded = true;
     }
     async addNotification({navigationId, ...info}){

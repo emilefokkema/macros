@@ -57,17 +57,20 @@ class EditorCollection{
 		this.editors.splice(index, 1);
 		this.editedStatusChanged.dispatch({ruleId: editor.ruleId, edited: false});
 	}
+	async tryToAddEditor({ruleId, ownNavigationId, otherNavigationId}){
+		var recreated = await Editor.recreate(this.navigationInterface, {ruleId, ownNavigationId, otherNavigationId});
+		if(!recreated){
+			this.editedStatusChanged.dispatch({ruleId, edited: false});
+		}else{
+			this.addEditor(recreated);
+		}
+	}
 	async ensureLoaded(){
 		if(this.loaded){
 			return;
 		}
 		var stringifiedEditors = this.storage.getItem('editors') || [];
-		for(var editorMaybe of await Promise.all(stringifiedEditors.map(e => Editor.recreate(this.navigationInterface, e)))){
-			if(!editorMaybe){
-				continue;
-			}
-			this.addEditor(editorMaybe);
-		}
+		await Promise.all(stringifiedEditors.map(e => this.tryToAddEditor(e)));
 		this.loaded = true;
 	}
 	addOpenedEditor(ruleId, navigation, otherNavigationId){
