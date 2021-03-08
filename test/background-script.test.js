@@ -33,105 +33,134 @@ describe('given storage, navigation etc.', () => {
             storage.setItem('rules', [existingRule]);
         });
 
-        describe('and the storage contains one editor with a navigation', () => {
-            let existingEditor;
-            let existingEditorNavigationId;
+        describe('and a navigation exists', () => {
+            let existingNavigationId;
             let existingNavigation;
-            let editorNavigationExists;
-    
+            let navigationExists;
+
             beforeEach(() => {
-                editorNavigationExists = true;
-                existingEditorNavigationId = 'aaabbb';
+                navigationExists = true;
+                existingNavigationId = 'aaabbb';
                 existingNavigation = {
                     focus(){}
                 };
-                function navigationExists(navigationId){
-                    return navigationId === existingEditorNavigationId && editorNavigationExists;
+                function givenNavigationExists(navigationId){
+                    return navigationId === existingNavigationId && navigationExists;
                 }
-                navigationInterface.navigationExists = jest.fn().mockImplementation(async navigationId => navigationExists(navigationId));
+                navigationInterface.navigationExists = jest.fn().mockImplementation(async navigationId => givenNavigationExists(navigationId));
                 navigationInterface.getNavigation = jest.fn().mockImplementation(async navigationId => {
-                    if(!navigationExists(navigationId)){
+                    if(!givenNavigationExists(navigationId)){
                         return null;
                     }
                     return existingNavigation;
-                })
-                existingEditor = {
-                    ruleId: existingRule.id,
-                    ownNavigationId: existingEditorNavigationId
-                };
-                storage.setItem('editors', [existingEditor]);
+                });
             });
 
-            describe('that does not exists anymore', () => {
+            describe('and the storage contains a button for a tab', () => {
+                let tabId;
 
                 beforeEach(() => {
-                    editorNavigationExists = false;
+                    tabId = 4;
+                    storage.setItem('buttons', [
+                        {
+                            tabId: tabId,
+                            notifications: [
+                                {
+                                    navigationId: existingNavigationId,
+                                    numberOfRules: 1,
+                                    numberOfRulesThatHaveSomethingToDo: 1,
+                                    numberOfRulesThatHaveExecuted: 0
+                                }
+                            ]
+                        }
+                    ]);
                 });
 
-                describe('and the background script has executed', () => {
+                
+            });
 
+            describe('and the storage contains one editor with a navigation', () => {
+                let existingEditor;
+        
+                beforeEach(() => {
+                    existingEditor = {
+                        ruleId: existingRule.id,
+                        ownNavigationId: existingNavigationId
+                    };
+                    storage.setItem('editors', [existingEditor]);
+                });
+    
+                describe('that does not exists anymore', () => {
+    
+                    beforeEach(() => {
+                        navigationExists = false;
+                    });
+    
+                    describe('and the background script has executed', () => {
+    
+                        beforeEach(() => {
+                            backgroundScript(setPopup, storage, buttonInteraction, navigationInterface, crossBoundaryEventFactory, inspectedWindow);
+                        });
+    
+                        it('should return an edited status for the existing editor and its rule', async () => {
+                            const editedStatus = await crossBoundaryEventFactory.events['requestEditedStatus'].target.sendMessageAsync({ruleId: existingRule.id});
+                            expect(editedStatus).toEqual({
+                                edited: false
+                            })
+                        });
+    
+                        describe('and the navigation disappeared event is fired', () => {
+                            let editedStatusChangedEvent;
+    
+                            beforeEach(async () => {
+                                const editedStatusChangedPromise = crossBoundaryEventFactory.events['editedStatusChanged'].source.nextMessage();
+                                navigationInterface.navigationHasDisappeared.dispatch();
+                                editedStatusChangedEvent = await editedStatusChangedPromise;
+                            });
+    
+                            it('should have sent a message', () => {
+                                expect(editedStatusChangedEvent).toEqual({
+                                    ruleId: existingRule.id,
+                                    edited: false
+                                });
+                            });
+    
+                            it('should have updated the list of editors in the storage', () => {
+                                expect(storage.getItem('editors')).toEqual([]);
+                            });
+                        });
+                    });
+                });
+    
+                describe('and the background script has executed', () => {
+    
                     beforeEach(() => {
                         backgroundScript(setPopup, storage, buttonInteraction, navigationInterface, crossBoundaryEventFactory, inspectedWindow);
                     });
-
+    
                     it('should return an edited status for the existing editor and its rule', async () => {
                         const editedStatus = await crossBoundaryEventFactory.events['requestEditedStatus'].target.sendMessageAsync({ruleId: existingRule.id});
                         expect(editedStatus).toEqual({
-                            edited: false
+                            edited: true
                         })
                     });
-
-                    describe('and the navigation disappeared event is fired', () => {
-                        let editedStatusChangedEvent;
-
+    
+                    describe('when opening an editor for the rule is requested', () => {
+                        let editorWasAlreadyOpen;
+                        let focusSpy;
+    
                         beforeEach(async () => {
-                            const editedStatusChangedPromise = crossBoundaryEventFactory.events['editedStatusChanged'].source.nextMessage();
-                            navigationInterface.navigationHasDisappeared.dispatch();
-                            editedStatusChangedEvent = await editedStatusChangedPromise;
+                            focusSpy = jest.spyOn(existingNavigation, 'focus');
+                            editorWasAlreadyOpen = await crossBoundaryEventFactory.events['openEditor'].target.sendMessageAsync({ruleId: existingRule.id});
                         });
-
-                        it('should have sent a message', () => {
-                            expect(editedStatusChangedEvent).toEqual({
-                                ruleId: existingRule.id,
-                                edited: false
-                            });
+    
+                        it('should have reponded that the editor was already open', () => {
+                            expect(editorWasAlreadyOpen).toBe(true);
                         });
-
-                        it('should have updated the list of editors in the storage', () => {
-                            expect(storage.getItem('editors')).toEqual([]);
+    
+                        it('should have focussed the editor\'s navigation', () => {
+                            expect(focusSpy).toHaveBeenCalled();
                         });
-                    });
-                });
-            });
-
-            describe('and the background script has executed', () => {
-
-                beforeEach(() => {
-                    backgroundScript(setPopup, storage, buttonInteraction, navigationInterface, crossBoundaryEventFactory, inspectedWindow);
-                });
-
-                it('should return an edited status for the existing editor and its rule', async () => {
-                    const editedStatus = await crossBoundaryEventFactory.events['requestEditedStatus'].target.sendMessageAsync({ruleId: existingRule.id});
-                    expect(editedStatus).toEqual({
-                        edited: true
-                    })
-                });
-
-                describe('when opening an editor for the rule is requested', () => {
-                    let editorWasAlreadyOpen;
-                    let focusSpy;
-
-                    beforeEach(async () => {
-                        focusSpy = jest.spyOn(existingNavigation, 'focus');
-                        editorWasAlreadyOpen = await crossBoundaryEventFactory.events['openEditor'].target.sendMessageAsync({ruleId: existingRule.id});
-                    });
-
-                    it('should have reponded that the editor was already open', () => {
-                        expect(editorWasAlreadyOpen).toBe(true);
-                    });
-
-                    it('should have focussed the editor\'s navigation', () => {
-                        expect(focusSpy).toHaveBeenCalled();
                     });
                 });
             });
