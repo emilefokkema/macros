@@ -18,10 +18,10 @@ class Target extends MessagesTarget{
         super();
         this.event = event;
     }
-    sendMessageAsync(msg){
+    sendMessageAsync(...args){
         return new Promise((resolve) => {
             let resolved = false;
-            this.event.dispatch(msg, (response) => {
+            this.event.dispatch(...args, (response) => {
                 if(resolved){
                     return;
                 }
@@ -30,8 +30,8 @@ class Target extends MessagesTarget{
             });
         });
     }
-    sendMessage(msg){
-        this.event.dispatch(msg);
+    sendMessage(...args){
+        this.event.dispatch(...args);
     }
 }
 

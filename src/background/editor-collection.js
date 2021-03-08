@@ -11,7 +11,7 @@ class Editor{
 	focus(){
 		this.ownNavigation.focus();
 	}
-	toJSON(){
+	serialize(){
 		return {
 			ruleId: this.ruleId,
 			ownNavigationId: this.ownNavigation && this.ownNavigation.id,
@@ -39,7 +39,7 @@ class EditorCollection{
 		this.storage = storage;
 	}
 	save(){
-		this.storage.setItem('editors', this.editors);
+		this.storage.setItem('editors', this.editors.map(e => e.serialize()));
 	}
 	async prune(){
 		await this.ensureLoaded();

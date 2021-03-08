@@ -1,9 +1,9 @@
-const { backgroundScript } = require('../src/background/background-script-function');
-const { FakeNavigationInterface } = require('./fake-navigation-interface');
-const { FakeStorage } = require('./fake-storage');
-const { FakeButtonInteraction } = require('./fake-button-interaction');
-const { FakeInspectedWindow } = require('./fake-inspected-window');
-const { FakeCrossBoundaryEventFactory } = require('./fake-cross-boundary-event-factory');
+import { backgroundScript } from '../src/background/background-script-function';
+import { FakeNavigationInterface } from './fake-navigation-interface';
+import { FakeStorage } from './fake-storage';
+import { FakeButtonInteraction } from './fake-button-interaction';
+import { FakeInspectedWindow } from './fake-inspected-window';
+import { FakeCrossBoundaryEventFactory } from './fake-cross-boundary-event-factory';
 
 describe('given storage, navigation etc.', () => {
     let navigationInterface;
@@ -27,7 +27,7 @@ describe('given storage, navigation etc.', () => {
 
         beforeEach(() => {
             existingRule = {
-                id: 0,
+                id: 1,
                 urlPattern: 'foo.bar.baz/*'
             };
             storage.setItem('rules', [existingRule]);
@@ -36,11 +36,15 @@ describe('given storage, navigation etc.', () => {
         describe('and the storage contains one editor with a navigation', () => {
             let existingEditor;
             let existingEditorNavigationId;
+            let existingNavigation;
             let editorNavigationExists;
     
             beforeEach(() => {
                 editorNavigationExists = true;
                 existingEditorNavigationId = 'aaabbb';
+                existingNavigation = {
+                    focus(){}
+                };
                 function navigationExists(navigationId){
                     return navigationId === existingEditorNavigationId && editorNavigationExists;
                 }
@@ -49,10 +53,10 @@ describe('given storage, navigation etc.', () => {
                     if(!navigationExists(navigationId)){
                         return null;
                     }
-                    return {};
+                    return existingNavigation;
                 })
                 existingEditor = {
-                    ruleId: 0,
+                    ruleId: existingRule.id,
                     ownNavigationId: existingEditorNavigationId
                 };
                 storage.setItem('editors', [existingEditor]);
@@ -112,6 +116,24 @@ describe('given storage, navigation etc.', () => {
                         edited: true
                     })
                 });
+
+                describe('when opening an editor for the rule is requested', () => {
+                    let editorWasAlreadyOpen;
+                    let focusSpy;
+
+                    beforeEach(async () => {
+                        focusSpy = jest.spyOn(existingNavigation, 'focus');
+                        editorWasAlreadyOpen = await crossBoundaryEventFactory.events['openEditor'].target.sendMessageAsync({ruleId: existingRule.id});
+                    });
+
+                    it('should have reponded that the editor was already open', () => {
+                        expect(editorWasAlreadyOpen).toBe(true);
+                    });
+
+                    it('should have focussed the editor\'s navigation', () => {
+                        expect(focusSpy).toHaveBeenCalled();
+                    });
+                });
             });
         });
 
@@ -127,6 +149,45 @@ describe('given storage, navigation etc.', () => {
         
             it('should be managing the subscriptions of the cross boundary event factory', () => {
                 expect(crossBoundaryEventFactory.isManaging).toBe(true);
+            });
+
+            describe('and then an editor is requested', () => {
+                let editorWasAlreadyOpen;
+                let spy;
+
+                beforeEach(async () => {
+                    spy = jest.spyOn(navigationInterface, 'openTab');
+                    editorWasAlreadyOpen = await crossBoundaryEventFactory.events['openEditor'].target.sendMessageAsync({ruleId: existingRule.id});
+                });
+
+                it('should have answered that is was not yet open', () => {
+                    expect(editorWasAlreadyOpen).toBe(false);
+                });
+
+                it('should have opened a tab with the right url', () => {
+                    expect(spy).toHaveBeenCalledWith(`create-rule.html?ruleId=${existingRule.id}`);
+                });
+
+                describe('and then the editor is loaded', () => {
+                    let editorNavigation;
+                    let editorNavigationId;
+
+                    beforeEach(() => {
+                        editorNavigationId = 'navId';
+                        editorNavigation = {id: editorNavigationId};
+                        crossBoundaryEventFactory.events['editorLoaded'].target.sendMessage({ruleId: existingRule.id}, editorNavigation);
+                    });
+
+                    it('should have saved the new editor', () => {
+                        expect(storage.getItem('editors')).toEqual([
+                            {
+                                ruleId: existingRule.id,
+                                ownNavigationId: editorNavigationId,
+                                otherNavigationId: undefined
+                            }
+                        ]);
+                    });
+                });
             });
 
             describe('and then a rule is requested by its id', () => {
@@ -157,14 +218,14 @@ describe('given storage, navigation etc.', () => {
                 });
         
                 it('a new id should have been returned', () => {
-                    expect(newRuleId).toBe(1);
+                    expect(newRuleId).toBe(2);
                 });
         
                 it('should have updated the storage', () => {
                     expect(storage.getItem('rules')).toEqual([
                         existingRule,
                         {
-                            id: 1,
+                            id: 2,
                             urlPattern: newUrlPattern
                         }
                     ]);
