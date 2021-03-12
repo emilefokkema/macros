@@ -4,6 +4,7 @@ import { FakeStorage } from './fake-storage';
 import { FakeButtonInteraction } from './fake-button-interaction';
 import { FakeInspectedWindow } from './fake-inspected-window';
 import { FakeCrossBoundaryEventFactory } from './fake-cross-boundary-event-factory';
+import { whenReturns } from './when-returns';
 
 describe('given storage, navigation etc.', () => {
     let navigationInterface;
@@ -56,7 +57,7 @@ describe('given storage, navigation etc.', () => {
                 });
             });
 
-            describe('and the storage contains a button for a tab', () => {
+            describe('and the storage contains a button notification for the navigation', () => {
                 let tabId;
 
                 beforeEach(() => {
@@ -76,7 +77,32 @@ describe('given storage, navigation etc.', () => {
                     ]);
                 });
 
-                
+                describe('and the navigation does not exist anymore', () => {
+
+                    beforeEach(() => {
+                        navigationExists = false;
+                    });
+
+                    describe('and the background script has executed', () => {
+
+                        beforeEach(() => {
+                            backgroundScript(setPopup, storage, buttonInteraction, navigationInterface, crossBoundaryEventFactory, inspectedWindow);
+                        });
+
+                        describe('and the navigation disappeared event is fired', () => {
+                            let whenSaved;
+
+                            beforeEach( () => {
+                                whenSaved = whenReturns(storage, 'setItem', ['buttons', []]);
+                                navigationInterface.navigationHasDisappeared.dispatch();
+                            });
+
+                            it('should have deleted buttons from storage', async () => {
+                                await whenSaved;
+                            });
+                        });
+                    });
+                });
             });
 
             describe('and the storage contains one editor with a navigation', () => {
