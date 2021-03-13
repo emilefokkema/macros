@@ -38,11 +38,14 @@ describe('given storage, navigation etc.', () => {
             let existingNavigationId;
             let existingNavigation;
             let navigationExists;
+            let tabId;
 
             beforeEach(() => {
+                tabId = 4;
                 navigationExists = true;
                 existingNavigationId = 'aaabbb';
                 existingNavigation = {
+                    tabId: tabId,
                     focus(){}
                 };
                 function givenNavigationExists(navigationId){
@@ -58,10 +61,8 @@ describe('given storage, navigation etc.', () => {
             });
 
             describe('and the storage contains a button notification for the navigation', () => {
-                let tabId;
 
                 beforeEach(() => {
-                    tabId = 4;
                     storage.setItem('buttons', [
                         {
                             tabId: tabId,
@@ -92,14 +93,47 @@ describe('given storage, navigation etc.', () => {
                         describe('and the navigation disappeared event is fired', () => {
                             let whenSaved;
 
-                            beforeEach( () => {
-                                whenSaved = whenReturns(storage, 'setItem', ['buttons', []]);
+                            beforeEach(async () => {
+                                whenSaved = whenReturns(storage, 'setItem', args => args[0] === 'buttons');
                                 navigationInterface.navigationHasDisappeared.dispatch();
-                            });
-
-                            it('should have deleted buttons from storage', async () => {
                                 await whenSaved;
                             });
+
+                            it('should have deleted buttons from storage', () => {
+                                expect(storage.getItem('buttons')).toEqual([]);
+                            });
+                        });
+                    });
+                });
+
+                describe('and the background script has executed', () => {
+
+                    beforeEach(() => {
+                        backgroundScript(setPopup, storage, buttonInteraction, navigationInterface, crossBoundaryEventFactory, inspectedWindow);
+                    });
+
+                    describe('and another notification arrives for the same navigation, but with zero rules', () => {
+                        let setBadgeTextArgs;
+
+                        beforeEach(async () => {
+                            const whenBadgeTextSetToEmpty = whenReturns(buttonInteraction, 'setBadgeText', args => args[0].text === ``);
+                            const whenZeroButtonsSaved = whenReturns(storage, 'setItem', args => args[0] === 'buttons' && args[1].length === 0)
+                            crossBoundaryEventFactory.events['notifyRulesForNavigation'].target.sendMessage({
+                                navigationId: existingNavigationId,
+                                numberOfRules: 0,
+                                numberOfRulesThatHaveSomethingToDo: 0,
+                                numberOfRulesThatHaveExecuted: 0,
+                            });
+                            setBadgeTextArgs = (await whenBadgeTextSetToEmpty).args;
+                            await whenZeroButtonsSaved;
+                        });
+
+                        it(`should have set the button badge text to empty for the navigation's tab`, () => {
+                            expect(setBadgeTextArgs).toEqual([{tabId, text:``}]);
+                        });
+
+                        it('should have removed the button from the storage', () => {
+                            expect(storage.getItem('buttons')).toEqual([]);
                         });
                     });
                 });

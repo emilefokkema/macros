@@ -59,6 +59,17 @@ class Button{
         this.cancellationToken = new CancellationToken();
         this.navigationInterface = navigationInterface;
         this.buttonInteraction = buttonInteraction;
+        for(let notification of this.notifications){
+            this.addNotificationEventListeners(notification);
+        }
+    }
+    addNotificationEventListeners(notification){
+        notification.updated.listen(() => {
+            this.update();
+        }, this.cancellationToken);
+        notification.disappeared.next(this.cancellationToken).then(() => {
+            this.removeNotification(notification);
+        });
     }
     addNotification(navigation, info){
         var notification = this.notifications.find(n => n.navigation.id === navigation.id);
@@ -68,12 +79,7 @@ class Button{
                 return;
             }
             this.notifications.push(notification);
-            notification.updated.listen(() => {
-                this.update();
-            }, this.cancellationToken);
-            notification.disappeared.next(this.cancellationToken).then(() => {
-                this.removeNotification(notification);
-            });
+            this.addNotificationEventListeners(notification);
         }else{
             notification.update(info);
         }
@@ -168,8 +174,16 @@ class ButtonCollection{
         }
         var stringifiedButtons = this.storage.getItem('buttons') || [];
         this.buttons = (await Promise.all(stringifiedButtons.map(b => Button.recreate(this.navigationInterface, this.buttonInteraction, b)))).filter(n => !!n);
+        for(let button of this.buttons){
+            this.addButtonEventListeners(button);
+        }
         this.save();
         this.loaded = true;
+    }
+    addButtonEventListeners(button){
+        button.disappeared.next().then(() => {
+            this.removeButton(button);
+        });
     }
     async addNotification({navigationId, ...info}){
         await this.ensureLoaded();
@@ -185,9 +199,7 @@ class ButtonCollection{
                 return;
             }
             this.buttons.push(button);
-            button.disappeared.next().then(() => {
-                this.removeButton(button);
-            });
+            this.addButtonEventListeners(button);
         }else{
             button.addNotification(navigation, info);
         }
