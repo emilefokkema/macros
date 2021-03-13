@@ -26,7 +26,7 @@ class ButtonNotification{
     disappear(){
         this.disappeared.dispatch();
     }
-    toJSON(){
+    serialize(){
         return {
             navigationId: this.navigation.id,
             numberOfRules: this.numberOfRules,
@@ -129,10 +129,10 @@ class Button{
             this.buttonInteraction.setBadgeBackgroundColor({tabId: this.tabId, color: '#6c757d'});
         }
     }
-    toJSON(){
+    serialize(){
         return {
             tabId: this.tabId,
-            notifications: this.notifications
+            notifications: this.notifications.map(n => n.serialize())
         };
     }
     static create(navigationInterface, buttonInteraction, navigation, notificationInfo){
@@ -214,7 +214,7 @@ class ButtonCollection{
         }
     }
     save(){
-        this.storage.setItem('buttons', this.buttons);
+        this.storage.setItem('buttons', this.buttons.map(b => b.serialize()));
     }
 }
 

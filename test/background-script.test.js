@@ -45,6 +45,7 @@ describe('given storage, navigation etc.', () => {
                 navigationExists = true;
                 existingNavigationId = 'aaabbb';
                 existingNavigation = {
+                    id: existingNavigationId,
                     tabId: tabId,
                     focus(){}
                 };
@@ -221,6 +222,50 @@ describe('given storage, navigation etc.', () => {
                         it('should have focussed the editor\'s navigation', () => {
                             expect(focusSpy).toHaveBeenCalled();
                         });
+                    });
+                });
+            });
+
+            describe('and the background script has executed', () => {
+
+                beforeEach(() => {
+                    backgroundScript(setPopup, storage, buttonInteraction, navigationInterface, crossBoundaryEventFactory, inspectedWindow);
+                });
+
+                describe('and a notification for the existing navigation is sent', () => {
+                    let badgeTextSetArgs;
+
+                    beforeEach(async () => {
+                        const whenButtonSaved = whenReturns(storage, 'setItem', args => args[0] === 'buttons' && args[1].length > 0)
+                        const whenBadgeTextSet = whenReturns(buttonInteraction, 'setBadgeText');
+                        crossBoundaryEventFactory.events['notifyRulesForNavigation'].target.sendMessage({
+                            navigationId: existingNavigationId,
+                            numberOfRules: 1,
+                            numberOfRulesThatHaveSomethingToDo: 1,
+                            numberOfRulesThatHaveExecuted: 0,
+                        });
+                        await whenButtonSaved;
+                        badgeTextSetArgs = (await whenBadgeTextSet).args;
+                    });
+
+                    it('should have set the badge text', () => {
+                        expect(badgeTextSetArgs).toEqual([{tabId, text: '1'}]);
+                    });
+
+                    it('should have saved the notification', () => {
+                        expect(storage.getItem('buttons')).toEqual([
+                            {
+                                tabId: tabId,
+                                notifications: [
+                                    {
+                                        navigationId: existingNavigationId,
+                                        numberOfRules: 1,
+                                        numberOfRulesThatHaveSomethingToDo: 1,
+                                        numberOfRulesThatHaveExecuted: 0
+                                    }
+                                ]
+                            }
+                        ])
                     });
                 });
             });
