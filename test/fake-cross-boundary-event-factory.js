@@ -19,6 +19,9 @@ class Target extends MessagesTarget{
         this.event = event;
     }
     sendMessageAsync(...args){
+        if(args.length === 0){
+            args = [undefined];
+        }
         return new Promise((resolve) => {
             let resolved = false;
             this.event.dispatch(...args, (response) => {

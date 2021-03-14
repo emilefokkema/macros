@@ -285,6 +285,24 @@ describe('given storage, navigation etc.', () => {
                 expect(crossBoundaryEventFactory.isManaging).toBe(true);
             });
 
+            it('should return the rule', async () => {
+                const rules = await crossBoundaryEventFactory.events['requestRulesForUrl'].target.sendMessageAsync('foo.bar.baz/a');
+                expect(rules).toEqual([existingRule]);
+            });
+
+            it('should return all rules', async () => {
+                const rules = await crossBoundaryEventFactory.events['requestAllRules'].target.sendMessageAsync();
+                expect(rules).toEqual([existingRule]);
+            });
+
+            it('should delete a rule', async () => {
+                const ruleDeletedMessagePromise = crossBoundaryEventFactory.events['notifyRuleDeleted'].source.nextMessage();
+                await crossBoundaryEventFactory.events['requestDeleteRule'].target.sendMessageAsync(existingRule.id);
+                const ruleDeletedMessage = await ruleDeletedMessagePromise;
+                expect(storage.getItem('rules')).toEqual([]);
+                expect(ruleDeletedMessage).toEqual({ruleId: existingRule.id});
+            });
+
             describe('and then an editor is requested', () => {
                 let editorWasAlreadyOpen;
                 let spy;
