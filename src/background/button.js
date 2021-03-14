@@ -26,7 +26,7 @@ class ButtonNotification{
     disappear(){
         this.disappeared.dispatch();
     }
-    toJSON(){
+    serialize(){
         return {
             navigationId: this.navigation.id,
             numberOfRules: this.numberOfRules,
@@ -59,6 +59,17 @@ class Button{
         this.cancellationToken = new CancellationToken();
         this.navigationInterface = navigationInterface;
         this.buttonInteraction = buttonInteraction;
+        for(let notification of this.notifications){
+            this.addNotificationEventListeners(notification);
+        }
+    }
+    addNotificationEventListeners(notification){
+        notification.updated.listen(() => {
+            this.update();
+        }, this.cancellationToken);
+        notification.disappeared.next(this.cancellationToken).then(() => {
+            this.removeNotification(notification);
+        });
     }
     addNotification(navigation, info){
         var notification = this.notifications.find(n => n.navigation.id === navigation.id);
@@ -68,12 +79,7 @@ class Button{
                 return;
             }
             this.notifications.push(notification);
-            notification.updated.listen(() => {
-                this.update();
-            }, this.cancellationToken);
-            notification.disappeared.next(this.cancellationToken).then(() => {
-                this.removeNotification(notification);
-            });
+            this.addNotificationEventListeners(notification);
         }else{
             notification.update(info);
         }
@@ -123,10 +129,10 @@ class Button{
             this.buttonInteraction.setBadgeBackgroundColor({tabId: this.tabId, color: '#6c757d'});
         }
     }
-    toJSON(){
+    serialize(){
         return {
             tabId: this.tabId,
-            notifications: this.notifications
+            notifications: this.notifications.map(n => n.serialize())
         };
     }
     static create(navigationInterface, buttonInteraction, navigation, notificationInfo){
@@ -167,11 +173,17 @@ class ButtonCollection{
             return;
         }
         var stringifiedButtons = this.storage.getItem('buttons') || [];
-        console.log(`going to recreate buttons:`, stringifiedButtons);
         this.buttons = (await Promise.all(stringifiedButtons.map(b => Button.recreate(this.navigationInterface, this.buttonInteraction, b)))).filter(n => !!n);
+        for(let button of this.buttons){
+            this.addButtonEventListeners(button);
+        }
         this.save();
-        console.log(`button collection loaded ${this.buttons.length} buttons:`, JSON.parse(JSON.stringify(this.buttons)))
         this.loaded = true;
+    }
+    addButtonEventListeners(button){
+        button.disappeared.next().then(() => {
+            this.removeButton(button);
+        });
     }
     async addNotification({navigationId, ...info}){
         await this.ensureLoaded();
@@ -187,9 +199,7 @@ class ButtonCollection{
                 return;
             }
             this.buttons.push(button);
-            button.disappeared.next().then(() => {
-                this.removeButton(button);
-            });
+            this.addButtonEventListeners(button);
         }else{
             button.addNotification(navigation, info);
         }
@@ -204,7 +214,7 @@ class ButtonCollection{
         }
     }
     save(){
-        this.storage.setItem('buttons', this.buttons);
+        this.storage.setItem('buttons', this.buttons.map(b => b.serialize()));
     }
 }
 

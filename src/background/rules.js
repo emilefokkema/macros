@@ -19,7 +19,6 @@ class RuleCollection{
 	load(){
 		this.rules = this.storage.getItem('rules') || [];
 		this.latestRuleId = Math.max.apply(Math, this.rules.map(r => r.id));
-		console.log(`loaded ${this.rules.length} rules. Highest id: ${this.latestRuleId}`)
 		this.loaded = true;
 	}
 	ensureLoaded(){
