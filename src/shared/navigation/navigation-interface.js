@@ -146,7 +146,7 @@ var navigation = {
         return navigationDisappeared.listen(listener, cancellationToken);
     },
     whenDisappeared(navigationId){
-        return navigationDisappeared.mapAsync(() => this.navigationExists(navigationId)).filter(e => !e).next();
+        return navigationDisappeared.mapAsync(async () => [await this.navigationExists(navigationId)]).filter(e => !e).next();
     }
 };
 
