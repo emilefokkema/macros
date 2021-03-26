@@ -3,30 +3,20 @@
 			el: '#app',
 			data: function(){
 				return {
-					url: undefined,
 					name: undefined,
-					hasPage: false,
 					ruleId: undefined,
 					urlPattern: undefined,
 					actions: [],
 					runningAction: undefined,
-					automatic: false
+					automatic: false,
+					isNew: true,
+					hasPage: false,
+					url: undefined,
+					otherNavigationId: undefined
 				};
 			},
 			mounted: function(){
 				this.initialize();
-				chrome.runtime.onMessage.addListener((msg, sender) => {
-					if(msg.pageDestroyed){
-						this.hasPage = false;
-					}else if(msg.addActionForSelector){
-						this.addActionsForSelectors([msg.selector]);
-					}
-				});
-			},
-			computed: {
-				isNew: function(){
-					return this.ruleId === undefined;
-				}
 			},
 			methods: {
 				onAddType: function(type){
@@ -41,31 +31,47 @@
 						action: {type: "delete"}
 					});
 				},
-				initialize: function(){
-					chrome.runtime.sendMessage(undefined, {initialize: true}, initMsg => {
-						if(initMsg.url){
-							this.url = initMsg.url;
-							this.hasPage = true;
-						}
-						if(initMsg.ruleId){
-							this.ruleId = initMsg.ruleId;
-							this.setRule(initMsg.rule);
-						}else{
-							this.urlPattern = this.url;
-						}
-						this.addActionsForSelectors(initMsg.selectorsForWhichToAddActions);
-					});
+				removePage(){
+					this.hasPage = false;
+					var newUrl = macros.editors.replaceParamsInHref(location.href, undefined, this.ruleId);
+					history.pushState('',{}, newUrl);
+					macros.notifyEditorLoaded({ruleId: this.ruleId});
 				},
-				addActionsForSelectors(selectors){
-					for(let selector of selectors){
-						this.actions.push({
-							type: "select",
-							selector: selector,
-							action: {
-								type: "delete"
-							}
-						});
+				initialize: async function(){
+					var {ruleId, navigationId: otherNavigationId} = macros.editors.getParamsFromHref(location.href);
+					if(ruleId){
+						this.ruleId = ruleId;
+						this.isNew = false;
+						var rule = await macros.getRuleById(ruleId);
+						this.setRule(rule);
 					}
+					if(otherNavigationId){
+						var otherNavigation = await macros.navigation.getNavigation(otherNavigationId);
+						if(otherNavigation){
+							this.hasPage = true;
+							this.otherNavigationId = otherNavigationId;
+							this.url = otherNavigation.url;
+							if(this.isNew){
+								this.urlPattern = this.url;
+							}
+							macros.navigation.whenDisappeared(otherNavigationId).then(() => this.removePage());
+						}
+					}
+					macros.onRequestToAddActionForSelector(({ruleId, navigationId, text}) => {
+						if(this.ruleId !== undefined && ruleId === this.ruleId || this.otherNavigationId !== undefined && navigationId === this.otherNavigationId){
+							this.addActionsForSelector(text);
+						}
+					});
+					macros.notifyEditorLoaded({ruleId, otherNavigationId});
+				},
+				addActionsForSelector(selector){
+					this.actions.push({
+						type: "select",
+						selector: selector,
+						action: {
+							type: "delete"
+						}
+					});
 				},
 				setRule: function(rule){
 					this.name = rule.name;
@@ -74,28 +80,31 @@
 					this.actions = rule.actions;
 					this.automatic = !!rule.automatic;
 				},
-				setTitle: function(){
-					document.title = `Edit '${this.name}'`
-				},
-				gotoPage: function(){
-					chrome.runtime.sendMessage(undefined, {focusPage: true});
-				},
-				saveRule: function(){
+				saveRule: async function(){
 					var rule = {
 						name: this.name,
 						urlPattern: this.urlPattern,
+						automatic: !!this.automatic,
 						actions: this.actions,
-						automatic: this.automatic
+						id: this.ruleId
 					};
+					var ruleId = await macros.saveRuleAsync(rule);
 					if(this.isNew){
-						chrome.runtime.sendMessage(undefined, {createdRule: rule}, (msg) => {
-							this.ruleId = msg.ruleId;
-							this.setTitle();
-						});
-					}else{
-						chrome.runtime.sendMessage(undefined, {updatedRule: rule}, (msg) => {
-							this.setTitle();
-						});
+						this.isNew = false;
+						this.ruleId = ruleId;
+						this.setTitle();
+						var newUrl = macros.editors.replaceParamsInHref(location.href, this.otherNavigationId, this.ruleId);
+						history.pushState('',{}, newUrl);
+						macros.notifyEditorLoaded({ruleId: this.ruleId, otherNavigationId: this.otherNavigationId});
+					}
+				},
+				setTitle: function(){
+					document.title = `Edit '${this.name}'`
+				},
+				gotoPage: async function(){
+					var otherNavigation = await macros.navigation.getNavigation(this.otherNavigationId);
+					if(otherNavigation){
+						otherNavigation.focus();
 					}
 				},
 				deleteAction: function(action){
@@ -104,64 +113,13 @@
 						this.actions.splice(index, 1);
 					}
 				},
-				executeAction: function(action){
+				executeAction: async function(action){
 					this.runningAction = action;
-					console.log(`going to execute action`)
-					chrome.runtime.sendMessage(undefined, {executeAction: true, action: action}, (resp) => {
-						console.log(`executed action with result`, resp);
-						this.runningAction = undefined;
-					})
+					await macros.executeActionAsync(this.otherNavigationId, action);
+					this.runningAction = undefined;
 				}
 			},
 			components: {
-				'class-finder': {
-					template: document.getElementById("classFinderTemplate").innerHTML,
-					data: function(){
-						return {
-							queryProperties: [
-								{
-									property: undefined,
-									value: undefined,
-									comparison: "eq"
-								}
-							],
-							result: [],
-							collapsed: true
-						};
-					},
-					methods: {
-						toggleCollapsed: function(){
-							this.collapsed = !this.collapsed;
-						},
-						search: function(){
-							chrome.runtime.sendMessage(undefined, {findSelectors: true, req: {properties: this.queryProperties}}, (resp) => {
-								this.result = resp;
-							});
-						}
-					},
-					components: {
-						'query-property': {
-							template: document.getElementById("queryPropertyTemplate").innerHTML,
-							props: {
-								property: Object
-							}
-						},
-						'selector-match': {
-							template: document.getElementById("selectorMatchTemplate").innerHTML,
-							props: {
-								match: Object
-							},
-							components: {
-								'match-node': {
-									template: document.getElementById("matchNodeTemplate").innerHTML,
-									props: {
-										node: Object
-									},
-								}
-							}
-						}
-					}
-				},
 				'action-adder': {
 					template: document.getElementById("actionAdderTemplate").innerHTML,
 					data: function(){

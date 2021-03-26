@@ -2,6 +2,7 @@
 <head>
 	<title>Create rule</title>
 	<script src="https://cdn.jsdelivr.net/npm/vue@2.6.12"></script>
+	<script src="macros.js"></script>
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
 	<link rel="stylesheet" type="text/css" href="shared.css" />
 	<link rel="stylesheet" type="text/css" href="create-rule.css" />
@@ -62,52 +63,6 @@
 			<input type="button" value="Add" v-on:click="onAddClicked()"/>
 		</div>
 	</template>
-	<template id="matchNodeTemplate">
-		<div><pre><span class="node-name">{{node.nodeName}}</span><span v-if="node.id" class="node-id">#{{node.id}}</span><span class="class-name" v-for="className of node.classes">.{{className}}</span></pre></div>
-	</template>
-	<template id="selectorMatchTemplate">
-		<div>
-			<div><pre class="selector-text">{{match.cssText}}</pre></div>
-			<div>
-				<div class="row-part indent"></div>
-				<div class="row-part">
-					<match-node v-for="node of match.nodes" v-bind:node="node"></match-node>
-				</div>
-			</div>
-		</div>
-		
-	</template>
-	<template id="queryPropertyTemplate">
-		<div>
-			<input class="text-input" type="text" id="property" v-model="property.property" placeholder="property-name" />
-			<select class="comparison-select" v-model="property.comparison">
-				<option value="eq">=</option>
-				<option value="lt">&lt;</option>
-				<option value="gt">&gt;</option>
-			</select>
-			<input class="text-input" type="text" id="value" v-model="property.value" placeholder="value" />	
-		</div>
-	</template>
-	<template id="classFinderTemplate">
-		<div class="class-finder" v-bind:class='{collapsed: collapsed}'>
-			<div class="row with-buttons">
-				<div class="row-part">Find style</div>
-				<div class="row-part right">
-					<span class="button fa fa-minus" v-if="!collapsed" v-on:click="toggleCollapsed()"></span>
-					<span class="button fa fa-plus" v-if="collapsed" v-on:click="toggleCollapsed()"></span>
-				</div>
-			</div>
-			<div class="row">
-				<query-property v-for="property of queryProperties" v-bind:property="property"></query-property>
-			</div>
-			<div class="row">
-				<input type="button" value="Search" v-on:click="search()"/>
-			</div>
-			<div class="row list">
-				<selector-match v-for="match of result" v-bind:match="match"></selector-match>
-			</div>
-		</div>
-	</template>
 	<div id="app">
 		<div class="row">
 			<div v-if="isNew">Create new rule</div>
@@ -140,7 +95,6 @@
 		<div class="row">
 			<input type="button" v-on:click="saveRule()" value="Save"/>
 		</div>
-		<class-finder v-if="hasPage"></class-finder>
 	</div>
 <script src="create-rule.js">
 	
