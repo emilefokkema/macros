@@ -5,7 +5,7 @@
   "main": "background.js",
   "scripts": {
     "build": "node ./copy-files.js && npm run build:macros && npm run build:background && npm run build:content-script && npm run build:devtools",
-    "build-dev": "node ./copy-files.js && npm run build:macros-dev && npm run build:background-dev && npm run build:content-script-dev && npm run build:devtools-dev",
+    "build-dev": "node ./copy-files.js -d && npm run build:macros-dev && npm run build:background-dev && npm run build:content-script-dev && npm run build:devtools-dev",
     "build:macros": "npx webpack --config ./webpack.config.macros.js",
     "build:macros-dev": "npx webpack --config ./webpack.config.macros.js  --mode development",
     "build:background": "npx webpack --config ./webpack.config.background.js",
@@ -36,7 +36,9 @@
     "@babel/preset-env": "^7.13.8",
     "babel-plugin-transform-es2015-modules-commonjs": "^6.26.2",
     "jest": "^26.6.3",
+    "vue": "^2.6.12",
     "webpack": "^5.11.0",
-    "webpack-cli": "^4.2.0"
+    "webpack-cli": "^4.2.0",
+    "yargs": "^16.2.0"
   }
 }

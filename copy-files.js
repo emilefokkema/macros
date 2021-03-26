@@ -1,4 +1,6 @@
 const fs = require("fs");
+const yargs = require('yargs');
+const argv = yargs(process.argv.slice(2)).option('d', {alias: 'development', type: 'boolean'}).argv;
 
 if(!fs.existsSync('./dist')){
 	fs.mkdirSync('./dist');
@@ -24,6 +26,12 @@ copyFile('./src/devtools-sidebar/devtools_sidebar.html', './dist/devtools_sideba
 
 copyFile('./src/shared/shared.css', './dist/shared.css');
 copyFile('./src/devtools.html', './dist/devtools.html');
+
+if(argv.development){
+	copyFile('./node_modules/vue/dist/vue.js', './dist/vue.js');
+}else{
+	copyFile('./node_modules/vue/dist/vue.min.js', './dist/vue.js');
+}
 
 function copyFile(src, dest){
 	fs.copyFile(src, dest, (err) => {
