@@ -9,20 +9,21 @@ var tabId = inspectedWindow.tabId;
 
 async function notifyContentScriptForNavigation(navigation){
     try{
-        await inspectedWindow.eval('contentScript.elementSelectedInDevtools($0)', {
-            useContentScriptContext: true,
-            frameURL: navigation.url
-        });
+        const options = {useContentScriptContext: true};
+        if(navigation.frameId > 0){
+            options.frameURL = navigation.url;
+        }
+        await inspectedWindow.eval('contentScript.elementSelectedInDevtools($0)', options);
     }catch(e){
         console.log(`failed to notify content script for navigation '${navigation.id}': `, e)
     }
 }
 
+macros.onElementSelectionChangedForNavigation(async (navigationId) => {
+    const navigation = await macros.navigation.getNavigation(navigationId);
+    notifyContentScriptForNavigation(navigation);
+})
+
 elementSelectionChanged.listen(async () => {
-    var inspectedNagivations = await macros.navigation.getAllForTab(tabId);
-    for(let inspectedNavigation of inspectedNagivations){
-        notifyContentScriptForNavigation(inspectedNavigation);
-    }
+    macros.notifyElementSelectionChangedOnTab(tabId);
 });
-
-

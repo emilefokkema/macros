@@ -22,6 +22,8 @@ class Macros{
 		this.ruleDeletedNotification = crossBoundaryEventFactory.create('notifyRuleDeleted');
 		this.ruleUpdatedNotification = crossBoundaryEventFactory.create('notifyRuleUpdated');
 		this.addActionForSelectorRequest = crossBoundaryEventFactory.create('requestToAddActionForSelector');
+		this.elementSelectionChangedForTabNotification = crossBoundaryEventFactory.create('elementSelectionChangedForTab');
+		this.elementSelectionChangedForNavigationNotification = crossBoundaryEventFactory.create('elementSelectionChangedForNavigation');
 		this.crossBoundaryEventFactory = crossBoundaryEventFactory;
 	}
 	forBackground(){
@@ -141,6 +143,18 @@ class Macros{
 	}
 	onRequestToAddActionForSelector(listener, cancellationToken){
 		this.addActionForSelectorRequest.source.onMessage(listener, cancellationToken);
+	}
+	notifyElementSelectionChangedOnTab(tabId){
+		this.elementSelectionChangedForTabNotification.target.sendMessage(tabId);
+	}
+	onElementSelectionChangedOnTab(listener, cancellationToken){
+		return this.elementSelectionChangedForTabNotification.source.onMessage(listener, cancellationToken);
+	}
+	notifyElementSelectionChangedForNavigation(navigationId){
+		this.elementSelectionChangedForNavigationNotification.target.sendMessage(navigationId);
+	}
+	onElementSelectionChangedForNavigation(listener, cancellationToken){
+		return this.elementSelectionChangedForNavigationNotification.source.onMessage(listener, cancellationToken);
 	}
 }
 

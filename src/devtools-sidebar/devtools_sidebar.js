@@ -52,6 +52,9 @@
 				}
 			},
 			async addNavigation(notification){
+				if(!(await macros.navigation.navigationExists(notification.navigationId))){
+					return;
+				}
 				var existingIndex = this.navigations.findIndex(n => n.navigationId === notification.navigationId);
 				if(existingIndex > -1){
 					console.log(`replacing navigation with id ${notification.navigationId}`)
@@ -59,10 +62,6 @@
 					return;
 				}
 				console.log(`adding new navigation with id ${notification.navigationId}:`, notification)
-				var navigation = await macros.navigation.getNavigation(notification.navigationId);
-				if(!navigation){
-					return;
-				}
 				notification.origin = new URL(notification.url).origin;
 				this.navigations.push(notification);
 				if(!this.selectedNavigation){

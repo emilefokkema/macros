@@ -85,6 +85,12 @@ export function contentScriptFunction(navigation, inspectedWindow, crossBoundary
             }
             sendResponse({});
         });
+        macros.onElementSelectionChangedOnTab((_tabId) => {
+            if(_tabId != tabId){
+                return;
+            }
+            macros.notifyElementSelectionChangedForNavigation(navigationId);
+        });
         macros.onExecuteActionRequest(({navigationId: _navigationId, action: actionDefinition}, sendResponse) => {
             if(_navigationId !== navigationId){
                 return;

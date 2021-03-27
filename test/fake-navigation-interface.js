@@ -21,12 +21,6 @@ export class FakeNavigationInterface{
     async getPopupTabId(){
 
     }
-    async getAllForTab(){
-
-    }
-    async getAll(){
-
-    }
     onCreated(){
 
     }

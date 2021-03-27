@@ -122,20 +122,6 @@ var navigation = {
         });
         return resolver.promise;
     },
-    getAllForTab(tabId){
-        var resolver = new PromiseResolver();
-        chrome.webNavigation.getAllFrames({tabId}, info => {
-            Promise.all(info.map(i => Navigation.create(tabId, i.frameId, i.url))).then(navigations => resolver.resolve(navigations));
-        });
-        return resolver.promise;
-    },
-    getAll(){
-        var resolver = new PromiseResolver();
-        chrome.tabs.query({}, tabs => {
-            Promise.all(tabs.map(t => this.getAllForTab(t.id))).then(all => resolver.resolve(all.reduce((a, b) => a.concat(b), [])));
-        });
-        return resolver.promise;
-    },
     onCreated(listener, cancellationToken){
         return navigationCreated.listen(listener, cancellationToken);
     },
