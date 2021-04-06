@@ -1,6 +1,5 @@
 import { contentScriptFunction } from '../src/content-script/content-script-function';
 import { FakeNavigationInterface } from './fake-navigation-interface';
-import { FakeInspectedWindow } from './fake-inspected-window';
 import { FakeCrossBoundaryEventFactory } from './fake-cross-boundary-event-factory';
 import { Event } from '../src/shared/events';
 
@@ -47,7 +46,6 @@ class ElementList{
 
 describe('given navigation, etc', () => {
     let navigationInterface;
-    let inspectedWindow;
     let crossBoundaryEventFactory;
     let currentNavigation;
     let url;
@@ -77,7 +75,6 @@ describe('given navigation, etc', () => {
         };
         navigationInterface = new FakeNavigationInterface();
         jest.spyOn(navigationInterface, 'getCurrent').mockImplementation(async () => currentNavigation);
-        inspectedWindow = new FakeInspectedWindow();
         crossBoundaryEventFactory = new FakeCrossBoundaryEventFactory();
     });
 
@@ -96,7 +93,7 @@ describe('given navigation, etc', () => {
             let elementSelectedInDevtools;
 
             beforeEach(() => {
-                const result = contentScriptFunction(navigationInterface, inspectedWindow, crossBoundaryEventFactory, documentMutationsProvider);
+                const result = contentScriptFunction(navigationInterface, crossBoundaryEventFactory, documentMutationsProvider);
                 elementSelectedInDevtools = result.elementSelectedInDevtools;
             });
 
@@ -455,7 +452,7 @@ describe('given navigation, etc', () => {
     describe('and the content script has executed', () => {
 
         beforeEach(() => {
-            contentScriptFunction(navigationInterface, inspectedWindow, crossBoundaryEventFactory, documentMutationsProvider);
+            contentScriptFunction(navigationInterface, crossBoundaryEventFactory, documentMutationsProvider);
         });
 
         describe('and the rules are returned', () => {

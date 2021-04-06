@@ -1,4 +1,7 @@
 export class FakeInspectedWindow{
-    get tabId(){return 0;}
+    constructor(tabId){
+        this._tabId = tabId || 0;
+    }
+    get tabId(){return this._tabId;}
     eval(){}
 }

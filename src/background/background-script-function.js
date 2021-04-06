@@ -20,9 +20,8 @@ export function backgroundScript(
     storage,
     buttonInteraction,
     navigationInterface,
-    crossBoundaryEventFactory,
-    inspectedWindow){
-        var macros = new Macros(navigationInterface, inspectedWindow, crossBoundaryEventFactory);
+    crossBoundaryEventFactory){
+        var macros = new Macros(navigationInterface, undefined, crossBoundaryEventFactory);
         var rules = new RuleCollection(storage);
         var editorCollection = new EditorCollection(navigationInterface, storage);
         var buttons = new ButtonCollection(navigationInterface, storage, buttonInteraction);
@@ -31,11 +30,11 @@ export function backgroundScript(
 
         setPopup('popup.html');
 
-        macros.navigation.onDisappeared(() => {
+        navigationInterface.onDisappeared(() => {
             editorCollection.prune();
             buttons.prune();
         });
-        macros.navigation.onCreated(navigation => {
+        navigationInterface.onCreated(navigation => {
             tryExecuteContentScript(navigation);
         });
         macros.onRequestRulesForUrl((url, sendResponse) => {

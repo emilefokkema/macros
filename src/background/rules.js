@@ -18,7 +18,9 @@ class RuleCollection{
 	}
 	load(){
 		this.rules = this.storage.getItem('rules') || [];
-		this.latestRuleId = Math.max.apply(Math, this.rules.map(r => r.id));
+		if(this.rules.length > 0){
+			this.latestRuleId = Math.max.apply(Math, this.rules.map(r => r.id));
+		}
 		this.loaded = true;
 	}
 	ensureLoaded(){
