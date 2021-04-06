@@ -443,4 +443,37 @@ describe('given storage, navigation etc.', () => {
             });
         });
     });
+
+    describe('and the background script has executed', () => {
+
+        beforeEach(() => {
+            backgroundScript(setPopup, storage, buttonInteraction, navigationInterface, crossBoundaryEventFactory);
+        });
+
+        describe('and then a new rule is saved', () => {
+            let notification;
+            let newRuleId;
+            let urlPattern;
+
+            beforeEach(async () => {
+                urlPattern = 'http://a.b/c'
+                const notificationPromise = crossBoundaryEventFactory.events['notifyRuleAdded'].source.nextMessage();
+                newRuleId = await crossBoundaryEventFactory.events['requestSaveRule'].target.sendMessageAsync({urlPattern});
+                notification = await notificationPromise;
+            });
+
+            it('should have returned the new rule id', () => {
+                expect(newRuleId).toEqual(1);
+            });
+
+            it('should have saved the new rule', () => {
+                expect(storage.getItem('rules')).toEqual([
+                    {
+                        urlPattern,
+                        id: 1
+                    }
+                ]);
+            });
+        });
+    });
 });
