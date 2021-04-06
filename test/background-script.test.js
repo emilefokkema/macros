@@ -103,7 +103,7 @@ describe('given storage, navigation etc.', () => {
                             });
 
                             it('should have deleted buttons from storage', () => {
-                                expect(storage.getItem('buttons')).toEqual([]);
+                                expect(storage.items['buttons']).toEqual([]);
                             });
                         });
                     });
@@ -136,7 +136,7 @@ describe('given storage, navigation etc.', () => {
                         });
 
                         it('should have removed the button from the storage', () => {
-                            expect(storage.getItem('buttons')).toEqual([]);
+                            expect(storage.items['buttons']).toEqual([]);
                         });
                     });
                 });
@@ -189,7 +189,7 @@ describe('given storage, navigation etc.', () => {
                             });
     
                             it('should have updated the list of editors in the storage', () => {
-                                expect(storage.getItem('editors')).toEqual([]);
+                                expect(storage.items['editors']).toEqual([]);
                             });
                         });
                     });
@@ -238,7 +238,7 @@ describe('given storage, navigation etc.', () => {
                             });
 
                             it('should have deleted the editor from storage', () => {
-                                expect(storage.getItem('editors')).toEqual([]);
+                                expect(storage.items['editors']).toEqual([]);
                             });
 
                             it('should have emitted a notification that the rule is no longer being edited', () => {
@@ -279,7 +279,7 @@ describe('given storage, navigation etc.', () => {
                     });
 
                     it('should have saved the notification', () => {
-                        expect(storage.getItem('buttons')).toEqual([
+                        expect(storage.items['buttons']).toEqual([
                             {
                                 tabId: tabId,
                                 notifications: [
@@ -467,7 +467,7 @@ describe('given storage, navigation etc.', () => {
             });
 
             it('should have saved the new rule', () => {
-                expect(storage.getItem('rules')).toEqual([
+                expect(storage.items['rules']).toEqual([
                     {
                         urlPattern,
                         id: 1
