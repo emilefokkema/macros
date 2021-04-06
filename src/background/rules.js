@@ -16,47 +16,47 @@ class RuleCollection{
 		this.ruleDeleted = new Event();
 		this.storage = storage;
 	}
-	load(){
-		this.rules = this.storage.getItem('rules') || [];
+	async load(){
+		this.rules = await this.storage.getItem('rules') || [];
 		if(this.rules.length > 0){
 			this.latestRuleId = Math.max.apply(Math, this.rules.map(r => r.id));
 		}
 		this.loaded = true;
 	}
-	ensureLoaded(){
+	async ensureLoaded(){
 		if(this.loaded){
 			return;
 		}
-		this.load();
+		await this.load();
 	}
-	save(){
-		this.storage.setItem('rules', this.rules);
+	async save(){
+		await this.storage.setItem('rules', this.rules);
 	}
-	deleteRule(ruleId){
-		this.ensureLoaded();
+	async deleteRule(ruleId){
+		await this.ensureLoaded();
 		var index = this.rules.findIndex(r => r.id === ruleId);
 		if(index > -1){
 			this.rules.splice(index, 1);
-			this.save();
 			this.ruleDeleted.dispatch({ruleId});
+			await this.save();
 		}
 	}
-	saveRule(rule){
-		this.ensureLoaded();
+	async saveRule(rule){
+		await this.ensureLoaded();
 		if(rule.id === undefined){
-			return this.saveNewRule(rule);
+			return await this.saveNewRule(rule);
 		}
-		this.updateRule(rule);
+		await this.updateRule(rule);
 		return rule.id;
 	}
-	saveNewRule(rule){
+	async saveNewRule(rule){
 		rule.id = ++this.latestRuleId;
 		this.rules.push(rule);
-		this.save();
+		await this.save();
 		this.ruleAdded.dispatch();
 		return rule.id;
 	}
-	updateRule(rule){
+	async updateRule(rule){
 		if(rule.id === undefined){
 			return;
 		}
@@ -66,19 +66,19 @@ class RuleCollection{
 		}
 		this.rules.splice(index, 1);
 		this.rules.push(rule);
-		this.save();
+		await this.save();
 		this.ruleUpdated.dispatch({ruleId: rule.id});
 	}
-	getAll(){
-		this.ensureLoaded();
+	async getAll(){
+		await this.ensureLoaded();
 		return this.rules.slice();
 	}
-	getRule(ruleId){
-		this.ensureLoaded();
+	async getRule(ruleId){
+		await this.ensureLoaded();
 		return this.rules.find(r => r.id === ruleId);
 	}
-	getRulesForUrl(url){
-		this.ensureLoaded();
+	async getRulesForUrl(url){
+		await this.ensureLoaded();
 		return this.rules.filter(r => urlMatchesPattern(url, r.urlPattern));
 	}
 }

@@ -161,7 +161,7 @@ describe('given storage, navigation etc.', () => {
                         });
 
                         it('should have updated the button in the storage', () => {
-                            expect(storage.getItem('buttons')).toEqual([
+                            expect(storage.items['buttons']).toEqual([
                                 {
                                     tabId: tabId,
                                     notifications: [
@@ -362,7 +362,7 @@ describe('given storage, navigation etc.', () => {
                 const ruleDeletedMessagePromise = crossBoundaryEventFactory.events['notifyRuleDeleted'].source.nextMessage();
                 await crossBoundaryEventFactory.events['requestDeleteRule'].target.sendMessageAsync(existingRule1.id);
                 const ruleDeletedMessage = await ruleDeletedMessagePromise;
-                expect(storage.getItem('rules')).toEqual([existingRule2]);
+                expect(storage.items['rules']).toEqual([existingRule2]);
                 expect(ruleDeletedMessage).toEqual({ruleId: existingRule1.id});
             });
 
@@ -394,7 +394,7 @@ describe('given storage, navigation etc.', () => {
                     });
 
                     it('should have saved the new editor', () => {
-                        expect(storage.getItem('editors')).toEqual([
+                        expect(storage.items['editors']).toEqual([
                             {
                                 ruleId: existingRule1.id,
                                 ownNavigationId: editorNavigationId,
@@ -437,7 +437,7 @@ describe('given storage, navigation etc.', () => {
                 });
         
                 it('should have updated the storage', () => {
-                    expect(storage.getItem('rules')).toEqual([
+                    expect(storage.items['rules']).toEqual([
                         existingRule1,
                         existingRule2,
                         {
@@ -469,7 +469,7 @@ describe('given storage, navigation etc.', () => {
                 });
 
                 it('should have updated the storage', () => {
-                    expect(storage.getItem('rules')).toEqual([
+                    expect(storage.items['rules']).toEqual([
                         existingRule2,
                         {
                             id: existingRule1.id,

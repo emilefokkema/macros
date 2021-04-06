@@ -172,13 +172,13 @@ class ButtonCollection{
         if(this.loaded){
             return;
         }
-        var stringifiedButtons = this.storage.getItem('buttons') || [];
+        var stringifiedButtons = await this.storage.getItem('buttons') || [];
         this.buttons = (await Promise.all(stringifiedButtons.map(b => Button.recreate(this.navigationInterface, this.buttonInteraction, b)))).filter(n => !!n);
         for(let button of this.buttons){
             this.addButtonEventListeners(button);
         }
-        this.save();
         this.loaded = true;
+        this.save();
     }
     addButtonEventListeners(button){
         button.disappeared.next().then(() => {

@@ -80,15 +80,15 @@ class CrossBoundarySubscriptionCollection{
         await Promise.all(this.subscriptions.map(s => s.prune()));
         this.save();
     }
-    save(){
+    async save(){
         var nonEmpty = this.subscriptions.filter(s => !s.empty);
-        storage.setItem('crossBoundarySubscriptions', nonEmpty)
+        await storage.setItem('crossBoundarySubscriptions', nonEmpty)
     }
     async ensureLoaded(){
         await (this.loadingPromise = this.loadingPromise || this.load());
     }
     async load(){
-        var saved = storage.getItem('crossBoundarySubscriptions') || [];
+        var saved = await storage.getItem('crossBoundarySubscriptions') || [];
         var subscriptions = await Promise.all(saved.map(s => CrossBoundarySubscriptionForType.create(s)));
         for(let subscription of subscriptions){
             this.subscriptions.push(subscription);
