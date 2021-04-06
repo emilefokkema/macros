@@ -2,7 +2,6 @@ import { backgroundScript } from '../src/background/background-script-function';
 import { FakeNavigationInterface } from './fake-navigation-interface';
 import { FakeStorage } from './fake-storage';
 import { FakeButtonInteraction } from './fake-button-interaction';
-import { FakeInspectedWindow } from './fake-inspected-window';
 import { FakeCrossBoundaryEventFactory } from './fake-cross-boundary-event-factory';
 import { whenReturns } from './when-returns';
 
@@ -11,7 +10,6 @@ describe('given storage, navigation etc.', () => {
     let setPopup;
     let storage;
     let buttonInteraction;
-    let inspectedWindow;
     let crossBoundaryEventFactory;
 
     beforeEach(() => {
@@ -19,7 +17,6 @@ describe('given storage, navigation etc.', () => {
         setPopup = jest.fn();
         storage = new FakeStorage();
         buttonInteraction = new FakeButtonInteraction();
-        inspectedWindow = new FakeInspectedWindow();
         crossBoundaryEventFactory = new FakeCrossBoundaryEventFactory();
     });
 
@@ -93,7 +90,7 @@ describe('given storage, navigation etc.', () => {
                     describe('and the background script has executed', () => {
 
                         beforeEach(() => {
-                            backgroundScript(setPopup, storage, buttonInteraction, navigationInterface, crossBoundaryEventFactory, inspectedWindow);
+                            backgroundScript(setPopup, storage, buttonInteraction, navigationInterface, crossBoundaryEventFactory);
                         });
 
                         describe('and the navigation disappeared event is fired', () => {
@@ -115,7 +112,7 @@ describe('given storage, navigation etc.', () => {
                 describe('and the background script has executed', () => {
 
                     beforeEach(() => {
-                        backgroundScript(setPopup, storage, buttonInteraction, navigationInterface, crossBoundaryEventFactory, inspectedWindow);
+                        backgroundScript(setPopup, storage, buttonInteraction, navigationInterface, crossBoundaryEventFactory);
                     });
 
                     describe('and another notification arrives for the same navigation, but with zero rules', () => {
@@ -165,7 +162,7 @@ describe('given storage, navigation etc.', () => {
                     describe('and the background script has executed', () => {
     
                         beforeEach(() => {
-                            backgroundScript(setPopup, storage, buttonInteraction, navigationInterface, crossBoundaryEventFactory, inspectedWindow);
+                            backgroundScript(setPopup, storage, buttonInteraction, navigationInterface, crossBoundaryEventFactory);
                         });
     
                         it('should return an edited status for the existing editor and its rule', async () => {
@@ -201,7 +198,7 @@ describe('given storage, navigation etc.', () => {
                 describe('and the background script has executed', () => {
     
                     beforeEach(() => {
-                        backgroundScript(setPopup, storage, buttonInteraction, navigationInterface, crossBoundaryEventFactory, inspectedWindow);
+                        backgroundScript(setPopup, storage, buttonInteraction, navigationInterface, crossBoundaryEventFactory);
                     });
     
                     it('should return an edited status for the existing editor and its rule', async () => {
@@ -227,6 +224,30 @@ describe('given storage, navigation etc.', () => {
                         it('should have focussed the editor\'s navigation', () => {
                             expect(focusSpy).toHaveBeenCalled();
                         });
+
+                        describe('and then the navigation doesn\'t exist anymore', () => {
+                            let notification;
+
+                            beforeEach(async () => {
+                                navigationExists = false;
+                                const whenSaved = whenReturns(storage, 'setItem', args => args[0] === 'editors');
+                                const notificationPromise = crossBoundaryEventFactory.events['editedStatusChanged'].source.nextMessage();
+                                navigationInterface.navigationHasDisappeared.dispatch();
+                                await whenSaved;
+                                notification = await notificationPromise;
+                            });
+
+                            it('should have deleted the editor from storage', () => {
+                                expect(storage.getItem('editors')).toEqual([]);
+                            });
+
+                            it('should have emitted a notification that the rule is no longer being edited', () => {
+                                expect(notification).toEqual({
+                                    ruleId: existingRule1.id,
+                                    edited: false
+                                });
+                            });
+                        });
                     });
                 });
             });
@@ -234,7 +255,7 @@ describe('given storage, navigation etc.', () => {
             describe('and the background script has executed', () => {
 
                 beforeEach(() => {
-                    backgroundScript(setPopup, storage, buttonInteraction, navigationInterface, crossBoundaryEventFactory, inspectedWindow);
+                    backgroundScript(setPopup, storage, buttonInteraction, navigationInterface, crossBoundaryEventFactory);
                 });
 
                 describe('and a notification for the existing navigation is sent', () => {
@@ -279,7 +300,7 @@ describe('given storage, navigation etc.', () => {
         describe('and the background script has executed', () => {
 
             beforeEach(() => {
-                backgroundScript(setPopup, storage, buttonInteraction, navigationInterface, crossBoundaryEventFactory, inspectedWindow);
+                backgroundScript(setPopup, storage, buttonInteraction, navigationInterface, crossBoundaryEventFactory);
             });
 
             it('the popup should have been set', () => {

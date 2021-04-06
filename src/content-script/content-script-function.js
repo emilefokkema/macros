@@ -2,16 +2,20 @@ import { Macros } from '../shared/macros-class';
 import { ContentScriptRuleCollection, createAction } from './content-script-rules';
 import { Selector } from './selector';
 
-export function contentScriptFunction(navigation, inspectedWindow, crossBoundaryEventFactory, documentMutationsProvider){
-    var macros = new Macros(navigation, inspectedWindow, crossBoundaryEventFactory);
+export function contentScriptFunction(navigation, crossBoundaryEventFactory, documentMutationsProvider){
+    var macros = new Macros(navigation, undefined, crossBoundaryEventFactory);
     var currentlySelectedElement;
     var navigationId;
     var tabId;
     var url;
     var ruleCollection = new ContentScriptRuleCollection(() => macros.getRulesForUrl(url), documentMutationsProvider);
+    var loaded = false;
 
     var elementSelectedInDevtools = function(element){
         currentlySelectedElement = element;
+        if(!loaded){
+            return;
+        }
         sendNotification(ruleCollection.getNotification(), getSelectedElementNotification());
     }
 
@@ -41,7 +45,7 @@ export function contentScriptFunction(navigation, inspectedWindow, crossBoundary
 
     var load = async function(){
         url = location.href;
-        var currentNavigation = await macros.navigation.getCurrent();
+        var currentNavigation = await navigation.getCurrent();
         var navigationHistoryId = currentNavigation.historyId;
         navigationId = currentNavigation.id;
         tabId = currentNavigation.tabId;
@@ -54,7 +58,7 @@ export function contentScriptFunction(navigation, inspectedWindow, crossBoundary
             ruleCollection.removeRule(ruleId);
             await ruleCollection.refresh();
         });
-        macros.navigation.onReplaced(async ({navigationHistoryId: _navigationHistoryId, newNavigationId}) => {
+        navigation.onReplaced(async ({navigationHistoryId: _navigationHistoryId, newNavigationId}) => {
             if(_navigationHistoryId !== navigationHistoryId){
                 return;
             }
@@ -99,6 +103,7 @@ export function contentScriptFunction(navigation, inspectedWindow, crossBoundary
             action.execute();
             sendResponse({});
         });
+        loaded = true;
     };
     
     load();
