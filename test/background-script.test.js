@@ -139,6 +139,43 @@ describe('given storage, navigation etc.', () => {
                             expect(storage.getItem('buttons')).toEqual([]);
                         });
                     });
+
+                    describe('and another notification arrives for the same navigation', () => {
+                        let setBadgeTextArgs;
+
+                        beforeEach(async () => {
+                            const whenBadgeTextSetTwice = whenReturns(buttonInteraction, 'setBadgeText', () => true, 2);
+                            const whenButtonsSavedTwice = whenReturns(storage, 'setItem', () => true, 2);
+                            crossBoundaryEventFactory.events['notifyRulesForNavigation'].target.sendMessage({
+                                navigationId: existingNavigationId,
+                                numberOfRules: 2,
+                                numberOfRulesThatHaveSomethingToDo: 0,
+                                numberOfRulesThatHaveExecuted: 0,
+                            });
+                            setBadgeTextArgs = (await whenBadgeTextSetTwice).args;
+                            await whenButtonsSavedTwice;
+                        });
+
+                        it(`should have set the button badge text for the navigation's tab`, () => {
+                            expect(setBadgeTextArgs).toEqual([{tabId, text:`2`}]);
+                        });
+
+                        it('should have updated the button in the storage', () => {
+                            expect(storage.getItem('buttons')).toEqual([
+                                {
+                                    tabId: tabId,
+                                    notifications: [
+                                        {
+                                            navigationId: existingNavigationId,
+                                            numberOfRules: 2,
+                                            numberOfRulesThatHaveSomethingToDo: 0,
+                                            numberOfRulesThatHaveExecuted: 0
+                                        }
+                                    ]
+                                }
+                            ]);
+                        });
+                    });
                 });
             });
 
