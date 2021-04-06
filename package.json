@@ -9,7 +9,7 @@
     "build:macros": "npx webpack --config ./webpack.config.macros.js",
     "build:macros-dev": "npx webpack --config ./webpack.config.macros.js  --mode development",
     "build:background": "npx webpack --config ./webpack.config.background.js",
-    "build:background-dev": "npx webpack --config ./webpack.config.background.js  --mode development",
+    "build:background-dev": "npx webpack --config ./webpack.config.background.js  --mode development --devtool cheap-source-map",
     "build:content-script": "npx webpack --config ./webpack.config.content-script.js",
     "build:content-script-dev": "npx webpack --config ./webpack.config.content-script.js --mode development",
     "build:devtools": "npx webpack --config ./webpack.config.devtools.js",
