@@ -1,13 +1,27 @@
 var storage = {
-	async getItem(name){
-		var stringified = localStorage.getItem(name);
-		if(stringified === null){
-			return null;
-		}
-		return JSON.parse(stringified);
+	getItem(name){
+		return new Promise((resolve, reject) => {
+			chrome.storage.local.get([name], (items) => {
+				var lastError = chrome.runtime.lastError;
+				if(lastError){
+					reject(`error when getting '${name}' from storage: ${lastError.message}`);
+				}else{
+					resolve(items[name]);
+				}
+			});
+		});
 	},
-	async setItem(name, value){
-		localStorage.setItem(name, JSON.stringify(value));
+	setItem(name, value){
+		return new Promise((resolve, reject) => {
+			chrome.storage.local.set({[name]: value}, () => {
+				var lastError = chrome.runtime.lastError;
+				if(lastError){
+					reject(`error when setting value for '${name}' to storage: ${lastError.message}`);
+				}else{
+					resolve();
+				}
+			});
+		});
 	}
 };
 
