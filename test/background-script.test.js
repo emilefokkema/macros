@@ -103,7 +103,7 @@ describe('given storage, navigation etc.', () => {
                             });
 
                             it('should have deleted buttons from storage', () => {
-                                expect(storage.getItem('buttons')).toEqual([]);
+                                expect(storage.items['buttons']).toEqual([]);
                             });
                         });
                     });
@@ -136,7 +136,44 @@ describe('given storage, navigation etc.', () => {
                         });
 
                         it('should have removed the button from the storage', () => {
-                            expect(storage.getItem('buttons')).toEqual([]);
+                            expect(storage.items['buttons']).toEqual([]);
+                        });
+                    });
+
+                    describe('and another notification arrives for the same navigation', () => {
+                        let setBadgeTextArgs;
+
+                        beforeEach(async () => {
+                            const whenBadgeTextSetTwice = whenReturns(buttonInteraction, 'setBadgeText', () => true, 2);
+                            const whenButtonsSavedTwice = whenReturns(storage, 'setItem', () => true, 2);
+                            crossBoundaryEventFactory.events['notifyRulesForNavigation'].target.sendMessage({
+                                navigationId: existingNavigationId,
+                                numberOfRules: 2,
+                                numberOfRulesThatHaveSomethingToDo: 0,
+                                numberOfRulesThatHaveExecuted: 0,
+                            });
+                            setBadgeTextArgs = (await whenBadgeTextSetTwice).args;
+                            await whenButtonsSavedTwice;
+                        });
+
+                        it(`should have set the button badge text for the navigation's tab`, () => {
+                            expect(setBadgeTextArgs).toEqual([{tabId, text:`2`}]);
+                        });
+
+                        it('should have updated the button in the storage', () => {
+                            expect(storage.items['buttons']).toEqual([
+                                {
+                                    tabId: tabId,
+                                    notifications: [
+                                        {
+                                            navigationId: existingNavigationId,
+                                            numberOfRules: 2,
+                                            numberOfRulesThatHaveSomethingToDo: 0,
+                                            numberOfRulesThatHaveExecuted: 0
+                                        }
+                                    ]
+                                }
+                            ]);
                         });
                     });
                 });
@@ -189,7 +226,7 @@ describe('given storage, navigation etc.', () => {
                             });
     
                             it('should have updated the list of editors in the storage', () => {
-                                expect(storage.getItem('editors')).toEqual([]);
+                                expect(storage.items['editors']).toEqual([]);
                             });
                         });
                     });
@@ -238,7 +275,7 @@ describe('given storage, navigation etc.', () => {
                             });
 
                             it('should have deleted the editor from storage', () => {
-                                expect(storage.getItem('editors')).toEqual([]);
+                                expect(storage.items['editors']).toEqual([]);
                             });
 
                             it('should have emitted a notification that the rule is no longer being edited', () => {
@@ -279,7 +316,7 @@ describe('given storage, navigation etc.', () => {
                     });
 
                     it('should have saved the notification', () => {
-                        expect(storage.getItem('buttons')).toEqual([
+                        expect(storage.items['buttons']).toEqual([
                             {
                                 tabId: tabId,
                                 notifications: [
@@ -325,7 +362,7 @@ describe('given storage, navigation etc.', () => {
                 const ruleDeletedMessagePromise = crossBoundaryEventFactory.events['notifyRuleDeleted'].source.nextMessage();
                 await crossBoundaryEventFactory.events['requestDeleteRule'].target.sendMessageAsync(existingRule1.id);
                 const ruleDeletedMessage = await ruleDeletedMessagePromise;
-                expect(storage.getItem('rules')).toEqual([existingRule2]);
+                expect(storage.items['rules']).toEqual([existingRule2]);
                 expect(ruleDeletedMessage).toEqual({ruleId: existingRule1.id});
             });
 
@@ -357,7 +394,7 @@ describe('given storage, navigation etc.', () => {
                     });
 
                     it('should have saved the new editor', () => {
-                        expect(storage.getItem('editors')).toEqual([
+                        expect(storage.items['editors']).toEqual([
                             {
                                 ruleId: existingRule1.id,
                                 ownNavigationId: editorNavigationId,
@@ -400,7 +437,7 @@ describe('given storage, navigation etc.', () => {
                 });
         
                 it('should have updated the storage', () => {
-                    expect(storage.getItem('rules')).toEqual([
+                    expect(storage.items['rules']).toEqual([
                         existingRule1,
                         existingRule2,
                         {
@@ -432,7 +469,7 @@ describe('given storage, navigation etc.', () => {
                 });
 
                 it('should have updated the storage', () => {
-                    expect(storage.getItem('rules')).toEqual([
+                    expect(storage.items['rules']).toEqual([
                         existingRule2,
                         {
                             id: existingRule1.id,
@@ -467,7 +504,7 @@ describe('given storage, navigation etc.', () => {
             });
 
             it('should have saved the new rule', () => {
-                expect(storage.getItem('rules')).toEqual([
+                expect(storage.items['rules']).toEqual([
                     {
                         urlPattern,
                         id: 1

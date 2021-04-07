@@ -1,12 +1,12 @@
 var storage = {
-	getItem(name){
+	async getItem(name){
 		var stringified = localStorage.getItem(name);
 		if(stringified === null){
 			return null;
 		}
 		return JSON.parse(stringified);
 	},
-	setItem(name, value){
+	async setItem(name, value){
 		localStorage.setItem(name, JSON.stringify(value));
 	}
 };
