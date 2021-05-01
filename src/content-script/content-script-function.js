@@ -2,8 +2,8 @@ import { Macros } from '../shared/macros-class';
 import { ContentScriptRuleCollection, createAction } from './content-script-rules';
 import { Selector } from './selector';
 
-export function contentScriptFunction(navigation, crossBoundaryEventFactory, documentMutationsProvider){
-    var macros = new Macros(navigation, undefined, crossBoundaryEventFactory);
+export function contentScriptFunction(navigation, messageBus, documentMutationsProvider){
+    var macros = new Macros(navigation, undefined, messageBus);
     var currentlySelectedElement;
     var navigationId;
     var tabId;

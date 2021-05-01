@@ -1,7 +1,7 @@
 import { Macros } from '../shared/macros-class';
 
-export function devtoolsFunction(inspectedWindow, createSidebarPaneInElements, elementSelectionChanged, navigationInterface, crossBoundaryEventFactory){
-    var macros = new Macros(undefined, undefined, crossBoundaryEventFactory);
+export function devtoolsFunction(inspectedWindow, createSidebarPaneInElements, elementSelectionChanged, navigationInterface, messageBus){
+    var macros = new Macros(undefined, undefined, messageBus);
 
     createSidebarPaneInElements('Macros', 'devtools_sidebar.html');
 

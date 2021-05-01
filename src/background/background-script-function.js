@@ -20,13 +20,11 @@ export function backgroundScript(
     storage,
     buttonInteraction,
     navigationInterface,
-    crossBoundaryEventFactory){
-        var macros = new Macros(navigationInterface, undefined, crossBoundaryEventFactory);
+    messageBus){
+        var macros = new Macros(navigationInterface, undefined, messageBus);
         var rules = new RuleCollection(storage);
         var editorCollection = new EditorCollection(navigationInterface, storage);
         var buttons = new ButtonCollection(navigationInterface, storage, buttonInteraction);
-
-        macros.forBackground();
 
         setPopup('popup.html');
 
