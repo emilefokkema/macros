@@ -1,33 +1,29 @@
 import { editors } from './editors';
 
 class Macros{
-	constructor(navigationInterface, inspectedWindow, crossBoundaryEventFactory){
+	constructor(navigationInterface, inspectedWindow, messageBus){
 		this.navigation = navigationInterface;
 		this.inspectedWindow = inspectedWindow;
 		this.editors = editors;
-		this.rulesForUrlRequest = crossBoundaryEventFactory.create('requestRulesForUrl');
-		this.emitRulesRequest = crossBoundaryEventFactory.create('emitRulesRequest');
-		this.rulesForNavigationNotification = crossBoundaryEventFactory.create('notifyRulesForNavigation');
-		this.executeRuleMessage = crossBoundaryEventFactory.create('executeRule');
-		this.openEditorRequest = crossBoundaryEventFactory.create('openEditor');
-		this.ruleByIdRequest = crossBoundaryEventFactory.create('requestRuleById');
-		this.allRulesRequest = crossBoundaryEventFactory.create('requestAllRules');
-		this.executeActionRequest = crossBoundaryEventFactory.create('executeAction');
-		this.editedStatusRequest = crossBoundaryEventFactory.create('requestEditedStatus');
-		this.editorLoadedMessage = crossBoundaryEventFactory.create('editorLoaded');
-		this.editedStatusChangedMessage = crossBoundaryEventFactory.create('editedStatusChanged');
-		this.saveRuleRequest = crossBoundaryEventFactory.create('requestSaveRule');
-		this.deleteRuleRequest = crossBoundaryEventFactory.create('requestDeleteRule');
-		this.ruleAddedNotification = crossBoundaryEventFactory.create('notifyRuleAdded');
-		this.ruleDeletedNotification = crossBoundaryEventFactory.create('notifyRuleDeleted');
-		this.ruleUpdatedNotification = crossBoundaryEventFactory.create('notifyRuleUpdated');
-		this.addActionForSelectorRequest = crossBoundaryEventFactory.create('requestToAddActionForSelector');
-		this.elementSelectionChangedForTabNotification = crossBoundaryEventFactory.create('elementSelectionChangedForTab');
-		this.elementSelectionChangedForNavigationNotification = crossBoundaryEventFactory.create('elementSelectionChangedForNavigation');
-		this.crossBoundaryEventFactory = crossBoundaryEventFactory;
-	}
-	forBackground(){
-		this.crossBoundaryEventFactory.manageSubscriptions();
+		this.rulesForUrlRequest = messageBus.createChannel('requestRulesForUrl');
+		this.emitRulesRequest = messageBus.createChannel('emitRulesRequest');
+		this.rulesForNavigationNotification = messageBus.createChannel('notifyRulesForNavigation');
+		this.executeRuleMessage = messageBus.createChannel('executeRule');
+		this.openEditorRequest = messageBus.createChannel('openEditor');
+		this.ruleByIdRequest = messageBus.createChannel('requestRuleById');
+		this.allRulesRequest = messageBus.createChannel('requestAllRules');
+		this.executeActionRequest = messageBus.createChannel('executeAction');
+		this.editedStatusRequest = messageBus.createChannel('requestEditedStatus');
+		this.editorLoadedMessage = messageBus.createChannel('editorLoaded');
+		this.editedStatusChangedMessage = messageBus.createChannel('editedStatusChanged');
+		this.saveRuleRequest = messageBus.createChannel('requestSaveRule');
+		this.deleteRuleRequest = messageBus.createChannel('requestDeleteRule');
+		this.ruleAddedNotification = messageBus.createChannel('notifyRuleAdded');
+		this.ruleDeletedNotification = messageBus.createChannel('notifyRuleDeleted');
+		this.ruleUpdatedNotification = messageBus.createChannel('notifyRuleUpdated');
+		this.addActionForSelectorRequest = messageBus.createChannel('requestToAddActionForSelector');
+		this.elementSelectionChangedForTabNotification = messageBus.createChannel('elementSelectionChangedForTab');
+		this.elementSelectionChangedForNavigationNotification = messageBus.createChannel('elementSelectionChangedForNavigation');
 	}
 	getRulesForUrl(url){
 		return this.rulesForUrlRequest.target.sendMessageAsync(url);

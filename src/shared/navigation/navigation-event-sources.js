@@ -30,6 +30,6 @@ class ReferenceFragmentUpdated extends EventSource{
 var webNavigationCommitted = new WebNavigationCommitted();
 var historyStateUpdated = new HistoryStateUpdated();
 var referenceFragmentUpdated = new ReferenceFragmentUpdated();
-var historyStateUpdatedOrReferenceFramentUpdated = new CombinedEventSource([historyStateUpdated, referenceFragmentUpdated]);
+var historyStateUpdatedOrReferenceFragmentUpdated = new CombinedEventSource([historyStateUpdated, referenceFragmentUpdated]);
 
-export {webNavigationCommitted, historyStateUpdatedOrReferenceFramentUpdated};
+export {webNavigationCommitted, historyStateUpdatedOrReferenceFragmentUpdated};

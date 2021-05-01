@@ -2,7 +2,7 @@ import { backgroundScript } from '../src/background/background-script-function';
 import { FakeNavigationInterface } from './fake-navigation-interface';
 import { FakeStorage } from './fake-storage';
 import { FakeButtonInteraction } from './fake-button-interaction';
-import { FakeCrossBoundaryEventFactory } from './fake-cross-boundary-event-factory';
+import { FakeMessageBus } from './fake-message-bus';
 import { whenReturns } from './when-returns';
 
 describe('given storage, navigation etc.', () => {
@@ -10,14 +10,14 @@ describe('given storage, navigation etc.', () => {
     let setPopup;
     let storage;
     let buttonInteraction;
-    let crossBoundaryEventFactory;
+    let messageBus;
 
     beforeEach(() => {
         navigationInterface = new FakeNavigationInterface();
         setPopup = jest.fn();
         storage = new FakeStorage();
         buttonInteraction = new FakeButtonInteraction();
-        crossBoundaryEventFactory = new FakeCrossBoundaryEventFactory();
+        messageBus = new FakeMessageBus();
     });
 
     describe('and the storage contains rules', () => {
@@ -90,7 +90,7 @@ describe('given storage, navigation etc.', () => {
                     describe('and the background script has executed', () => {
 
                         beforeEach(() => {
-                            backgroundScript(setPopup, storage, buttonInteraction, navigationInterface, crossBoundaryEventFactory);
+                            backgroundScript(setPopup, storage, buttonInteraction, navigationInterface, messageBus);
                         });
 
                         describe('and the navigation disappeared event is fired', () => {
@@ -112,7 +112,7 @@ describe('given storage, navigation etc.', () => {
                 describe('and the background script has executed', () => {
 
                     beforeEach(() => {
-                        backgroundScript(setPopup, storage, buttonInteraction, navigationInterface, crossBoundaryEventFactory);
+                        backgroundScript(setPopup, storage, buttonInteraction, navigationInterface, messageBus);
                     });
 
                     describe('and another notification arrives for the same navigation, but with zero rules', () => {
@@ -121,7 +121,7 @@ describe('given storage, navigation etc.', () => {
                         beforeEach(async () => {
                             const whenBadgeTextSetToEmpty = whenReturns(buttonInteraction, 'setBadgeText', args => args[0].text === ``);
                             const whenZeroButtonsSaved = whenReturns(storage, 'setItem', args => args[0] === 'buttons' && args[1].length === 0)
-                            crossBoundaryEventFactory.events['notifyRulesForNavigation'].target.sendMessage({
+                            messageBus.channels['notifyRulesForNavigation'].target.sendMessage({
                                 navigationId: existingNavigationId,
                                 numberOfRules: 0,
                                 numberOfRulesThatHaveSomethingToDo: 0,
@@ -146,7 +146,7 @@ describe('given storage, navigation etc.', () => {
                         beforeEach(async () => {
                             const whenBadgeTextSetTwice = whenReturns(buttonInteraction, 'setBadgeText', () => true, 2);
                             const whenButtonsSavedTwice = whenReturns(storage, 'setItem', () => true, 2);
-                            crossBoundaryEventFactory.events['notifyRulesForNavigation'].target.sendMessage({
+                            messageBus.channels['notifyRulesForNavigation'].target.sendMessage({
                                 navigationId: existingNavigationId,
                                 numberOfRules: 2,
                                 numberOfRulesThatHaveSomethingToDo: 0,
@@ -199,11 +199,11 @@ describe('given storage, navigation etc.', () => {
                     describe('and the background script has executed', () => {
     
                         beforeEach(() => {
-                            backgroundScript(setPopup, storage, buttonInteraction, navigationInterface, crossBoundaryEventFactory);
+                            backgroundScript(setPopup, storage, buttonInteraction, navigationInterface, messageBus);
                         });
     
                         it('should return an edited status for the existing editor and its rule', async () => {
-                            const editedStatus = await crossBoundaryEventFactory.events['requestEditedStatus'].target.sendMessageAsync({ruleId: existingRule1.id});
+                            const editedStatus = await messageBus.channels['requestEditedStatus'].target.sendMessageAsync({ruleId: existingRule1.id});
                             expect(editedStatus).toEqual({
                                 edited: false
                             })
@@ -213,7 +213,7 @@ describe('given storage, navigation etc.', () => {
                             let editedStatusChangedEvent;
     
                             beforeEach(async () => {
-                                const editedStatusChangedPromise = crossBoundaryEventFactory.events['editedStatusChanged'].source.nextMessage();
+                                const editedStatusChangedPromise = messageBus.channels['editedStatusChanged'].source.nextMessage();
                                 navigationInterface.navigationHasDisappeared.dispatch();
                                 editedStatusChangedEvent = await editedStatusChangedPromise;
                             });
@@ -235,11 +235,11 @@ describe('given storage, navigation etc.', () => {
                 describe('and the background script has executed', () => {
     
                     beforeEach(() => {
-                        backgroundScript(setPopup, storage, buttonInteraction, navigationInterface, crossBoundaryEventFactory);
+                        backgroundScript(setPopup, storage, buttonInteraction, navigationInterface, messageBus);
                     });
     
                     it('should return an edited status for the existing editor and its rule', async () => {
-                        const editedStatus = await crossBoundaryEventFactory.events['requestEditedStatus'].target.sendMessageAsync({ruleId: existingRule1.id});
+                        const editedStatus = await messageBus.channels['requestEditedStatus'].target.sendMessageAsync({ruleId: existingRule1.id});
                         expect(editedStatus).toEqual({
                             edited: true
                         })
@@ -251,7 +251,7 @@ describe('given storage, navigation etc.', () => {
     
                         beforeEach(async () => {
                             focusSpy = jest.spyOn(existingNavigation, 'focus');
-                            editorWasAlreadyOpen = await crossBoundaryEventFactory.events['openEditor'].target.sendMessageAsync({ruleId: existingRule1.id});
+                            editorWasAlreadyOpen = await messageBus.channels['openEditor'].target.sendMessageAsync({ruleId: existingRule1.id});
                         });
     
                         it('should have reponded that the editor was already open', () => {
@@ -268,7 +268,7 @@ describe('given storage, navigation etc.', () => {
                             beforeEach(async () => {
                                 navigationExists = false;
                                 const whenSaved = whenReturns(storage, 'setItem', args => args[0] === 'editors');
-                                const notificationPromise = crossBoundaryEventFactory.events['editedStatusChanged'].source.nextMessage();
+                                const notificationPromise = messageBus.channels['editedStatusChanged'].source.nextMessage();
                                 navigationInterface.navigationHasDisappeared.dispatch();
                                 await whenSaved;
                                 notification = await notificationPromise;
@@ -292,7 +292,7 @@ describe('given storage, navigation etc.', () => {
             describe('and the background script has executed', () => {
 
                 beforeEach(() => {
-                    backgroundScript(setPopup, storage, buttonInteraction, navigationInterface, crossBoundaryEventFactory);
+                    backgroundScript(setPopup, storage, buttonInteraction, navigationInterface, messageBus);
                 });
 
                 describe('and a notification for the existing navigation is sent', () => {
@@ -301,7 +301,7 @@ describe('given storage, navigation etc.', () => {
                     beforeEach(async () => {
                         const whenButtonSaved = whenReturns(storage, 'setItem', args => args[0] === 'buttons' && args[1].length > 0)
                         const whenBadgeTextSet = whenReturns(buttonInteraction, 'setBadgeText');
-                        crossBoundaryEventFactory.events['notifyRulesForNavigation'].target.sendMessage({
+                        messageBus.channels['notifyRulesForNavigation'].target.sendMessage({
                             navigationId: existingNavigationId,
                             numberOfRules: 1,
                             numberOfRulesThatHaveSomethingToDo: 1,
@@ -337,30 +337,26 @@ describe('given storage, navigation etc.', () => {
         describe('and the background script has executed', () => {
 
             beforeEach(() => {
-                backgroundScript(setPopup, storage, buttonInteraction, navigationInterface, crossBoundaryEventFactory);
+                backgroundScript(setPopup, storage, buttonInteraction, navigationInterface, messageBus);
             });
 
             it('the popup should have been set', () => {
                 expect(setPopup.mock.calls[0]).toEqual(['popup.html']);
             });
-        
-            it('should be managing the subscriptions of the cross boundary event factory', () => {
-                expect(crossBoundaryEventFactory.isManaging).toBe(true);
-            });
 
             it('should return the rule', async () => {
-                const rules = await crossBoundaryEventFactory.events['requestRulesForUrl'].target.sendMessageAsync('foo.bar.baz/a');
+                const rules = await messageBus.channels['requestRulesForUrl'].target.sendMessageAsync('foo.bar.baz/a');
                 expect(rules).toEqual([existingRule1]);
             });
 
             it('should return all rules', async () => {
-                const rules = await crossBoundaryEventFactory.events['requestAllRules'].target.sendMessageAsync();
+                const rules = await messageBus.channels['requestAllRules'].target.sendMessageAsync();
                 expect(rules).toEqual([existingRule1, existingRule2]);
             });
 
             it('should delete a rule', async () => {
-                const ruleDeletedMessagePromise = crossBoundaryEventFactory.events['notifyRuleDeleted'].source.nextMessage();
-                await crossBoundaryEventFactory.events['requestDeleteRule'].target.sendMessageAsync(existingRule1.id);
+                const ruleDeletedMessagePromise = messageBus.channels['notifyRuleDeleted'].source.nextMessage();
+                await messageBus.channels['requestDeleteRule'].target.sendMessageAsync(existingRule1.id);
                 const ruleDeletedMessage = await ruleDeletedMessagePromise;
                 expect(storage.items['rules']).toEqual([existingRule2]);
                 expect(ruleDeletedMessage).toEqual({ruleId: existingRule1.id});
@@ -372,7 +368,7 @@ describe('given storage, navigation etc.', () => {
 
                 beforeEach(async () => {
                     spy = jest.spyOn(navigationInterface, 'openTab');
-                    editorWasAlreadyOpen = await crossBoundaryEventFactory.events['openEditor'].target.sendMessageAsync({ruleId: existingRule1.id});
+                    editorWasAlreadyOpen = await messageBus.channels['openEditor'].target.sendMessageAsync({ruleId: existingRule1.id});
                 });
 
                 it('should have answered that is was not yet open', () => {
@@ -390,7 +386,7 @@ describe('given storage, navigation etc.', () => {
                     beforeEach(() => {
                         editorNavigationId = 'navId';
                         editorNavigation = {id: editorNavigationId};
-                        crossBoundaryEventFactory.events['editorLoaded'].target.sendMessage({ruleId: existingRule1.id}, editorNavigation);
+                        messageBus.channels['editorLoaded'].target.sendMessage({ruleId: existingRule1.id}, editorNavigation);
                     });
 
                     it('should have saved the new editor', () => {
@@ -409,7 +405,7 @@ describe('given storage, navigation etc.', () => {
                 let rule;
         
                 beforeEach(async () => {
-                    rule = await crossBoundaryEventFactory.events['requestRuleById'].target.sendMessageAsync(existingRule1.id);
+                    rule = await messageBus.channels['requestRuleById'].target.sendMessageAsync(existingRule1.id);
                 });
         
                 it('it should have been returned', () => {
@@ -424,8 +420,8 @@ describe('given storage, navigation etc.', () => {
         
                 beforeEach(async () => {
                     newUrlPattern = 'a.b.c*';
-                    ruleAddedNotificationPromise = crossBoundaryEventFactory.events['notifyRuleAdded'].source.nextMessage();
-                    newRuleId = await crossBoundaryEventFactory.events['requestSaveRule'].target.sendMessageAsync({urlPattern: newUrlPattern});
+                    ruleAddedNotificationPromise = messageBus.channels['notifyRuleAdded'].source.nextMessage();
+                    newRuleId = await messageBus.channels['requestSaveRule'].target.sendMessageAsync({urlPattern: newUrlPattern});
                 });
         
                 it('should have notified of an added rule', async () => {
@@ -455,8 +451,8 @@ describe('given storage, navigation etc.', () => {
 
                 beforeEach(async () => {
                     newUrlPattern = 'a.b.c*';
-                    const ruleUpdatedNotificationPromise = crossBoundaryEventFactory.events['notifyRuleUpdated'].source.nextMessage();
-                    newRuleId = await crossBoundaryEventFactory.events['requestSaveRule'].target.sendMessageAsync({id: existingRule1.id, urlPattern: newUrlPattern});
+                    const ruleUpdatedNotificationPromise = messageBus.channels['notifyRuleUpdated'].source.nextMessage();
+                    newRuleId = await messageBus.channels['requestSaveRule'].target.sendMessageAsync({id: existingRule1.id, urlPattern: newUrlPattern});
                     ruleUpdatedNotification = await ruleUpdatedNotificationPromise;
                 });
 
@@ -484,7 +480,7 @@ describe('given storage, navigation etc.', () => {
     describe('and the background script has executed', () => {
 
         beforeEach(() => {
-            backgroundScript(setPopup, storage, buttonInteraction, navigationInterface, crossBoundaryEventFactory);
+            backgroundScript(setPopup, storage, buttonInteraction, navigationInterface, messageBus);
         });
 
         describe('and then a new rule is saved', () => {
@@ -494,8 +490,8 @@ describe('given storage, navigation etc.', () => {
 
             beforeEach(async () => {
                 urlPattern = 'http://a.b/c'
-                const notificationPromise = crossBoundaryEventFactory.events['notifyRuleAdded'].source.nextMessage();
-                newRuleId = await crossBoundaryEventFactory.events['requestSaveRule'].target.sendMessageAsync({urlPattern});
+                const notificationPromise = messageBus.channels['notifyRuleAdded'].source.nextMessage();
+                newRuleId = await messageBus.channels['requestSaveRule'].target.sendMessageAsync({urlPattern});
                 notification = await notificationPromise;
             });
 

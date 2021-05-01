@@ -1,6 +1,6 @@
 import { contentScriptFunction } from '../src/content-script/content-script-function';
 import { FakeNavigationInterface } from './fake-navigation-interface';
-import { FakeCrossBoundaryEventFactory } from './fake-cross-boundary-event-factory';
+import { FakeMessageBus } from './fake-message-bus';
 import { Event } from '../src/shared/events';
 
 class Element{
@@ -46,7 +46,7 @@ class ElementList{
 
 describe('given navigation, etc', () => {
     let navigationInterface;
-    let crossBoundaryEventFactory;
+    let messageBus;
     let currentNavigation;
     let url;
     let querySelectorAllResults;
@@ -75,7 +75,7 @@ describe('given navigation, etc', () => {
         };
         navigationInterface = new FakeNavigationInterface();
         jest.spyOn(navigationInterface, 'getCurrent').mockImplementation(async () => currentNavigation);
-        crossBoundaryEventFactory = new FakeCrossBoundaryEventFactory();
+        messageBus = new FakeMessageBus();
     });
 
     describe('and there is an element for a selector', () => {
@@ -93,7 +93,7 @@ describe('given navigation, etc', () => {
             let elementSelectedInDevtools;
 
             beforeEach(() => {
-                const result = contentScriptFunction(navigationInterface, crossBoundaryEventFactory, documentMutationsProvider);
+                const result = contentScriptFunction(navigationInterface, messageBus, documentMutationsProvider);
                 elementSelectedInDevtools = result.elementSelectedInDevtools;
             });
 
@@ -115,7 +115,7 @@ describe('given navigation, etc', () => {
                             }
                         ]
                     };
-                    const message = crossBoundaryEventFactory.events['requestRulesForUrl'].target.expectMessage(m => true);
+                    const message = messageBus.channels['requestRulesForUrl'].target.expectMessage(m => true);
                     const whenRemoved = elementsForSelector.elementRemoved.next();
                     message.sendResponse([existingRuleForUrl]);
                     await whenRemoved;
@@ -129,7 +129,7 @@ describe('given navigation, etc', () => {
                     let newNotification;
 
                     beforeEach(async () => {
-                        const notificationPromise = crossBoundaryEventFactory.events['notifyRulesForNavigation'].source.nextMessage();
+                        const notificationPromise = messageBus.channels['notifyRulesForNavigation'].source.nextMessage();
                         documentMutationOccurred.dispatch();
                         newNotification = await notificationPromise;
                     });
@@ -158,8 +158,8 @@ describe('given navigation, etc', () => {
                         let newNotification;
     
                         beforeEach(async () => {
-                            const notificationPromise = crossBoundaryEventFactory.events['notifyRulesForNavigation'].source.nextMessage();
-                            crossBoundaryEventFactory.events['notifyRuleDeleted'].target.sendMessage({ruleId: existingRuleForUrl.id});
+                            const notificationPromise = messageBus.channels['notifyRulesForNavigation'].source.nextMessage();
+                            messageBus.channels['notifyRuleDeleted'].target.sendMessage({ruleId: existingRuleForUrl.id});
                             newNotification = await notificationPromise;
                         });
     
@@ -198,8 +198,8 @@ describe('given navigation, etc', () => {
                             }
                         ]
                     };
-                    const message = crossBoundaryEventFactory.events['requestRulesForUrl'].target.expectMessage(m => true);
-                    const notificationPromise = crossBoundaryEventFactory.events['notifyRulesForNavigation'].source.nextMessage();
+                    const message = messageBus.channels['requestRulesForUrl'].target.expectMessage(m => true);
+                    const notificationPromise = messageBus.channels['notifyRulesForNavigation'].source.nextMessage();
                     message.sendResponse([existingRuleForUrl]);
                     notification = await notificationPromise;
                 });
@@ -231,9 +231,9 @@ describe('given navigation, etc', () => {
                         const otherSelector = 'a';
                         querySelectorAllResults[otherSelector] = new ElementList();
                         existingRuleForUrl.actions[0].selector = otherSelector;
-                        crossBoundaryEventFactory.events['notifyRuleUpdated'].target.sendMessage({ruleId: existingRuleForUrl.id});
-                        const message = crossBoundaryEventFactory.events['requestRulesForUrl'].target.expectMessage(m => true);
-                        const notificationPromise = crossBoundaryEventFactory.events['notifyRulesForNavigation'].source.nextMessage();
+                        messageBus.channels['notifyRuleUpdated'].target.sendMessage({ruleId: existingRuleForUrl.id});
+                        const message = messageBus.channels['requestRulesForUrl'].target.expectMessage(m => true);
+                        const notificationPromise = messageBus.channels['notifyRulesForNavigation'].source.nextMessage();
                         message.sendResponse([existingRuleForUrl]);
                         newNotification = await notificationPromise;
                     });
@@ -263,7 +263,7 @@ describe('given navigation, etc', () => {
                     let notification;
     
                     beforeEach(async () => {
-                        const notificationPromise = crossBoundaryEventFactory.events['notifyRulesForNavigation'].source.nextMessage();
+                        const notificationPromise = messageBus.channels['notifyRulesForNavigation'].source.nextMessage();
                         elementSelectedInDevtools(new Element([], selector));
                         notification = await notificationPromise;
                     });
@@ -305,7 +305,7 @@ describe('given navigation, etc', () => {
                 describe('and a delete action is executed', () => {
 
                     beforeEach(async () => {
-                        await crossBoundaryEventFactory.events['executeAction'].target.sendMessageAsync({
+                        await messageBus.channels['executeAction'].target.sendMessageAsync({
                             navigationId: currentNavigation.id,
                             action: {
                                 type: 'select',
@@ -325,7 +325,7 @@ describe('given navigation, etc', () => {
                 describe('and notification is given that a rule has been added', () => {
 
                     beforeEach(() => {
-                        crossBoundaryEventFactory.events['notifyRuleAdded'].target.sendMessage();
+                        messageBus.channels['notifyRuleAdded'].target.sendMessage();
                     });
 
                     describe('and one more rule is returned', () => {
@@ -350,8 +350,8 @@ describe('given navigation, etc', () => {
                                 ]
                             };
                             querySelectorAllResults[addedRuleSelector] = new ElementList();
-                            const message = crossBoundaryEventFactory.events['requestRulesForUrl'].target.expectMessage(m => true);
-                            const notificationPromise = crossBoundaryEventFactory.events['notifyRulesForNavigation'].source.nextMessage();
+                            const message = messageBus.channels['requestRulesForUrl'].target.expectMessage(m => true);
+                            const notificationPromise = messageBus.channels['notifyRulesForNavigation'].source.nextMessage();
                             message.sendResponse([
                                 existingRuleForUrl,
                                 addedRule
@@ -402,8 +402,8 @@ describe('given navigation, etc', () => {
                         let newNotification;
 
                         beforeEach(async () => {
-                            const message = crossBoundaryEventFactory.events['requestRulesForUrl'].target.expectMessage(m => true);
-                            const notificationPromise = crossBoundaryEventFactory.events['notifyRulesForNavigation'].source.nextMessage();
+                            const message = messageBus.channels['requestRulesForUrl'].target.expectMessage(m => true);
+                            const notificationPromise = messageBus.channels['notifyRulesForNavigation'].source.nextMessage();
                             message.sendResponse([]);
                             newNotification = await notificationPromise;
                         });
@@ -427,8 +427,8 @@ describe('given navigation, etc', () => {
                     let newNotification;
 
                     beforeEach(async () => {
-                        const notificationPromise = crossBoundaryEventFactory.events['notifyRulesForNavigation'].source.nextMessage();
-                        crossBoundaryEventFactory.events['notifyRuleDeleted'].target.sendMessage({ruleId: existingRuleForUrl.id});
+                        const notificationPromise = messageBus.channels['notifyRulesForNavigation'].source.nextMessage();
+                        messageBus.channels['notifyRuleDeleted'].target.sendMessage({ruleId: existingRuleForUrl.id});
                         newNotification = await notificationPromise;
                     });
 
@@ -452,7 +452,7 @@ describe('given navigation, etc', () => {
     describe('and the content script has executed', () => {
 
         beforeEach(() => {
-            contentScriptFunction(navigationInterface, crossBoundaryEventFactory, documentMutationsProvider);
+            contentScriptFunction(navigationInterface, messageBus, documentMutationsProvider);
         });
 
         describe('and the rules are returned', () => {
@@ -479,8 +479,8 @@ describe('given navigation, etc', () => {
                     ]
                 };
                 querySelectorAllResults[existingRuleSelector] = elementsForSelector;
-                const message = crossBoundaryEventFactory.events['requestRulesForUrl'].target.expectMessage(m => true);
-                const notificationPromise = crossBoundaryEventFactory.events['notifyRulesForNavigation'].source.nextMessage();
+                const message = messageBus.channels['requestRulesForUrl'].target.expectMessage(m => true);
+                const notificationPromise = messageBus.channels['notifyRulesForNavigation'].source.nextMessage();
                 message.sendResponse([existingRuleForUrl]);
                 notification = await notificationPromise;
             });
@@ -506,8 +506,8 @@ describe('given navigation, etc', () => {
             });
 
             it('should respond to a request to emit a notification', async () => {
-                const notificationPromise = crossBoundaryEventFactory.events['notifyRulesForNavigation'].source.nextMessage();
-                crossBoundaryEventFactory.events['emitRulesRequest'].target.sendMessage({tabId: currentNavigation.tabId});
+                const notificationPromise = messageBus.channels['notifyRulesForNavigation'].source.nextMessage();
+                messageBus.channels['emitRulesRequest'].target.sendMessage({tabId: currentNavigation.tabId});
                 const notification = await notificationPromise;
                 expect(notification).toEqual({
                     navigationId: currentNavigation.id,
@@ -533,7 +533,7 @@ describe('given navigation, etc', () => {
 
                 beforeEach(async () => {
                     elementsForSelector.addElement();
-                    const notificationPromise = crossBoundaryEventFactory.events['notifyRulesForNavigation'].source.nextMessage();
+                    const notificationPromise = messageBus.channels['notifyRulesForNavigation'].source.nextMessage();
                     documentMutationOccurred.dispatch();
                     newNotification = await notificationPromise;
                 });
@@ -561,7 +561,7 @@ describe('given navigation, etc', () => {
                 describe('and then a request to execute the rule is sent', () => {
 
                     beforeEach(async () => {
-                        await crossBoundaryEventFactory.events['executeRule'].target.sendMessageAsync({
+                        await messageBus.channels['executeRule'].target.sendMessageAsync({
                             ruleId: existingRuleForUrl.id,
                             navigationId: currentNavigation.id
                         });
@@ -575,7 +575,7 @@ describe('given navigation, etc', () => {
                         let newNotification;
     
                         beforeEach(async () => {
-                            const notificationPromise = crossBoundaryEventFactory.events['notifyRulesForNavigation'].source.nextMessage();
+                            const notificationPromise = messageBus.channels['notifyRulesForNavigation'].source.nextMessage();
                             documentMutationOccurred.dispatch();
                             newNotification = await notificationPromise;
                         });
