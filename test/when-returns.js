@@ -39,7 +39,7 @@ export function whenReturns(object, methodName, argumentsPredicate, callCount){
             }catch(e){
                 reject(e);
             }finally{
-                spy.mockReset();
+                spy.mockRestore();
             }
         });
     });

@@ -1,7 +1,7 @@
 import { FakeInspectedWindow } from './fake-inspected-window';
 import { Event } from '../src/shared/events';
 import { FakeNavigationInterface } from './fake-navigation-interface';
-import { FakeCrossBoundaryEventFactory } from './fake-cross-boundary-event-factory';
+import { FakeMessageBus } from './fake-message-bus';
 import { devtoolsFunction } from '../src/devtools/devtools-function';
 import { whenReturns } from './when-returns';
 
@@ -10,7 +10,7 @@ describe('given the dependencies', () => {
     let createSidebarPaneInElements;
     let elementSelectionChanged;
     let navigationInterface;
-    let crossBoundaryEventFactory;
+    let messageBus;
     let tabId;
 
     beforeEach(() => {
@@ -19,13 +19,13 @@ describe('given the dependencies', () => {
         createSidebarPaneInElements = jest.fn();
         elementSelectionChanged = new Event();
         navigationInterface = new FakeNavigationInterface();
-        crossBoundaryEventFactory = new FakeCrossBoundaryEventFactory();
+        messageBus = new FakeMessageBus();
     });
 
     describe('and the devtools function is executed', () => {
 
         beforeEach(() => {
-            devtoolsFunction(inspectedWindow, createSidebarPaneInElements, elementSelectionChanged, navigationInterface, crossBoundaryEventFactory);
+            devtoolsFunction(inspectedWindow, createSidebarPaneInElements, elementSelectionChanged, navigationInterface, messageBus);
         });
 
         it('should have created a sidebar pane in elements', () => {
@@ -36,7 +36,7 @@ describe('given the dependencies', () => {
             let notification;
 
             beforeEach(async () => {
-                const notificationPromise = crossBoundaryEventFactory.events['elementSelectionChangedForTab'].source.nextMessage();
+                const notificationPromise = messageBus.channels['elementSelectionChangedForTab'].source.nextMessage();
                 elementSelectionChanged.dispatch();
                 notification = await notificationPromise;
             });
@@ -57,7 +57,7 @@ describe('given the dependencies', () => {
                     };
                     jest.spyOn(navigationInterface, 'getNavigation').mockImplementation(() => Promise.resolve(navigation));
                     const evalPromise = whenReturns(inspectedWindow, 'eval');
-                    crossBoundaryEventFactory.events['elementSelectionChangedForNavigation'].target.sendMessage(navigation.id);
+                    messageBus.channels['elementSelectionChangedForNavigation'].target.sendMessage(navigation.id);
                     evalInvocation = await evalPromise;
                 });
 
