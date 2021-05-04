@@ -10,7 +10,7 @@ export class NavigationEventProvider{
         historyStateUpdatedOrReferenceFragmentUpdated){
             this.navigationMessages = runtimeMessagesEventSource
                 .filter((msg, sender) => !!sender.tab && sender.tab.id > 0)
-                .map((msg, {frameId, tab, url}, sendResponse) => [msg, new Navigation(tab.id, frameId, url), sendResponse]);
+                .map((msg, {frameId, tab, url}, sendResponse) => [msg, new Navigation(tab.id, frameId, tab.url), sendResponse]);
             this.navigationCreated = webNavigationCommitted
                 .filter(({tabId, frameId, url}) => tabId > 0)
                 .map(({tabId, frameId, url}) => [new Navigation(tabId, frameId, url)]);
