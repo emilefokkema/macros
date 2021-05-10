@@ -1,10 +1,11 @@
 import { editors } from './editors';
 
 class Macros{
-	constructor(navigationInterface, inspectedWindow, messageBus){
+	constructor(navigationInterface, inspectedWindow, messageBus, pageInterface){
 		this.navigation = navigationInterface;
 		this.inspectedWindow = inspectedWindow;
 		this.editors = editors;
+		this.page = pageInterface;
 		this.rulesForUrlRequest = messageBus.createChannel('requestRulesForUrl');
 		this.emitRulesRequest = messageBus.createChannel('emitRulesRequest');
 		this.rulesForNavigationNotification = messageBus.createChannel('notifyRulesForNavigation');
@@ -84,7 +85,9 @@ class Macros{
 		});
 	}
 	openManagementPage(){
-		this.navigation.openTab('management.html')
+		var searchParams = new URLSearchParams();
+		searchParams.append('page', 'management.html')
+		this.navigation.openTab(`sandbox.html?${searchParams}`);
 	}
 	getEditedStatusAsync(ruleId){
 		return this.editedStatusRequest.target.sendMessageAsync({ruleId});

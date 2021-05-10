@@ -1,5 +1,5 @@
 import { elementSelectionChanged } from './element-selection-changed';
-import { inspectedWindow } from '../shared/inspected-window';
+import { inspectedWindow } from '../shared/inspected-window/inspected-window';
 import { createSidebarPaneInElements } from './create-sidebar-pane-in-elements';
 import { devtoolsFunction } from './devtools-function';
 import { NavigationInterface } from '../shared/navigation/navigation-interface';

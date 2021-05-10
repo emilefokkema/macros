@@ -17,7 +17,7 @@ export function devtoolsFunction(inspectedWindow, createSidebarPaneInElements, e
     }
 
     async function initialize(){
-        createSidebarPaneInElements('Macros', 'devtools_sidebar.html');
+        createSidebarPaneInElements('Macros', 'sandbox.html?page=devtools_sidebar.html');
         tabId = await inspectedWindow.getTabId();
 
         macros.onElementSelectionChangedForNavigation(async (navigationId) => {

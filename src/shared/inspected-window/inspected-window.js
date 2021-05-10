@@ -1,4 +1,4 @@
-import { PromiseResolver } from './promise-resolver';
+import { PromiseResolver } from '../promise-resolver';
 
 var inspectedWindow = {
     async getTabId(){

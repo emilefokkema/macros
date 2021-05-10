@@ -27,6 +27,9 @@ copyFile('./src/devtools-sidebar/devtools_sidebar.html', './dist/devtools_sideba
 copyFile('./src/shared/shared.css', './dist/shared.css');
 copyFile('./src/devtools.html', './dist/devtools.html');
 
+copyFile('./src/sandbox/sandbox.html', './dist/sandbox.html');
+copyFile('./src/sandbox/sandbox.css', './dist/sandbox.css');
+
 if(argv.development){
 	copyFile('./node_modules/vue/dist/vue.js', './dist/vue.js');
 }else{
