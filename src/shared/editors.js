@@ -7,7 +7,10 @@ var editors = {
 		if(ruleId){
 			searchParams.append('ruleId', ruleId);
 		}
-		return `create-rule.html?${searchParams}`;
+		const page = `create-rule.html?${searchParams}`;
+        var searchParams2 = new URLSearchParams();
+        searchParams2.append('page', page);
+        return `sandbox.html?${searchParams2}`;
     },
     getParamsFromHref(href){
         var url = new URL(href);

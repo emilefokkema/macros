@@ -74,7 +74,7 @@ class EditorCollection{
 		this.loaded = true;
 	}
 	addOpenedEditor(ruleId, navigation, otherNavigationId){
-		if(ruleId !== undefined && this.editors.some(e => e.ruleId === ruleId) || this.editors.some(e => e.otherNavigationId === otherNavigationId)){
+		if(ruleId !== undefined && this.editors.some(e => e.ruleId === ruleId) || ruleId === undefined && this.editors.some(e => e.otherNavigationId === otherNavigationId)){
 			return;
 		}
 		this.addEditor(new Editor(this.navigationInterface, ruleId, navigation, otherNavigationId));

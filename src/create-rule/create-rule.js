@@ -31,14 +31,16 @@
 						action: {type: "delete"}
 					});
 				},
-				removePage(){
+				async removePage(){
 					this.hasPage = false;
-					var newUrl = macros.editors.replaceParamsInHref(location.href, undefined, this.ruleId);
-					history.pushState('',{}, newUrl);
+					var currentLocation = macros.page.getLocation();
+					var newUrl = macros.editors.replaceParamsInHref(currentLocation, undefined, this.ruleId);
+					await macros.page.pushHistoryState(newUrl);
 					macros.notifyEditorLoaded({ruleId: this.ruleId});
 				},
 				initialize: async function(){
-					var {ruleId, navigationId: otherNavigationId} = macros.editors.getParamsFromHref(location.href);
+					var currentLocation = macros.page.getLocation();
+					var {ruleId, navigationId: otherNavigationId} = macros.editors.getParamsFromHref(currentLocation);
 					if(ruleId){
 						this.ruleId = ruleId;
 						this.isNew = false;
@@ -93,13 +95,14 @@
 						this.isNew = false;
 						this.ruleId = ruleId;
 						this.setTitle();
-						var newUrl = macros.editors.replaceParamsInHref(location.href, this.otherNavigationId, this.ruleId);
-						history.pushState('',{}, newUrl);
+						var currentUrl = macros.page.getLocation();
+						var newUrl = macros.editors.replaceParamsInHref(currentUrl, this.otherNavigationId, this.ruleId);
+						await macros.page.pushHistoryState(newUrl);
 						macros.notifyEditorLoaded({ruleId: this.ruleId, otherNavigationId: this.otherNavigationId});
 					}
 				},
 				setTitle: function(){
-					document.title = `Edit '${this.name}'`
+					macros.page.setTitle(`Edit '${this.name}'`);
 				},
 				gotoPage: async function(){
 					var otherNavigation = await macros.navigation.getNavigation(this.otherNavigationId);

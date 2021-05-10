@@ -36,6 +36,9 @@ class EventSource {
 	next(cancellationToken){
 		return this.when(() => true, cancellationToken)
 	}
+	debounce(interval){
+		return new DebouncedEvent(this, interval);
+	}
 }
 
 class ComparingEventSource extends EventSource{
@@ -221,7 +224,52 @@ class Event extends EventSource{
 		}
 	}
 }
-
+class DebouncedEvent extends Event{
+	constructor(originalEventSource, interval){
+		super();
+		this.originalEventSource = originalEventSource;
+		this.interval = interval;
+		this.currentTimeout = undefined;
+		this.subscription = undefined;
+		this.latestArgs = undefined;
+		this.waiting = false;
+	}
+	addListener(listener){
+		super.addListener(listener);
+		this.start();
+	}
+	removeListener(listener){
+		super.removeListener(listener);
+		if(this.listeners.length === 0){
+			this.stop();
+		}
+	}
+	renewTimeout(){
+		if(this.currentTimeout !== undefined){
+			clearTimeout(this.currentTimeout);
+		}
+		this.currentTimeout = setTimeout(() => {
+			this.dispatch(...this.latestArgs);
+			this.waiting = false;
+			this.currentTimeout = undefined;
+		}, this.interval);
+		this.waiting = true;
+	}
+	start(){
+		this.subscription = this.originalEventSource.listen((...args) => {
+			this.latestArgs = args;
+			this.renewTimeout();
+		});
+	}
+	stop(){
+		if(this.currentTimeout !== undefined){
+			clearTimeout(this.currentTimeout);
+		}
+		if(this.subscription){
+			this.subscription.cancel();
+		}
+	}
+}
 class CancellationToken extends Event{
 	constructor(){
 		super();
@@ -259,6 +307,9 @@ class MessageType{
 			type: this.type,
 			message: msg
 		};
+	}
+	toString(){
+		return this.type;
 	}
 }
 class MessagesSource{

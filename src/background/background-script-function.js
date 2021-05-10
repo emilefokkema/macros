@@ -26,7 +26,7 @@ export function backgroundScript(
         var editorCollection = new EditorCollection(navigationInterface, storage);
         var buttons = new ButtonCollection(navigationInterface, storage, buttonInteraction);
 
-        setPopup('popup.html');
+        setPopup('sandbox.html?page=popup.html');
 
         navigationInterface.onDisappeared(() => {
             editorCollection.prune();

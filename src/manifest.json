@@ -12,6 +12,14 @@
 		"http://*/",
 		"https://*/"
 	],
+	"sandbox": {
+		"pages": [
+			"create-rule.html",
+			"management.html",
+			"popup.html",
+			"devtools_sidebar.html"
+		]
+	},
 	"background":{
 		"service_worker": "background.js"
 	},
