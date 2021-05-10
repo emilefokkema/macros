@@ -14,7 +14,7 @@ export class Navigation{
     }
     executeScriptAsync(url){
         var resolver = new PromiseResolver();
-        chrome.tabs.executeScript(this.tabId, {file: url, runAt: 'document_start', frameId: this.frameId}, () => {
+        chrome.scripting.executeScript({target: {tabId: this.tabId, frameIds: [this.frameId]}, files: [url]}, () => {
             var e = chrome.runtime.lastError;
 			if(e !== undefined){
 				resolver.reject(e.message);
