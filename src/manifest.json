@@ -13,6 +13,14 @@
 		"http://*/",
 		"https://*/"
 	],
+	"content_scripts": [
+		{
+			"matches": ["http://*/*", "https://*/*"],
+			"all_frames": true,
+			"js": ["content-script.js"],
+			"run_at": "document_start"
+		}
+	],
 	"sandbox": {
 		"pages": [
 			"create-rule.html",
