@@ -99,9 +99,6 @@ export class NavigationInterface{
     onReplaced(listener, cancellationToken){
         return this.navigationReplacedMessage.source.onMessage(listener, cancellationToken);
     }
-    onCreated(listener, cancellationToken){
-        return this.navigationEventProvider.navigationCreated.listen(listener, cancellationToken);
-    }
     onDisappeared(listener, cancellationToken){
         return this.navigationEventProvider.navigationDisappeared.listen(listener, cancellationToken);
     }

@@ -3,18 +3,6 @@ import { RuleCollection } from './rules';
 import { ButtonCollection } from './button';
 import { EditorCollection } from './editor-collection';
 
-async function tryExecuteContentScript(navigation){
-	if(navigation.url === 'about:blank'){
-		console.log('url is about:blank, not loading content script');
-		return;
-	}
-	try{
-		await navigation.executeScriptAsync('content-script.js');
-	}catch(e){
-		console.log(`could not execute content script for navigation at ${navigation.url}: `, e);
-	}
-}
-
 export function backgroundScript(
     setPopup,
     storage,
@@ -31,9 +19,6 @@ export function backgroundScript(
         navigationInterface.onDisappeared(() => {
             editorCollection.prune();
             buttons.prune();
-        });
-        navigationInterface.onCreated(navigation => {
-            tryExecuteContentScript(navigation);
         });
         macros.onRequestRulesForUrl((url, sendResponse) => {
             rules.getRulesForUrl(url).then(sendResponse);
