@@ -21,9 +21,6 @@ export class FakeNavigationInterface{
     async getPopupTabId(){
 
     }
-    onCreated(){
-
-    }
     onReplaced(listener, cancellationToken){
         return this.navigationHasBeenReplaced.listen(listener, cancellationToken);
     }
