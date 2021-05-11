@@ -27,6 +27,10 @@ copyFile('./src/devtools-sidebar/devtools_sidebar.html', './dist/devtools_sideba
 copyFile('./src/shared/shared.css', './dist/shared.css');
 copyFile('./src/devtools.html', './dist/devtools.html');
 
+copyFile('./src/icon_128.png', './dist/icon_128.png');
+copyFile('./src/icon_48.png', './dist/icon_48.png');
+copyFile('./src/icon_16.png', './dist/icon_16.png');
+
 if(argv.development){
 	copyFile('./node_modules/vue/dist/vue.js', './dist/vue.js');
 }else{
