@@ -341,7 +341,7 @@ describe('given storage, navigation etc.', () => {
             });
 
             it('the popup should have been set', () => {
-                expect(setPopup.mock.calls[0]).toEqual(['popup.html']);
+                expect(setPopup.mock.calls[0]).toEqual(['sandbox.html?page=popup.html']);
             });
 
             it('should return the rule', async () => {
@@ -376,7 +376,7 @@ describe('given storage, navigation etc.', () => {
                 });
 
                 it('should have opened a tab with the right url', () => {
-                    expect(spy).toHaveBeenCalledWith(`create-rule.html?ruleId=${existingRule1.id}`);
+                    expect(spy).toHaveBeenCalledWith(`sandbox.html?page=create-rule.html%3FruleId%3D${existingRule1.id}`);
                 });
 
                 describe('and then the editor is loaded', () => {
