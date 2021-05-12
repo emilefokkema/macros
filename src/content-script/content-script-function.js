@@ -1,8 +1,10 @@
 import { Macros } from '../shared/macros-class';
 import { ContentScriptRuleCollection, createAction } from './content-script-rules';
 import { Selector } from './selector';
+import { BlockedPageDiagnostic } from './diagnostics/blocked-page-diagnostic';
 
 export function contentScriptFunction(navigation, messageBus, documentMutationsProvider){
+    var diagnostics = [new BlockedPageDiagnostic()];
     var macros = new Macros(navigation, undefined, messageBus);
     var currentlySelectedElement;
     var navigationId;
@@ -17,6 +19,12 @@ export function contentScriptFunction(navigation, messageBus, documentMutationsP
             return;
         }
         sendNotification(ruleCollection.getNotification(), getSelectedElementNotification());
+    }
+
+    var runDiagnostics = function(){
+        for(const diagnostic of diagnostics){
+            diagnostic.diagnose();
+        }
     }
 
     function sendNotification(ruleCollectionNotification, selectedElementNotification){
@@ -108,5 +116,5 @@ export function contentScriptFunction(navigation, messageBus, documentMutationsP
     
     load();
 
-    return {elementSelectedInDevtools};
+    return {elementSelectedInDevtools, runDiagnostics};
 }
