@@ -1,6 +1,49 @@
 class NodeFilterContext{
-    constructor(node){
+    constructor(node, getAll){
+        this.node = node;
         this.style = getComputedStyle(node);
+        this.rect = node.getBoundingClientRect();
+        this.getAll = getAll;
+    }
+    getParent(){
+        const parentNode = this.node.parentNode;
+        if(!parentNode){
+            return null;
+        }
+        return this.getAll().find(c => c.node === parentNode);
+    }
+}
+
+class SelfAndAllParentsFilter{
+    constructor(filter){
+        this.filter = filter;
+    }
+    nodePassesFilter(nodeContext){
+        if(!this.filter.nodePassesFilter(nodeContext)){
+            return false;
+        }
+        const parent = nodeContext.getParent();
+        if(!parent){
+            return true;
+        }
+        return this.nodePassesFilter(parent);
+    }
+}
+
+class SelfAndNoParentFilter{
+    constructor(filter){
+        this.filter = filter;
+        this.allParentsFilter = new SelfAndAllParentsFilter(new NotFilter(filter));
+    }
+    nodePassesFilter(nodeContext){
+        if(!this.filter.nodePassesFilter(nodeContext)){
+            return false;
+        }
+        const parent = nodeContext.getParent();
+        if(!parent){
+            return true;
+        }
+        return this.allParentsFilter.nodePassesFilter(parent);
     }
 }
 
@@ -14,12 +57,39 @@ class NotFilter{
 }
 
 class AndFilter{
-    constructor(filter1, filter2){
-        this.filter1 = filter1;
-        this.filter2 = filter2;
+    constructor(...filters){
+        this.filters = filters;
     }
     nodePassesFilter(nodeContext){
-        return this.filter1.nodePassesFilter(nodeContext) && this.filter2.nodePassesFilter(nodeContext);
+        for(const filter of this.filters){
+            if(!filter.nodePassesFilter(nodeContext)){
+                return false;
+            }
+        }
+        return true;
+    }
+}
+
+class IsInViewportFilter{
+    nodePassesFilter(nodeContext){
+        const rect = nodeContext.rect;
+        return rect.x <= innerWidth && rect.x + rect.width >= 0 && rect.y <= innerHeight && rect.y + rect.height >= 0;
+    }
+}
+
+class IntersectsRectFilter{
+    constructor(rect){
+        this.minX = rect.x;
+        this.maxX = rect.x + rect.width;
+        this.minY = rect.y;
+        this.maxY = rect.y + rect.height;
+    }
+    nodePassesFilter(nodeContext){
+        const otherRect = nodeContext.rect;
+        return otherRect.x <= this.maxX && 
+            otherRect.x + otherRect.width >= this.minX &&
+            otherRect.y <= this.maxY &&
+            otherRect.y + otherRect.height >= this.minY;
     }
 }
 
@@ -34,7 +104,7 @@ class StylePropertyFilter{
     }
 }
 
-class StringValueFilter{
+class ValueEqualsFilter{
     constructor(filterValue){
         this.filterValue = filterValue;
     }
@@ -43,13 +113,64 @@ class StringValueFilter{
     }
 }
 
+class ValueIsNumberFilter{
+    valuePassesFilter(value){
+        return !isNaN(value);
+    }
+}
+
+class ValueIsNumberGreaterThanFilter{
+    constructor(threshold){
+        this.threshold = threshold;
+    }
+    valuePassesFilter(value){
+        if(isNaN(value)){
+            return false;
+        }
+        const numberValue = parseFloat(value);
+        return numberValue > this.threshold;
+    }
+}
+
+class ParsesToIntFilter{
+    constructor(intValue){
+        this.intValue = intValue;
+    }
+    valuePassesFilter(value){
+        return parseInt(value) === this.intValue;
+    }
+}
+
 export class BlockedPageDiagnostic{
     diagnose(){
-        const filter = new AndFilter(
-            new StylePropertyFilter('position', new StringValueFilter('fixed')),
-            new NotFilter(new StylePropertyFilter('visibility', new StringValueFilter('hidden')))
-        );
-        const pass = [].filter.apply(document.querySelectorAll('*'), [n => filter.nodePassesFilter(new NodeFilterContext(n))]);
+        const filter = new SelfAndNoParentFilter(new AndFilter(
+            new StylePropertyFilter('z-index', new ValueIsNumberFilter()),
+            new IsInViewportFilter(),
+            new NotFilter(new StylePropertyFilter('position', new ValueEqualsFilter('relative'))),
+            new SelfAndAllParentsFilter(new AndFilter(
+                new NotFilter(new StylePropertyFilter('opacity', new ValueEqualsFilter('0'))),
+                new NotFilter(new StylePropertyFilter('visibility', new ValueEqualsFilter('hidden'))),
+                new NotFilter(new StylePropertyFilter('display', new ValueEqualsFilter('none'))),
+                new NotFilter(new AndFilter(
+                    new StylePropertyFilter('width', new ParsesToIntFilter(0)),
+                    new StylePropertyFilter('height', new ParsesToIntFilter(0))
+                ))
+            ))
+        ));
+        const filterContexts = [].map.apply(document.querySelectorAll('*'), [n => new NodeFilterContext(n, () => filterContexts)]);
+        const pass = filterContexts
+            .filter(c => filter.nodePassesFilter(c))
+            .filter((c, _, array) => {
+                const zIndexNumber = parseFloat(c.style.getPropertyValue('z-index'));
+                const rect = c.rect;
+                const isBlockedByFilter = new AndFilter(
+                    new StylePropertyFilter('z-index', new ValueIsNumberGreaterThanFilter(zIndexNumber)),
+                    new IntersectsRectFilter(rect)
+                );
+                return !array.some(cc => cc !== c && isBlockedByFilter.nodePassesFilter(cc));
+            })
+            .map(c => c.node);
+        //const pass = [].filter.apply(document.querySelectorAll('*'), [n => filter.nodePassesFilter(new NodeFilterContext(n))]);
         console.log(`pass:`, pass)
     }
 }
