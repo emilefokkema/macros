@@ -25,6 +25,8 @@ class Macros{
 		this.addActionForSelectorRequest = messageBus.createChannel('requestToAddActionForSelector');
 		this.elementSelectionChangedForTabNotification = messageBus.createChannel('elementSelectionChangedForTab');
 		this.elementSelectionChangedForNavigationNotification = messageBus.createChannel('elementSelectionChangedForNavigation');
+		this.suggestionsRequest = messageBus.createChannel('requestSuggestions');
+		this.clearSuggestionsRequest = messageBus.createChannel('clearSuggestions');
 	}
 	getRulesForUrl(url){
 		return this.rulesForUrlRequest.target.sendMessageAsync(url);
@@ -154,6 +156,16 @@ class Macros{
 	}
 	onElementSelectionChangedForNavigation(listener, cancellationToken){
 		return this.elementSelectionChangedForNavigationNotification.source.onMessage(listener, cancellationToken);
+	}
+	onSuggestionsRequested(listener, cancellationToken){
+		return this.suggestionsRequest.source.onMessage(listener, cancellationToken);
+	}
+	requestSuggestions(navigationId){
+		this.clearSuggestionsRequest.target.sendMessage();
+		return this.suggestionsRequest.target.sendMessageAsync(navigationId);
+	}
+	onClearSuggestions(listener, cancellationToken){
+		return this.clearSuggestionsRequest.source.onMessage(listener, cancellationToken);
 	}
 }
 

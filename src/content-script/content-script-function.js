@@ -1,16 +1,19 @@
 import { Macros } from '../shared/macros-class';
 import { ContentScriptRuleCollection, createAction } from './content-script-rules';
 import { Selector } from './selector';
-import { BlockedPageDiagnostic } from './diagnostics/blocked-page-diagnostic';
+import { BlockedPageSuggestionProvider } from './suggestions/blocked-page-suggestion-provider';
+import { SuggestionCollection } from './suggestions/suggestion-collection';
 
 export function contentScriptFunction(navigation, messageBus, documentMutationsProvider){
-    var diagnostics = [new BlockedPageDiagnostic()];
+    var suggestionProviders = [new BlockedPageSuggestionProvider()];
+    var suggestionCollection = new SuggestionCollection();
     var macros = new Macros(navigation, undefined, messageBus);
     var currentlySelectedElement;
     var navigationId;
     var tabId;
     var url;
     var ruleCollection = new ContentScriptRuleCollection(() => macros.getRulesForUrl(url), documentMutationsProvider);
+    var suggestionCollection = new SuggestionCollection(ruleCollection);
     var loaded = false;
 
     var elementSelectedInDevtools = function(element){
@@ -21,10 +24,12 @@ export function contentScriptFunction(navigation, messageBus, documentMutationsP
         sendNotification(ruleCollection.getNotification(), getSelectedElementNotification());
     }
 
-    var runDiagnostics = function(){
-        for(const diagnostic of diagnostics){
-            diagnostic.diagnose();
+    var createSuggestions = function(){
+        suggestionCollection.clear();
+        for(const suggestionProvider of suggestionProviders){
+            suggestionProvider.createSuggestions(suggestionCollection);
         }
+        return suggestionCollection.getSuggestions();
     }
 
     function sendNotification(ruleCollectionNotification, selectedElementNotification){
@@ -111,10 +116,19 @@ export function contentScriptFunction(navigation, messageBus, documentMutationsP
             action.execute();
             sendResponse({});
         });
+        macros.onClearSuggestions(() => {
+            suggestionCollection.clear();
+        });
+        macros.onSuggestionsRequested((_navigationId, sendResponse) => {
+            if(_navigationId !== navigationId){
+                return;
+            }
+            sendResponse(createSuggestions());
+        });
         loaded = true;
     };
     
     load();
 
-    return {elementSelectedInDevtools, runDiagnostics};
+    return {elementSelectedInDevtools};
 }

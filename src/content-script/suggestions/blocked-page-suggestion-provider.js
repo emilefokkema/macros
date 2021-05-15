@@ -141,8 +141,8 @@ class ParsesToIntFilter{
     }
 }
 
-export class BlockedPageDiagnostic{
-    diagnose(){
+export class BlockedPageSuggestionProvider{
+    createSuggestions(suggestionCollection){
         const filter = new SelfAndNoParentFilter(new AndFilter(
             new StylePropertyFilter('z-index', new ValueIsNumberFilter()),
             new IsInViewportFilter(),

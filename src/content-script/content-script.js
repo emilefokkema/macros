@@ -24,6 +24,6 @@ const navigation = NavigationInterface.create(
     navigationEventProvider,
     tabCollection)
 
-const {elementSelectedInDevtools, runDiagnostics} = contentScriptFunction(navigation, messageBus, documentMutationsProvider);
+const {elementSelectedInDevtools} = contentScriptFunction(navigation, messageBus, documentMutationsProvider);
 
-export {elementSelectedInDevtools, runDiagnostics};
+export {elementSelectedInDevtools};

@@ -21,6 +21,7 @@
 					var navigation = this.navigations.find(n => n.navigationId === value);
 					if(navigation){
 						this.selectedNavigation = navigation;
+						console.log(`selectedNavigation was changed to a new value`)
 					}
 				}
 			}
@@ -73,12 +74,22 @@
 					navigation: Object,
 					rulecurrentlyexecuting: Object
 				},
+				updated: function(){
+					this.$nextTick(() => this.getSuggestions());
+				},
+				mounted: function(){
+					this.$nextTick(() => this.getSuggestions());
+				},
 				methods:{
 					onEditClicked(rule){
 						this.$emit('editclicked', {rule, navigationId: this.navigation.navigationId});
 					},
 					onExecuteClicked(rule){
 						this.$emit('executeclicked', {rule, navigationId: this.navigation.navigationId});
+					},
+					async getSuggestions(){
+						const suggestions = await macros.requestSuggestions(this.navigation.navigationId);
+						console.log(`got suggestions:`, suggestions)
 					}
 				},
 				components: {
