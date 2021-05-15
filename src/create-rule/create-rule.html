@@ -23,19 +23,19 @@
 			<div class="row-part">
 				and
 				<select class="text-input" v-model="actionType">
-					<option value="delete">delete them</option>
-					<option value="removeClass">remove class</option>
-					<option value="removeStyleProperty">remove style property</option>
+					<option :value="actionTypeConstants.DELETE_ACTION_TYPE">delete them</option>
+					<option :value="actionTypeConstants.REMOVE_CLASS_ACTION_TYPE">remove class</option>
+					<option :value="actionTypeConstants.REMOVE_STYLE_PROPERTY_ACTION_TYPE">remove style property</option>
 				</select>
-				<remove-class-action v-if="actionType === 'removeClass'" v-bind:action="action.action"></remove-class-action>
-				<remove-style-property-action v-if="actionType === 'removeStyleProperty'" v-bind:action="action.action"></remove-style-property-action>
+				<remove-class-action v-if="actionType === actionTypeConstants.REMOVE_CLASS_ACTION_TYPE" v-bind:action="action.action"></remove-class-action>
+				<remove-style-property-action v-if="actionType === actionTypeConstants.REMOVE_STYLE_PROPERTY_ACTION_TYPE" v-bind:action="action.action"></remove-style-property-action>
 			</div>
 		</div>
 		
 	</template>
 	<template id="actionTemplate">
 		<div class="row">
-			<select-action v-if="action.type === 'select'" v-bind:action="action"></select-action>
+			<select-action v-if="action.type === actionTypeConstants.SELECT_ACTION_TYPE" v-bind:action="action"></select-action>
 			<div class="row-part">
 				<div class="action-buttons">
 					<div class="button" v-if="isExecuting">
@@ -58,7 +58,7 @@
 	<template id="actionAdderTemplate">
 		<div>
 			<select class="text-input" v-model="type">
-				<option value="select">Select nodes</option>
+				<option :value="actionTypeConstants.SELECT_ACTION_TYPE">Select nodes</option>
 			</select>
 			<input type="button" value="Add" v-on:click="onAddClicked()"/>
 		</div>

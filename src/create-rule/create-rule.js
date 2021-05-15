@@ -21,15 +21,11 @@
 			methods: {
 				onAddType: function(type){
 					switch(type){
-						case "select": return this.addSelectingAction();
+						case macros.ruleDefinitions.SELECT_ACTION_TYPE: return this.addSelectingAction();
 					}
 				},
 				addSelectingAction: function(){
-					this.actions.push({
-						type: "select",
-						selector: undefined,
-						action: {type: "delete"}
-					});
+					this.actions.push(macros.ruleDefinitions.getSelectActionDefinition(undefined, macros.ruleDefinitions.getDeleteActionDefinition()))
 				},
 				async removePage(){
 					this.hasPage = false;
@@ -67,13 +63,7 @@
 					macros.notifyEditorLoaded({ruleId, otherNavigationId});
 				},
 				addActionsForSelector(selector){
-					this.actions.push({
-						type: "select",
-						selector: selector,
-						action: {
-							type: "delete"
-						}
-					});
+					this.actions.push(macros.ruleDefinitions.getSelectActionDefinition(selector, macros.ruleDefinitions.getDeleteActionDefinition()));
 				},
 				setRule: function(rule){
 					this.name = rule.name;
@@ -127,7 +117,10 @@
 					template: document.getElementById("actionAdderTemplate").innerHTML,
 					data: function(){
 						return {
-							type: "select"
+							actionTypeConstants: {
+								SELECT_ACTION_TYPE: macros.ruleDefinitions.SELECT_ACTION_TYPE
+							},
+							type: macros.ruleDefinitions.SELECT_ACTION_TYPE
 						};
 					},
 					methods: {
@@ -142,6 +135,13 @@
 						action: Object,
 						runningaction: Object,
 						runnable: Boolean
+					},
+					data: function(){
+						return {
+							actionTypeConstants: {
+								SELECT_ACTION_TYPE: macros.ruleDefinitions.SELECT_ACTION_TYPE
+							}
+						};
 					},
 					methods: {
 						execute: function(){
@@ -168,16 +168,14 @@
 							props: {
 								action: Object
 							},
-							methods: {
-								setDeleteAction: function(){
-									this.action.action = {type: "delete"};
-								},
-								setRemoveClassAction: function(){
-									this.action.action = {type: "removeClass", class: undefined}
-								},
-								setRemoveStylePropertyAction: function(){
-									this.action.action = {type: "removeStyleProperty", property: undefined};
-								}
+							data: function(){
+								return {
+									actionTypeConstants: {
+										DELETE_ACTION_TYPE: macros.ruleDefinitions.DELETE_ACTION_TYPE,
+										REMOVE_CLASS_ACTION_TYPE: macros.ruleDefinitions.REMOVE_CLASS_ACTION_TYPE,
+										REMOVE_STYLE_PROPERTY_ACTION_TYPE: macros.ruleDefinitions.REMOVE_STYLE_PROPERTY_ACTION_TYPE,
+									}
+								};
 							},
 							computed: {
 								actionType: {
@@ -188,11 +186,7 @@
 										if(this.action.action && this.action.action.type === type){
 											return;
 										}
-										switch(type){
-											case "delete": return this.setDeleteAction();
-											case "removeClass": return this.setRemoveClassAction();
-											case "removeStyleProperty": return this.setRemoveStylePropertyAction();
-										}
+										this.action.action = macros.ruleDefinitions.getSelectActionActionDefinitionOfType(type);
 									}
 								}
 							},

@@ -1,3 +1,5 @@
+import { ruleDefinitions } from '../../shared/rule-definitions';
+
 class NodeFilterContext{
     constructor(node, getAll){
         this.node = node;
@@ -170,7 +172,9 @@ export class BlockedPageSuggestionProvider{
                 return !array.some(cc => cc !== c && isBlockedByFilter.nodePassesFilter(cc));
             })
             .map(c => c.node);
-        //const pass = [].filter.apply(document.querySelectorAll('*'), [n => filter.nodePassesFilter(new NodeFilterContext(n))]);
-        console.log(`pass:`, pass)
+        
+        for(const passedNode of pass){
+            suggestionCollection.addNodeActionSuggestion(passedNode, ruleDefinitions.getDeleteActionDefinition());
+        }
     }
 }

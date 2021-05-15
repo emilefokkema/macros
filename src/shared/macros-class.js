@@ -1,10 +1,12 @@
 import { editors } from './editors';
+import { ruleDefinitions } from './rule-definitions';
 
 class Macros{
 	constructor(navigationInterface, inspectedWindow, messageBus, pageInterface){
 		this.navigation = navigationInterface;
 		this.inspectedWindow = inspectedWindow;
 		this.editors = editors;
+		this.ruleDefinitions = ruleDefinitions;
 		this.page = pageInterface;
 		this.rulesForUrlRequest = messageBus.createChannel('requestRulesForUrl');
 		this.emitRulesRequest = messageBus.createChannel('emitRulesRequest');

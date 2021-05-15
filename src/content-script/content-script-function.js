@@ -123,6 +123,7 @@ export function contentScriptFunction(navigation, messageBus, documentMutationsP
             if(_navigationId !== navigationId){
                 return;
             }
+            console.log(`navigation '${navigationId}' creating suggestions`);
             sendResponse(createSuggestions());
         });
         loaded = true;

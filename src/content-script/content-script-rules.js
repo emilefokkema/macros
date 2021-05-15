@@ -1,9 +1,10 @@
 import { CombinedEventSource, Event, CancellationToken } from '../shared/events';
 import { Selector } from './selector';
+import { ruleDefinitions } from '../shared/rule-definitions';
 
 class DeleteNode{
 	getEffectOnNode(node){
-		return 'will delete this element';
+		return {description: 'will delete this element'};
 	}
 	hasEffectOnNode(node){
 		return true;
@@ -25,7 +26,7 @@ class RemoveClass{
 		this.class = definition.class;
 	}
 	getEffectOnNode(node){
-		return `will remove class '${this.class}' from this element`;
+		return {description: `will remove class '${this.class}' from this element`};
 	}
 	hasEffectOnNode(node){
 		var classes = node.getAttribute('class');
@@ -62,7 +63,7 @@ class RemoveStyleProperty{
 		this.property = definition.property;
 	}
 	getEffectOnNode(node){
-		return `will remove property '${this.property}' from this element's style declaration`;
+		return {description: `will remove property '${this.property}' from this element's style declaration`};
 	}
 	nodeStyleDeclarationContainsProperty(node){
 		for(var i = 0; i < node.style.length; i++){
@@ -85,9 +86,9 @@ class RemoveStyleProperty{
 
 function createSelectedNodeAction(definition){
 	switch(definition.type){
-		case "delete": return new DeleteNode(definition);
-		case "removeClass": return new RemoveClass(definition);
-		case "removeStyleProperty": return new RemoveStyleProperty(definition);
+		case ruleDefinitions.DELETE_ACTION_TYPE: return new DeleteNode(definition);
+		case ruleDefinitions.REMOVE_CLASS_ACTION_TYPE: return new RemoveClass(definition);
+		case ruleDefinitions.REMOVE_STYLE_PROPERTY_ACTION_TYPE: return new RemoveStyleProperty(definition);
 	}
 }
 
@@ -136,7 +137,7 @@ class SelectAction{
 
 function createAction(definition, documentMutationsProvider){
 	switch(definition.type){
-		case 'select': return new SelectAction(definition, documentMutationsProvider);
+		case ruleDefinitions.SELECT_ACTION_TYPE: return new SelectAction(definition, documentMutationsProvider);
 	}
 }
 
