@@ -25,6 +25,16 @@ const ruleDefinitions = {
             case this.REMOVE_CLASS_ACTION_TYPE: return this.getRemoveClassActionDefinition();
             case this.REMOVE_STYLE_PROPERTY_ACTION_TYPE: return this.getRemoveStylePropertyActionDefinition();
         }
+    },
+    actionIsAchievedByOther(action, otherAction){
+        if(action.type !== otherAction.type){
+            return false;
+        }
+        switch(action.type){
+            case this.DELETE_ACTION_TYPE: return true;
+            case this.REMOVE_CLASS_ACTION_TYPE: return action.class === otherAction.class;
+            case this.REMOVE_STYLE_PROPERTY_ACTION_TYPE: return action.property === otherAction.property;
+        }
     }
 };
 

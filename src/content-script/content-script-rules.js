@@ -4,7 +4,10 @@ import { ruleDefinitions } from '../shared/rule-definitions';
 
 class DeleteNode{
 	getEffectOnNode(node){
-		return {description: 'will delete this element'};
+		return {
+			description: 'will delete this element',
+			actionDefinition: ruleDefinitions.getDeleteActionDefinition()
+		};
 	}
 	hasEffectOnNode(node){
 		return true;
@@ -26,7 +29,13 @@ class RemoveClass{
 		this.class = definition.class;
 	}
 	getEffectOnNode(node){
-		return {description: `will remove class '${this.class}' from this element`};
+		if(!this.hasEffectOnNode(node)){
+			return null;
+		}
+		return {
+			description: `will remove class '${this.class}' from this element`,
+			actionDefinition: ruleDefinitions.getRemoveClassActionDefinition(this.class)
+		};
 	}
 	hasEffectOnNode(node){
 		var classes = node.getAttribute('class');
@@ -63,7 +72,13 @@ class RemoveStyleProperty{
 		this.property = definition.property;
 	}
 	getEffectOnNode(node){
-		return {description: `will remove property '${this.property}' from this element's style declaration`};
+		if(!this.hasEffectOnNode(node)){
+			return null;
+		}
+		return {
+			description: `will remove property '${this.property}' from this element's style declaration`,
+			actionDefinition: ruleDefinitions.getRemoveStylePropertyActionDefinition(this.property)
+		};
 	}
 	nodeStyleDeclarationContainsProperty(node){
 		for(var i = 0; i < node.style.length; i++){

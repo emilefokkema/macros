@@ -74,6 +74,11 @@
 					navigation: Object,
 					rulecurrentlyexecuting: Object
 				},
+				data: function(){
+					return {
+						suggestions: []
+					};
+				},
 				updated: function(){
 					this.$nextTick(() => this.getSuggestions());
 				},
@@ -88,8 +93,7 @@
 						this.$emit('executeclicked', {rule, navigationId: this.navigation.navigationId});
 					},
 					async getSuggestions(){
-						const suggestions = await macros.requestSuggestions(this.navigation.navigationId);
-						console.log(`got suggestions:`, suggestions)
+						this.suggestions = await macros.requestSuggestions(this.navigation.navigationId);
 					}
 				},
 				components: {
@@ -127,6 +131,12 @@
 							onEditClicked: function(){
 								this.$emit('editclicked');
 							},
+						}
+					},
+					suggestion: {
+						template: document.getElementById("suggestionTemplate").innerHTML,
+						props: {
+							suggestion: Object
 						}
 					}
 				}
