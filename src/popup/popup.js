@@ -74,26 +74,12 @@
 					navigation: Object,
 					rulecurrentlyexecuting: Object
 				},
-				data: function(){
-					return {
-						suggestions: []
-					};
-				},
-				updated: function(){
-					this.$nextTick(() => this.getSuggestions());
-				},
-				mounted: function(){
-					this.$nextTick(() => this.getSuggestions());
-				},
 				methods:{
 					onEditClicked(rule){
 						this.$emit('editclicked', {rule, navigationId: this.navigation.navigationId});
 					},
 					onExecuteClicked(rule){
 						this.$emit('executeclicked', {rule, navigationId: this.navigation.navigationId});
-					},
-					async getSuggestions(){
-						this.suggestions = await macros.requestSuggestions(this.navigation.navigationId);
 					}
 				},
 				components: {
@@ -136,7 +122,16 @@
 					suggestion: {
 						template: document.getElementById("suggestionTemplate").innerHTML,
 						props: {
-							suggestion: Object
+							suggestion: Object,
+							navigationid: String
+						},
+						methods: {
+							onMouseEnter(){
+								macros.notifySuggestionIndicationStart(this.navigationid, this.suggestion.suggestionId);
+							},
+							onMouseLeave(){
+								macros.notifySuggestionIndicationEnd(this.navigationid, this.suggestion.suggestionId);
+							}
 						}
 					}
 				}

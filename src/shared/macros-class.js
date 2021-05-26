@@ -27,8 +27,8 @@ class Macros{
 		this.addActionForSelectorRequest = messageBus.createChannel('requestToAddActionForSelector');
 		this.elementSelectionChangedForTabNotification = messageBus.createChannel('elementSelectionChangedForTab');
 		this.elementSelectionChangedForNavigationNotification = messageBus.createChannel('elementSelectionChangedForNavigation');
-		this.suggestionsRequest = messageBus.createChannel('requestSuggestions');
-		this.clearSuggestionsRequest = messageBus.createChannel('clearSuggestions');
+		this.suggestionIndicationStartNotification = messageBus.createChannel('suggestionIndicationStart');
+		this.suggestionIndicationEndNotification = messageBus.createChannel('suggestionIndicationEnd');
 	}
 	getRulesForUrl(url){
 		return this.rulesForUrlRequest.target.sendMessageAsync(url);
@@ -159,15 +159,17 @@ class Macros{
 	onElementSelectionChangedForNavigation(listener, cancellationToken){
 		return this.elementSelectionChangedForNavigationNotification.source.onMessage(listener, cancellationToken);
 	}
-	onSuggestionsRequested(listener, cancellationToken){
-		return this.suggestionsRequest.source.onMessage(listener, cancellationToken);
+	notifySuggestionIndicationStart(navigationId, suggestionId){
+		this.suggestionIndicationStartNotification.target.sendMessage({navigationId, suggestionId});
 	}
-	requestSuggestions(navigationId){
-		this.clearSuggestionsRequest.target.sendMessage();
-		return this.suggestionsRequest.target.sendMessageAsync(navigationId);
+	onNotifySuggestionIndicationStart(listener, cancellationToken){
+		return this.suggestionIndicationStartNotification.source.onMessage(listener, cancellationToken);
 	}
-	onClearSuggestions(listener, cancellationToken){
-		return this.clearSuggestionsRequest.source.onMessage(listener, cancellationToken);
+	notifySuggestionIndicationEnd(navigationId, suggestionId){
+		this.suggestionIndicationEndNotification.target.sendMessage({navigationId, suggestionId});
+	}
+	onNotifySuggestionIndicationEnd(listener, cancellationToken){
+		return this.suggestionIndicationEndNotification.source.onMessage(listener, cancellationToken);
 	}
 }
 

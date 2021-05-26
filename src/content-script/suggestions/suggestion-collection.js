@@ -19,6 +19,11 @@ export class SuggestionCollection{
                 }
             }
         }
+        for(const suggestion of this.suggestions){
+            if(suggestion.node === node && ruleDefinitions.actionIsAchievedByOther(actionDefinition, suggestion.actionDefinition)){
+                return;
+            }
+        }
         this.suggestions.push({
             id: ++this.latestSuggestionId,
             actionDefinition: actionDefinition,
@@ -31,5 +36,12 @@ export class SuggestionCollection{
             actionDefinition: s.actionDefinition,
             selector: Selector.forElement(s.node)
         }));
+    }
+    startHighlightingSuggestion(suggestionId){
+        const suggestion = this.suggestions.find(s => s.id === suggestionId);
+        console.log(`highlighting suggestion`, suggestion);
+    }
+    stopHighlightingSuggestion(suggestionId){
+
     }
 }

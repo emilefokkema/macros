@@ -21,18 +21,17 @@ export function contentScriptFunction(navigation, messageBus, documentMutationsP
         if(!loaded){
             return;
         }
-        sendNotification(ruleCollection.getNotification(), getSelectedElementNotification());
+        sendNotification(ruleCollection.getNotification(), getSelectedElementNotification(), createSuggestions());
     }
 
     var createSuggestions = function(){
-        suggestionCollection.clear();
         for(const suggestionProvider of suggestionProviders){
             suggestionProvider.createSuggestions(suggestionCollection);
         }
         return suggestionCollection.getSuggestions();
     }
 
-    function sendNotification(ruleCollectionNotification, selectedElementNotification){
+    function sendNotification(ruleCollectionNotification, selectedElementNotification, suggestionsNotification){
         macros.notifyRulesForNavigation({
             navigationId: navigationId,
             url: url,
@@ -41,7 +40,8 @@ export function contentScriptFunction(navigation, messageBus, documentMutationsP
             numberOfRules: ruleCollectionNotification.numberOfRules,
             numberOfRulesThatHaveSomethingToDo: ruleCollectionNotification.numberOfRulesThatHaveSomethingToDo,
             numberOfRulesThatHaveExecuted: ruleCollectionNotification.numberOfRulesThatHaveExecuted,
-            selectedElement: selectedElementNotification
+            selectedElement: selectedElementNotification,
+            suggestions: suggestionsNotification
         });
     }
 
@@ -63,7 +63,7 @@ export function contentScriptFunction(navigation, messageBus, documentMutationsP
         navigationId = currentNavigation.id;
         tabId = currentNavigation.tabId;
         console.log(`navigation id '${navigationId}', navigation history id '${navigationHistoryId}', tabId ${tabId}`);
-        ruleCollection.notifications.listen(notification => sendNotification(notification, getSelectedElementNotification()));
+        ruleCollection.notifications.listen(notification => sendNotification(notification, getSelectedElementNotification(), createSuggestions()));
         await ruleCollection.refresh();
         macros.onRuleAdded(() => ruleCollection.refresh());
         macros.onRuleDeleted(({ruleId}) => ruleCollection.removeRule(ruleId));
@@ -83,13 +83,13 @@ export function contentScriptFunction(navigation, messageBus, documentMutationsP
             url = location.href;
             navigationId = newNavigationId;
             await ruleCollection.refresh();
-            sendNotification(ruleCollection.getNotification(), getSelectedElementNotification());
+            sendNotification(ruleCollection.getNotification(), getSelectedElementNotification(), createSuggestions());
         });
         macros.onRequestToEmitRules(({tabId: _tabId}) => {
             if(_tabId != tabId){
                 return;
             }
-            sendNotification(ruleCollection.getNotification(), getSelectedElementNotification());
+            sendNotification(ruleCollection.getNotification(), getSelectedElementNotification(), createSuggestions());
         });
         macros.onExecuteRuleRequest(({ruleId, navigationId: _navigationId}, sendResponse) => {
             if(_navigationId !== navigationId){
@@ -116,15 +116,17 @@ export function contentScriptFunction(navigation, messageBus, documentMutationsP
             action.execute();
             sendResponse({});
         });
-        macros.onClearSuggestions(() => {
-            suggestionCollection.clear();
-        });
-        macros.onSuggestionsRequested((_navigationId, sendResponse) => {
+        macros.onNotifySuggestionIndicationStart(({navigationId: _navigationId, suggestionId}) => {
             if(_navigationId !== navigationId){
                 return;
             }
-            console.log(`navigation '${navigationId}' creating suggestions`);
-            sendResponse(createSuggestions());
+            suggestionCollection.startHighlightingSuggestion(suggestionId);
+        });
+        macros.onNotifySuggestionIndicationEnd(({navigationId: _navigationId, suggestionId}) => {
+            if(_navigationId !== navigationId){
+                return;
+            }
+            suggestionCollection.stopHighlightingSuggestion(suggestionId);
         });
         loaded = true;
     };
