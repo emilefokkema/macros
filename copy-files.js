@@ -7,6 +7,7 @@ if(!fs.existsSync('./dist')){
 }
 
 copyFile('./src/manifest.json', './dist/manifest.json');
+copyFile('./src/injected.css', './dist/injected.css');
 
 copyFile('./src/create-rule/create-rule.css', './dist/create-rule.css');
 copyFile('./src/create-rule/create-rule.js', './dist/create-rule.js');

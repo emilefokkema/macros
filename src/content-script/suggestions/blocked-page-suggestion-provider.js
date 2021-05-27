@@ -160,8 +160,9 @@ export class BlockedPageSuggestionProvider{
             ))
         ));
         const filterContexts = [].map.apply(document.querySelectorAll('*'), [n => new NodeFilterContext(n, () => filterContexts)]);
-        const pass = filterContexts
-            .filter(c => filter.nodePassesFilter(c))
+        const firstPass = filterContexts.filter(c => filter.nodePassesFilter(c));
+        console.log(`first pass:`, firstPass.map(c => c.node));
+        const pass = firstPass
             .filter((c, _, array) => {
                 const zIndexNumber = parseFloat(c.style.getPropertyValue('z-index'));
                 const rect = c.rect;
@@ -169,9 +170,14 @@ export class BlockedPageSuggestionProvider{
                     new StylePropertyFilter('z-index', new ValueIsNumberGreaterThanFilter(zIndexNumber)),
                     new IntersectsRectFilter(rect)
                 );
-                return !array.some(cc => cc !== c && isBlockedByFilter.nodePassesFilter(cc));
+                const isBlockedByOther = array.some(cc => cc !== c && isBlockedByFilter.nodePassesFilter(cc));
+                if(isBlockedByOther){
+                    console.log(`blocked by other:`, c.node)
+                }
+                return !isBlockedByOther;
             })
             .map(c => c.node);
+        console.log(`pass:`, pass)
         
         for(const passedNode of pass){
             suggestionCollection.addNodeActionSuggestion(passedNode, ruleDefinitions.getDeleteActionDefinition());

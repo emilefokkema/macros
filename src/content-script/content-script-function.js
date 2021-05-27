@@ -3,17 +3,17 @@ import { ContentScriptRuleCollection, createAction } from './content-script-rule
 import { Selector } from './selector';
 import { BlockedPageSuggestionProvider } from './suggestions/blocked-page-suggestion-provider';
 import { SuggestionCollection } from './suggestions/suggestion-collection';
+import { ElementIndicator } from './suggestions/element-indicator';
 
 export function contentScriptFunction(navigation, messageBus, documentMutationsProvider){
     var suggestionProviders = [new BlockedPageSuggestionProvider()];
-    var suggestionCollection = new SuggestionCollection();
     var macros = new Macros(navigation, undefined, messageBus);
     var currentlySelectedElement;
     var navigationId;
     var tabId;
     var url;
     var ruleCollection = new ContentScriptRuleCollection(() => macros.getRulesForUrl(url), documentMutationsProvider);
-    var suggestionCollection = new SuggestionCollection(ruleCollection);
+    var suggestionCollection = new SuggestionCollection(ruleCollection, new ElementIndicator());
     var loaded = false;
 
     var elementSelectedInDevtools = function(element){
