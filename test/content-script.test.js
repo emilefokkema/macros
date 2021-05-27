@@ -62,6 +62,7 @@ describe('given navigation, etc', () => {
         };
         url = 'http://a.b/c';
         querySelectorAllResults = {};
+        querySelectorAllResults['*'] = new ElementList();
         jest.spyOn(global, 'location', 'get').mockImplementation(() => {
             return {
                 href: url
@@ -150,7 +151,8 @@ describe('given navigation, etc', () => {
                             numberOfRules: 1,
                             numberOfRulesThatHaveSomethingToDo: 0,
                             numberOfRulesThatHaveExecuted: 1,
-                            selectedElement: null
+                            selectedElement: null,
+                            suggestions: []
                         });
                     });
 
@@ -172,7 +174,8 @@ describe('given navigation, etc', () => {
                                 numberOfRules: 0,
                                 numberOfRulesThatHaveSomethingToDo: 0,
                                 numberOfRulesThatHaveExecuted: 0,
-                                selectedElement: null
+                                selectedElement: null,
+                                suggestions: []
                             });
                         });
                     });
@@ -220,7 +223,8 @@ describe('given navigation, etc', () => {
                         numberOfRules: 1,
                         numberOfRulesThatHaveSomethingToDo: 1,
                         numberOfRulesThatHaveExecuted: 0,
-                        selectedElement: null
+                        selectedElement: null,
+                        suggestions: []
                     })
                 });
 
@@ -254,7 +258,8 @@ describe('given navigation, etc', () => {
                             numberOfRules: 1,
                             numberOfRulesThatHaveSomethingToDo: 0,
                             numberOfRulesThatHaveExecuted: 0,
-                            selectedElement: null
+                            selectedElement: null,
+                            suggestions: []
                         });
                     });
                 });
@@ -288,7 +293,12 @@ describe('given navigation, etc', () => {
                                 effect: [
                                     {
                                         ruleId: existingRuleForUrl.id,
-                                        effect: ['will delete this element']
+                                        effect: [
+                                            {
+                                                actionDefinition: {type: 'delete'},
+                                                description: 'will delete this element'
+                                            }
+                                        ]
                                     }
                                 ],
                                 selector: {
@@ -297,7 +307,8 @@ describe('given navigation, etc', () => {
                                     nodeName: 'element',
                                     text: 'element'
                                 }
-                            }
+                            },
+                            suggestions: []
                         })
                     });
                 });
@@ -381,7 +392,8 @@ describe('given navigation, etc', () => {
                                 numberOfRules: 2,
                                 numberOfRulesThatHaveSomethingToDo: 1,
                                 numberOfRulesThatHaveExecuted: 0,
-                                selectedElement: null
+                                selectedElement: null,
+                                suggestions: []
                             });
                         });
                     });
@@ -417,7 +429,8 @@ describe('given navigation, etc', () => {
                                 numberOfRules: 0,
                                 numberOfRulesThatHaveSomethingToDo: 0,
                                 numberOfRulesThatHaveExecuted: 0,
-                                selectedElement: null
+                                selectedElement: null,
+                                suggestions: []
                             });
                         });
                     });
@@ -441,7 +454,8 @@ describe('given navigation, etc', () => {
                             numberOfRules: 0,
                             numberOfRulesThatHaveSomethingToDo: 0,
                             numberOfRulesThatHaveExecuted: 0,
-                            selectedElement: null
+                            selectedElement: null,
+                            suggestions: []
                         });
                     });
                 });
@@ -501,7 +515,8 @@ describe('given navigation, etc', () => {
                     numberOfRules: 1,
                     numberOfRulesThatHaveSomethingToDo: 0,
                     numberOfRulesThatHaveExecuted: 0,
-                    selectedElement: null
+                    selectedElement: null,
+                    suggestions: []
                 })
             });
 
@@ -524,7 +539,8 @@ describe('given navigation, etc', () => {
                     numberOfRules: 1,
                     numberOfRulesThatHaveSomethingToDo: 0,
                     numberOfRulesThatHaveExecuted: 0,
-                    selectedElement: null
+                    selectedElement: null,
+                    suggestions: []
                 })
             });
 
@@ -554,7 +570,8 @@ describe('given navigation, etc', () => {
                         numberOfRules: 1,
                         numberOfRulesThatHaveSomethingToDo: 1,
                         numberOfRulesThatHaveExecuted: 0,
-                        selectedElement: null
+                        selectedElement: null,
+                        suggestions: []
                     })
                 });
 
@@ -596,7 +613,8 @@ describe('given navigation, etc', () => {
                                 numberOfRules: 1,
                                 numberOfRulesThatHaveSomethingToDo: 0,
                                 numberOfRulesThatHaveExecuted: 1,
-                                selectedElement: null
+                                selectedElement: null,
+                                suggestions: []
                             });
                         });
                     });
