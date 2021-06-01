@@ -13,3 +13,18 @@ body{
 	padding: 5px;
 	color: #666;
 }
+.suggestion{
+	margin: 10px;
+	user-select: none;
+}
+.suggestion-title{
+	padding: 5px;
+}
+.suggestion-inner{
+	display: inline-block;
+	border: 1px solid #ddd;
+	border-radius: 3px;
+}
+.suggestion-part{
+	display: inline-block;
+}

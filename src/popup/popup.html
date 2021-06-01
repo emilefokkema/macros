@@ -42,7 +42,16 @@
 		
 	</template>
 	<template id="suggestionTemplate">
-		<span v-on:mouseenter="onMouseEnter()" v-on:mouseleave="onMouseLeave()">suggestion!</span>
+		<div class="suggestion">
+			<div class="suggestion-inner" v-on:mouseenter="onMouseEnter()" v-on:mouseleave="onMouseLeave()">
+				<div class="suggestion-part suggestion-title">suggestion!</div>
+				<div class="suggestion-part">
+					<div class="button run-button">
+						<span class="fa fa-play"></span>
+					</div>
+				</div>
+			</div>
+		</div>
 	</template>
 	<div id="app">
 		<select class="navigation-selector" v-if="navigations.length > 0" v-model="navigationIdOption">
