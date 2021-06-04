@@ -1,3 +1,5 @@
+import { macros } from '../sandbox/macros';
+
 (function(){
 
 	new Vue({

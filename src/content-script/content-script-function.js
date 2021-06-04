@@ -97,10 +97,14 @@ export function contentScriptFunction(navigation, messageBus, documentMutationsP
             }
             console.log(`navigation '${navigationId}' got request to execute rule:`, ruleId);
             var rule = ruleCollection.getRule(ruleId);
-            if(rule){
-                rule.execute();
-            }
-            sendResponse({});
+            
+            setTimeout(() => {
+                if(rule){
+                    rule.execute();
+                }
+                sendResponse({});
+            }, 1000);
+            return true;
         });
         macros.onElementSelectionChangedOnTab((_tabId) => {
             if(_tabId != tabId){
