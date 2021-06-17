@@ -106,6 +106,16 @@ export function contentScriptFunction(navigation, messageBus, documentMutationsP
             }, 1000);
             return true;
         });
+        macros.onExecuteSuggestionRequest(({suggestionId, navigationId: _navigationId}, sendResponse) => {
+            if(_navigationId !== navigationId){
+                return;
+            }
+            console.log(`navigation '${navigationId}' got request to execute suggestion:`, suggestionId);
+            setTimeout(() => {
+                sendResponse({});
+            }, 1000);
+            return true;
+        });
         macros.onElementSelectionChangedOnTab((_tabId) => {
             if(_tabId != tabId){
                 return;

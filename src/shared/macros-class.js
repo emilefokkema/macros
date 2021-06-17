@@ -29,6 +29,7 @@ class Macros{
 		this.elementSelectionChangedForNavigationNotification = messageBus.createChannel('elementSelectionChangedForNavigation');
 		this.suggestionIndicationStartNotification = messageBus.createChannel('suggestionIndicationStart');
 		this.suggestionIndicationEndNotification = messageBus.createChannel('suggestionIndicationEnd');
+		this.executeSuggestionRequest = messageBus.createChannel('executeSuggestion');
 	}
 	getRulesForUrl(url){
 		return this.rulesForUrlRequest.target.sendMessageAsync(url);
@@ -170,6 +171,12 @@ class Macros{
 	}
 	onNotifySuggestionIndicationEnd(listener, cancellationToken){
 		return this.suggestionIndicationEndNotification.source.onMessage(listener, cancellationToken);
+	}
+	onExecuteSuggestionRequest(listener, cancellationToken){
+		return this.executeSuggestionRequest.source.onMessage(listener, cancellationToken);
+	}
+	executeSuggestion(navigationId, suggestionId){
+		return this.executeSuggestionRequest.target.sendMessageAsync({suggestionId, navigationId});
 	}
 }
 

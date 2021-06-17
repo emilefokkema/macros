@@ -121,7 +121,7 @@ new Vue({
 							return this.currentExecutionId !== undefined && this.currentExecutionId === this.ownCurrentExecutionId;
 						},
 						canExecute: function(){
-							return this.rule.hasSomethingToDo && !this.currentExecutionId === undefined;
+							return this.rule.hasSomethingToDo && this.currentExecutionId === undefined;
 						},
 						hasExecuted: function(){
 							return this.rule.hasExecuted;
@@ -135,8 +135,11 @@ new Vue({
 						this.editable = !editedStatus.edited || editedStatus.navigationId === this.navigationid;
 					},
 					methods: {
-						onExecuteClicked: function(){
-							//this.$emit('executeclicked');
+						onExecuteClicked: async function(){
+							this.ownCurrentExecutionId = this.executionManager.startExecution();
+							await macros.executeRuleAsync(this.navigationid, this.rule.id);
+							this.executionManager.stopExecution();
+							this.ownCurrentExecutionId = undefined;
 						},
 						onEditClicked: function(){
 							this.$emit('editclicked');
