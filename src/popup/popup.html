@@ -35,7 +35,7 @@
 					No macros for this page.
 				</div>
 			</div>
-			<rule v-for="rule of navigation.rules" v-bind:navigationid="navigation.navigationId" v-bind:rulecurrentlyexecuting="rulecurrentlyexecuting" v-bind:rule="rule" v-on:editclicked="onEditClicked(rule)" v-on:executeclicked="onExecuteClicked(rule)"></rule>
+			<rule v-for="rule of navigation.rules" v-bind:navigationid="navigation.navigationId" v-bind:rule="rule" v-on:editclicked="onEditClicked(rule)"></rule>
 			<suggestion v-for="suggestion of navigation.suggestions" v-bind:navigationid="navigation.navigationId" v-bind:suggestion="suggestion"></suggestion>
 		</div>
 		
@@ -56,7 +56,7 @@
 		<select class="navigation-selector" v-if="navigations.length > 0" v-model="navigationIdOption">
 			<option v-for="navigation of navigations" v-bind:value="navigation.navigationId">{{navigation.origin}}</option>
 		</select>
-		<navigation v-bind:navigation="selectedNavigation" v-bind:rulecurrentlyexecuting="ruleCurrentlyExecuting" v-if="selectedNavigation" v-on:executeclicked="onExecuteClicked($event)" v-on:editclicked="onEditClicked($event)"></navigation>
+		<navigation v-bind:navigation="selectedNavigation" v-if="selectedNavigation" v-on:editclicked="onEditClicked($event)"></navigation>
 		<div class="row">
 			<div class="action-button row-part" v-on:click="goToManagementPage()">
 				<span class="button fa fa-cog"></span>

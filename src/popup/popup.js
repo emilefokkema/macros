@@ -5,8 +5,20 @@ class ExecutionManager{
 	constructor(){
 		this.currentExecutionIdChanged = new Event();
 		this.newExecutionId = 0;
+		this.currentExecutionId = undefined;
 	}
-	
+	startExecution(){
+		const executionId = this.newExecutionId++;
+		setTimeout(() => {
+			this.currentExecutionId = executionId;
+			this.currentExecutionIdChanged.dispatch(executionId);
+		}, 0);
+		return executionId;
+	}
+	stopExecution(){
+		this.currentExecutionId = undefined;
+		this.currentExecutionIdChanged.dispatch(undefined);
+	}
 }
 
 new Vue({
@@ -14,12 +26,14 @@ new Vue({
 	data: function(){
 		return {
 			navigations: [],
-			selectedNavigation: undefined,
-			ruleCurrentlyExecuting: undefined
+			selectedNavigation: undefined
 		};
 	},
 	mounted: function(){
 		this.initialize();
+	},
+	provide: {
+		executionManager: new ExecutionManager()
 	},
 	computed: {
 		navigationIdOption: {
@@ -36,11 +50,11 @@ new Vue({
 		}
 	},
 	methods: {
-		onExecuteClicked: async function({rule, navigationId}){
-			this.ruleCurrentlyExecuting = rule;
-			await macros.executeRuleAsync(navigationId, rule.id);
-			this.ruleCurrentlyExecuting = undefined;
-		},
+		// onExecuteClicked: async function({rule, navigationId}){
+		// 	this.ruleCurrentlyExecuting = rule;
+		// 	await macros.executeRuleAsync(navigationId, rule.id);
+		// 	this.ruleCurrentlyExecuting = undefined;
+		// },
 		onEditClicked: function({rule, navigationId}){
 			macros.requestToOpenEditor({ruleId: rule.id, navigationId});
 		},
@@ -80,15 +94,11 @@ new Vue({
 		navigation: {
 			template: document.getElementById("navigationTemplate").innerHTML,
 			props: {
-				navigation: Object,
-				rulecurrentlyexecuting: Object
+				navigation: Object
 			},
 			methods:{
 				onEditClicked(rule){
 					this.$emit('editclicked', {rule, navigationId: this.navigation.navigationId});
-				},
-				onExecuteClicked(rule){
-					this.$emit('executeclicked', {rule, navigationId: this.navigation.navigationId});
 				}
 			},
 			components: {
@@ -96,32 +106,37 @@ new Vue({
 					template: document.getElementById("ruleTemplate").innerHTML,
 					props: {
 						rule: Object,
-						rulecurrentlyexecuting: Object,
 						navigationid: String
 					},
 					data: function(){
 						return {
-							editable: false
+							editable: false,
+							currentExecutionId: undefined,
+							ownCurrentExecutionId: undefined
 						};
 					},
+					inject: ['executionManager'],
 					computed: {
 						isExecuting: function(){
-							return this.rulecurrentlyexecuting === this.rule;
+							return this.currentExecutionId !== undefined && this.currentExecutionId === this.ownCurrentExecutionId;
 						},
 						canExecute: function(){
-							return this.rule.hasSomethingToDo && !this.rulecurrentlyexecuting;
+							return this.rule.hasSomethingToDo && !this.currentExecutionId === undefined;
 						},
 						hasExecuted: function(){
 							return this.rule.hasExecuted;
 						}
 					},
 					mounted: async function(){
+						this.executionManager.currentExecutionIdChanged.listen((id) => {
+							this.currentExecutionId = id;
+						});
 						var editedStatus = await macros.getEditedStatusAsync(this.rule.id);
 						this.editable = !editedStatus.edited || editedStatus.navigationId === this.navigationid;
 					},
 					methods: {
 						onExecuteClicked: function(){
-							this.$emit('executeclicked');
+							//this.$emit('executeclicked');
 						},
 						onEditClicked: function(){
 							this.$emit('editclicked');
