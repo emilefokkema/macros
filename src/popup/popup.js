@@ -152,12 +152,43 @@ new Vue({
 						suggestion: Object,
 						navigationid: String
 					},
+					data: function(){
+						return {
+							currentExecutionId: undefined,
+							ownCurrentExecutionId: undefined,
+							hasExecutedNow: false
+						};
+					},
+					inject: ['executionManager'],
+					mounted: function(){
+						this.executionManager.currentExecutionIdChanged.listen((id) => {
+							this.currentExecutionId = id;
+						});
+					},
+					computed: {
+						canExecute(){
+							return !this.suggestion.hasExecuted && !this.hasExecutedNow && this.currentExecutionId === undefined;
+						},
+						isExecuting(){
+							return this.currentExecutionId !== undefined && this.currentExecutionId === this.ownCurrentExecutionId;
+						},
+						hasExecuted(){
+							return this.suggestion.hasExecuted || this.hasExecutedNow;
+						}
+					},
 					methods: {
 						onMouseEnter(){
 							macros.notifySuggestionIndicationStart(this.navigationid, this.suggestion.suggestionId);
 						},
 						onMouseLeave(){
 							macros.notifySuggestionIndicationEnd(this.navigationid, this.suggestion.suggestionId);
+						},
+						async onExecuteClicked(){
+							this.ownCurrentExecutionId = this.executionManager.startExecution();
+							await macros.executeSuggestion(this.navigationid, this.suggestion.suggestionId);
+							this.executionManager.stopExecution();
+							this.ownCurrentExecutionId = undefined;
+							this.hasExecutedNow = true;
 						}
 					}
 				}

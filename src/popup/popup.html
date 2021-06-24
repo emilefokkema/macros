@@ -35,8 +35,8 @@
 					No macros for this page.
 				</div>
 			</div>
-			<rule v-for="rule of navigation.rules" v-bind:navigationid="navigation.navigationId" v-bind:rule="rule" v-on:editclicked="onEditClicked(rule)"></rule>
-			<suggestion v-for="suggestion of navigation.suggestions" v-bind:navigationid="navigation.navigationId" v-bind:suggestion="suggestion"></suggestion>
+			<rule v-for="rule of navigation.rules" :key="rule.id" v-bind:navigationid="navigation.navigationId" v-bind:rule="rule" v-on:editclicked="onEditClicked(rule)"></rule>
+			<suggestion v-for="suggestion of navigation.suggestions" :key="suggestion.suggestionId" v-bind:navigationid="navigation.navigationId" v-bind:suggestion="suggestion"></suggestion>
 		</div>
 		
 	</template>
@@ -45,8 +45,17 @@
 			<div class="suggestion-inner" v-on:mouseenter="onMouseEnter()" v-on:mouseleave="onMouseLeave()">
 				<div class="suggestion-part suggestion-title">suggestion!</div>
 				<div class="suggestion-part">
-					<div class="button run-button">
-						<span class="fa fa-play"></span>
+					<div class="button" v-on:click="onExecuteClicked()" v-if="canExecute && !isExecuting">
+						<span class="run-button fa fa-play"></span>
+					</div>
+					<div class="padding-5" v-if="!canExecute && !isExecuting && !hasExecuted">
+						<span class="run-button-disabled fa fa-play"></span>
+					</div>
+					<div class="padding-5" v-if="hasExecuted">
+						<span class="run-button fa fa-check"></span>
+					</div>
+					<div class="button" v-if="isExecuting">
+						<span class="fa fa-circle-notch fa-spin"></span>
 					</div>
 				</div>
 			</div>

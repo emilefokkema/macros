@@ -161,7 +161,6 @@ export class BlockedPageSuggestionProvider{
         ));
         const filterContexts = [].map.apply(document.querySelectorAll('*'), [n => new NodeFilterContext(n, () => filterContexts)]);
         const firstPass = filterContexts.filter(c => filter.nodePassesFilter(c));
-        console.log(`first pass:`, firstPass.map(c => c.node));
         const pass = firstPass
             .filter((c, _, array) => {
                 const zIndexNumber = parseFloat(c.style.getPropertyValue('z-index'));
@@ -171,13 +170,9 @@ export class BlockedPageSuggestionProvider{
                     new IntersectsRectFilter(rect)
                 );
                 const isBlockedByOther = array.some(cc => cc !== c && isBlockedByFilter.nodePassesFilter(cc));
-                if(isBlockedByOther){
-                    console.log(`blocked by other:`, c.node)
-                }
                 return !isBlockedByOther;
             })
             .map(c => c.node);
-        console.log(`pass:`, pass)
         
         for(const passedNode of pass){
             suggestionCollection.addNodeActionSuggestion(passedNode, ruleDefinitions.getDeleteActionDefinition());

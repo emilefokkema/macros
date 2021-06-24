@@ -98,23 +98,17 @@ export function contentScriptFunction(navigation, messageBus, documentMutationsP
             console.log(`navigation '${navigationId}' got request to execute rule:`, ruleId);
             var rule = ruleCollection.getRule(ruleId);
             
-            setTimeout(() => {
-                if(rule){
-                    rule.execute();
-                }
-                sendResponse({});
-            }, 1000);
-            return true;
+            if(rule){
+                rule.execute();
+            }
+            sendResponse({});
         });
         macros.onExecuteSuggestionRequest(({suggestionId, navigationId: _navigationId}, sendResponse) => {
             if(_navigationId !== navigationId){
                 return;
             }
-            console.log(`navigation '${navigationId}' got request to execute suggestion:`, suggestionId);
-            setTimeout(() => {
-                sendResponse({});
-            }, 1000);
-            return true;
+            suggestionCollection.executeSuggestion(suggestionId);
+            sendResponse({});
         });
         macros.onElementSelectionChangedOnTab((_tabId) => {
             if(_tabId != tabId){

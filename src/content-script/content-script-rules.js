@@ -294,4 +294,4 @@ class ContentScriptRuleCollection{
 	}
 }
 
-export { ContentScriptRuleCollection, createAction };
+export { ContentScriptRuleCollection, createAction, createSelectedNodeAction };

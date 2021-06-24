@@ -1,5 +1,6 @@
 import { ruleDefinitions } from '../../shared/rule-definitions';
 import { Selector } from '../selector';
+import { createSelectedNodeAction } from '../content-script-rules';
 
 export class SuggestionCollection{
     constructor(ruleCollection, elementIndicator){
@@ -30,24 +31,35 @@ export class SuggestionCollection{
         this.suggestions.push({
             id: ++this.latestSuggestionId,
             actionDefinition: actionDefinition,
-            node: node
+            node: node,
+            hasExecuted: false
         });
     }
     getSuggestions(){
         const result = this.suggestions.map(s => ({
             suggestionId: s.id,
             actionDefinition: s.actionDefinition,
-            selector: Selector.forElement(s.node)
+            selector: Selector.forElement(s.node),
+            hasExecuted: s.hasExecuted
         }));
-        console.log(`returning suggestions`, result);
         return result;
+    }
+    executeSuggestion(suggestionId){
+        const suggestion = this.suggestions.find(s => s.id === suggestionId);
+        if(!suggestion){
+            return;
+        }
+        console.log(`going to execute suggestion`, suggestion)
+        this.elementIndicator.stopIndicatingElement(suggestion.node);
+        var action = createSelectedNodeAction(suggestion.actionDefinition);
+        action.execute(suggestion.node);
+        suggestion.hasExecuted = true;
     }
     startHighlightingSuggestion(suggestionId){
         const suggestion = this.suggestions.find(s => s.id === suggestionId);
-        console.log(`going to start indicating`, suggestion)
         this.elementIndicator.startIndicatingElement(suggestion.node);
     }
-    stopHighlightingSuggestion(suggestionId){
+    stopHighlightingSuggestion(){
         this.elementIndicator.stopIndicatingElement();
     }
 }
