@@ -1,5 +1,21 @@
 import { ruleDefinitions } from '../../shared/rule-definitions';
 
+class PaddedLogger{
+    constructor(numberOfIndents){
+        this.numberOfIndents = numberOfIndents;
+        this.padding = Array.apply(null, new Array(numberOfIndents)).map(x => `  `).join('');
+    }
+    log(...args){
+        if(typeof args[0] === 'string'){
+            args[0] = `${this.padding}${args[0]}`;
+        }
+        console.log(...args);
+    }
+    indent(){
+        return new PaddedLogger(this.numberOfIndents + 1);
+    }
+}
+
 class NodeFilterContext{
     constructor(node, getAll){
         this.node = node;
@@ -16,8 +32,21 @@ class NodeFilterContext{
     }
 }
 
-class SelfAndAllParentsFilter{
-    constructor(filter){
+class NodeFilter{
+    constructor(description){
+        this.description = description;
+    }
+    describeSelf(){
+        return `filter`;
+    }
+    toString(){
+        return this.description || this.describeSelf();
+    }
+}
+
+class SelfAndAllParentsFilter extends NodeFilter{
+    constructor(filter, description){
+        super(description);
         this.filter = filter;
     }
     nodePassesFilter(nodeContext){
@@ -30,10 +59,29 @@ class SelfAndAllParentsFilter{
         }
         return this.nodePassesFilter(parent);
     }
+    debugNodePassesFilter(nodeContext, logger){
+        if(!this.filter.debugNodePassesFilter(nodeContext, logger.indent())){
+            logger.log(`node does not itself pass: (${this.filter}):`, nodeContext)
+            return false;
+        }
+        const parent = nodeContext.getParent();
+        if(!parent){
+            return true;
+        }
+        const parentResult = this.debugNodePassesFilter(parent, logger.indent());
+        if(!parentResult){
+            logger.log(`parent does not pass (${this.filter}): `, parent)
+        }
+        return parentResult;
+    }
+    describeSelf(){
+        return `for self and all parents: (${this.filter})`;
+    }
 }
 
-class SelfAndNoParentFilter{
-    constructor(filter){
+class SelfAndNoParentFilter extends NodeFilter{
+    constructor(filter, description){
+        super(description);
         this.filter = filter;
         this.allParentsFilter = new SelfAndAllParentsFilter(new NotFilter(filter));
     }
@@ -47,19 +95,49 @@ class SelfAndNoParentFilter{
         }
         return this.allParentsFilter.nodePassesFilter(parent);
     }
+    debugNodePassesFilter(nodeContext, logger){
+        if(!this.filter.debugNodePassesFilter(nodeContext, logger.indent())){
+            logger.log(`node does not itself pass: (${this.filter}):`, nodeContext)
+            return false;
+        }
+        const parent = nodeContext.getParent();
+        if(!parent){
+            return true;
+        }
+        const allParentsResult = this.allParentsFilter.debugNodePassesFilter(parent, logger.indent());
+        if(!allParentsResult){
+            logger.log(`node has some parent that does match (${this.filter}):`, nodeContext)
+        }
+        return allParentsResult;
+    }
+    describeSelf(){
+        return `for self but for no parent: (${this.filter})`;
+    }
 }
 
-class NotFilter{
-    constructor(filter){
+class NotFilter extends NodeFilter{
+    constructor(filter, description){
+        super(description);
         this.filter = filter;
     }
     nodePassesFilter(nodeContext){
         return !this.filter.nodePassesFilter(nodeContext);
     }
+    debugNodePassesFilter(nodeContext, logger){
+        const result = !this.filter.debugNodePassesFilter(nodeContext, logger.indent());
+        if(!result){
+            logger.log(`node does pass (${this.filter}):`, nodeContext)
+        }
+        return result;
+    }
+    describeSelf(){
+        return `not: (${this.filter})`;
+    }
 }
 
-class AndFilter{
-    constructor(...filters){
+class AndFilter extends NodeFilter{
+    constructor(filters, description){
+        super(description);
         this.filters = filters;
     }
     nodePassesFilter(nodeContext){
@@ -70,17 +148,41 @@ class AndFilter{
         }
         return true;
     }
+    debugNodePassesFilter(nodeContext, logger){
+        for(const filter of this.filters){
+            if(!filter.debugNodePassesFilter(nodeContext, logger.indent())){
+                logger.log(`node does not match (${filter}): `, nodeContext)
+                return false;
+            }
+        }
+        return true;
+    }
+    describeSelf(){
+        return this.filters.map(f => `(${f})`).join(' & ');
+    }
 }
 
-class IsInViewportFilter{
+class IsInViewportFilter extends NodeFilter{
     nodePassesFilter(nodeContext){
         const rect = nodeContext.rect;
         return rect.x <= innerWidth && rect.x + rect.width >= 0 && rect.y <= innerHeight && rect.y + rect.height >= 0;
     }
+    debugNodePassesFilter(nodeContext, logger){
+        const rect = nodeContext.rect;
+        const result = rect.x <= innerWidth && rect.x + rect.width >= 0 && rect.y <= innerHeight && rect.y + rect.height >= 0;
+        if(!result){
+            logger.log(`element is not in viewport: `, nodeContext)
+        }
+        return result;
+    }
+    describeSelf(){
+        return `is in viewport`;
+    }
 }
 
-class IntersectsRectFilter{
+class IntersectsRectFilter extends NodeFilter{
     constructor(rect){
+        super();
         this.minX = rect.x;
         this.maxX = rect.x + rect.width;
         this.minY = rect.y;
@@ -93,16 +195,42 @@ class IntersectsRectFilter{
             otherRect.y <= this.maxY &&
             otherRect.y + otherRect.height >= this.minY;
     }
+    debugNodePassesFilter(nodeContext, logger){
+        const otherRect = nodeContext.rect;
+        const result = otherRect.x <= this.maxX && 
+            otherRect.x + otherRect.width >= this.minX &&
+            otherRect.y <= this.maxY &&
+            otherRect.y + otherRect.height >= this.minY;
+        if(!result){
+            logger.log(`rectangle does not intersect rectangle [${this.minX}, ${this.maxX}] x [${this.minY}, ${this.maxY}]:`, otherRect)
+        }
+        return result;
+    }
+    describeSelf(){
+        return `intersects rectangle [${this.minX}, ${this.maxX}] x [${this.minY}, ${this.maxY}]`;
+    }
 }
 
-class StylePropertyFilter{
-    constructor(property, valueMatcher){
+class StylePropertyFilter extends NodeFilter{
+    constructor(property, valueMatcher, description){
+        super(description);
         this.property = property;
         this.valueMatcher = valueMatcher;
     }
     nodePassesFilter(nodeContext){
         const value = nodeContext.style.getPropertyValue(this.property);
         return this.valueMatcher.valuePassesFilter(value);
+    }
+    debugNodePassesFilter(nodeContext, logger){
+        const value = nodeContext.style.getPropertyValue(this.property);
+        const result = this.valueMatcher.valuePassesFilter(value);
+        if(!result){
+            logger.log(`property '${this.property}' does not match (${this.valueMatcher}):`, nodeContext)
+        }
+        return result;
+    }
+    describeSelf(){
+        return `property '${this.property}' matches: (${this.valueMatcher})`;
     }
 }
 
@@ -113,11 +241,17 @@ class ValueEqualsFilter{
     valuePassesFilter(value){
         return value === this.filterValue;
     }
+    toString(){
+        return `value equals ${this.filterValue}`
+    }
 }
 
 class ValueIsNumberFilter{
     valuePassesFilter(value){
         return !isNaN(value);
+    }
+    toString(){
+        return `value is a number`;
     }
 }
 
@@ -132,6 +266,9 @@ class ValueIsNumberGreaterThanFilter{
         const numberValue = parseFloat(value);
         return numberValue > this.threshold;
     }
+    toString(){
+        return `value > ${this.threshold}`
+    }
 }
 
 class ParsesToIntFilter{
@@ -141,26 +278,39 @@ class ParsesToIntFilter{
     valuePassesFilter(value){
         return parseInt(value) === this.intValue;
     }
+    toString(){
+        return `is integer ${this.intValue}`
+    }
 }
 
 export class BlockedPageSuggestionProvider{
-    createSuggestions(suggestionCollection){
-        const filter = new SelfAndNoParentFilter(new AndFilter(
-            new StylePropertyFilter('z-index', new ValueIsNumberFilter()),
+    constructor(){
+        this.firstFilter = new SelfAndNoParentFilter(new AndFilter([
+            new StylePropertyFilter('z-index', new ValueIsNumberFilter(), 'has z-index'),
             new IsInViewportFilter(),
-            new NotFilter(new StylePropertyFilter('position', new ValueEqualsFilter('relative'))),
-            new SelfAndAllParentsFilter(new AndFilter(
+            new NotFilter(new StylePropertyFilter('position', new ValueEqualsFilter('relative')), 'has non-relative position'),
+            new SelfAndAllParentsFilter(new AndFilter([
                 new NotFilter(new StylePropertyFilter('opacity', new ValueEqualsFilter('0'))),
                 new NotFilter(new StylePropertyFilter('visibility', new ValueEqualsFilter('hidden'))),
                 new NotFilter(new StylePropertyFilter('display', new ValueEqualsFilter('none'))),
-                new NotFilter(new AndFilter(
+                new NotFilter(new AndFilter([
                     new StylePropertyFilter('width', new ParsesToIntFilter(0)),
-                    new StylePropertyFilter('height', new ParsesToIntFilter(0))
-                ))
-            ))
+                    new StylePropertyFilter('height', new ParsesToIntFilter(0))]
+                ))]
+            ), 'has size and is visible')]
         ));
+    }
+    debugSuggestionForElement(element){
+        console.log(`BlockedPageSuggestionProvider checking whether element passes ${this.firstFilter}:`, element);
         const filterContexts = [].map.apply(document.querySelectorAll('*'), [n => new NodeFilterContext(n, () => filterContexts)]);
-        const firstPass = filterContexts.filter(c => filter.nodePassesFilter(c));
+        const contextForElement = filterContexts.find(c => c.node === element);
+        const logger = new PaddedLogger(0);
+        const result = this.firstFilter.debugNodePassesFilter(contextForElement, logger);
+        console.log(`BlockedPageSuggestionProvider concluded that element does${result ? '':' not'} pass the first filter`)
+    }
+    createSuggestions(suggestionCollection){
+        const filterContexts = [].map.apply(document.querySelectorAll('*'), [n => new NodeFilterContext(n, () => filterContexts)]);
+        const firstPass = filterContexts.filter(c => this.firstFilter.nodePassesFilter(c));
         const pass = firstPass
             .filter((c, _, array) => {
                 const zIndexNumber = parseFloat(c.style.getPropertyValue('z-index'));
