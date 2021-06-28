@@ -315,9 +315,9 @@ export class BlockedPageSuggestionProvider{
             .filter((c, _, array) => {
                 const zIndexNumber = parseFloat(c.style.getPropertyValue('z-index'));
                 const rect = c.rect;
-                const isBlockedByFilter = new AndFilter(
+                const isBlockedByFilter = new AndFilter([
                     new StylePropertyFilter('z-index', new ValueIsNumberGreaterThanFilter(zIndexNumber)),
-                    new IntersectsRectFilter(rect)
+                    new IntersectsRectFilter(rect)]
                 );
                 const isBlockedByOther = array.some(cc => cc !== c && isBlockedByFilter.nodePassesFilter(cc));
                 return !isBlockedByOther;
