@@ -1,18 +1,28 @@
 import { ruleDefinitions } from '../../shared/rule-definitions';
 
-class PaddedLogger{
-    constructor(numberOfIndents){
+class Logger{
+    constructor(parentLogger, numberOfIndents, scopeId, newScopeId){
+        this.scopeId = scopeId;
+        this.parentLogger = parentLogger;
         this.numberOfIndents = numberOfIndents;
         this.padding = Array.apply(null, new Array(numberOfIndents)).map(x => `  `).join('');
+        this.newScopeId = newScopeId;
     }
-    log(...args){
-        if(typeof args[0] === 'string'){
-            args[0] = `${this.padding}${args[0]}`;
+    log(message, nodeContext){
+        message = `${this.padding}[${this.scopeId}] ${message}`;
+        console.log(message, '(some node context)');
+    }
+    getNewScopeId(){
+        if(this.parentLogger){
+            return this.parentLogger.getNewScopeId();
         }
-        console.log(...args);
+        return this.newScopeId++;
     }
-    indent(){
-        return new PaddedLogger(this.numberOfIndents + 1);
+    forNewScope(){
+        return new Logger(this, this.numberOfIndents + 1, this.getNewScopeId(), undefined);
+    }
+    static create(){
+        return new Logger(undefined, 0, 0, 1);
     }
 }
 
@@ -60,17 +70,20 @@ class SelfAndAllParentsFilter extends NodeFilter{
         return this.nodePassesFilter(parent);
     }
     debugNodePassesFilter(nodeContext, logger){
-        if(!this.filter.debugNodePassesFilter(nodeContext, logger.indent())){
+        if(!this.filter.debugNodePassesFilter(nodeContext, logger.forNewScope())){
             logger.log(`node does not itself pass: (${this.filter}):`, nodeContext)
             return false;
         }
         const parent = nodeContext.getParent();
         if(!parent){
+            logger.log(`has no parent, so self and all parents pass (${this.filter})`, nodeContext);
             return true;
         }
-        const parentResult = this.debugNodePassesFilter(parent, logger.indent());
+        const parentResult = this.debugNodePassesFilter(parent, logger.forNewScope());
         if(!parentResult){
             logger.log(`parent does not pass (${this.filter}): `, parent)
+        }else{
+            logger.log(`all parents pass (${this.filter})`, parent)
         }
         return parentResult;
     }
@@ -96,15 +109,16 @@ class SelfAndNoParentFilter extends NodeFilter{
         return this.allParentsFilter.nodePassesFilter(parent);
     }
     debugNodePassesFilter(nodeContext, logger){
-        if(!this.filter.debugNodePassesFilter(nodeContext, logger.indent())){
+        if(!this.filter.debugNodePassesFilter(nodeContext, logger.forNewScope())){
             logger.log(`node does not itself pass: (${this.filter}):`, nodeContext)
             return false;
         }
         const parent = nodeContext.getParent();
         if(!parent){
+            logger.log(`has no parent, so self and no parent passes (${this.filter})`, nodeContext)
             return true;
         }
-        const allParentsResult = this.allParentsFilter.debugNodePassesFilter(parent, logger.indent());
+        const allParentsResult = this.allParentsFilter.debugNodePassesFilter(parent, logger.forNewScope());
         if(!allParentsResult){
             logger.log(`node has some parent that does match (${this.filter}):`, nodeContext)
         }
@@ -124,7 +138,7 @@ class NotFilter extends NodeFilter{
         return !this.filter.nodePassesFilter(nodeContext);
     }
     debugNodePassesFilter(nodeContext, logger){
-        const result = !this.filter.debugNodePassesFilter(nodeContext, logger.indent());
+        const result = !this.filter.debugNodePassesFilter(nodeContext, logger.forNewScope());
         if(!result){
             logger.log(`node does pass (${this.filter}):`, nodeContext)
         }
@@ -150,7 +164,7 @@ class AndFilter extends NodeFilter{
     }
     debugNodePassesFilter(nodeContext, logger){
         for(const filter of this.filters){
-            if(!filter.debugNodePassesFilter(nodeContext, logger.indent())){
+            if(!filter.debugNodePassesFilter(nodeContext, logger.forNewScope())){
                 logger.log(`node does not match (${filter}): `, nodeContext)
                 return false;
             }
@@ -304,7 +318,7 @@ export class BlockedPageSuggestionProvider{
         console.log(`BlockedPageSuggestionProvider checking whether element passes ${this.firstFilter}:`, element);
         const filterContexts = [].map.apply(document.querySelectorAll('*'), [n => new NodeFilterContext(n, () => filterContexts)]);
         const contextForElement = filterContexts.find(c => c.node === element);
-        const logger = new PaddedLogger(0);
+        const logger = Logger.create();
         const result = this.firstFilter.debugNodePassesFilter(contextForElement, logger);
         console.log(`BlockedPageSuggestionProvider concluded that element does${result ? '':' not'} pass the first filter`)
     }
