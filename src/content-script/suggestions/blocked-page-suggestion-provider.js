@@ -1,16 +1,41 @@
 import { ruleDefinitions } from '../../shared/rule-definitions';
 
 class Logger{
-    constructor(parentLogger, numberOfIndents, scopeId, newScopeId){
+    constructor(parentLogger, numberOfIndents, scopeId, newScopeId, newContextId){
         this.scopeId = scopeId;
         this.parentLogger = parentLogger;
         this.numberOfIndents = numberOfIndents;
         this.padding = Array.apply(null, new Array(numberOfIndents)).map(x => `  `).join('');
         this.newScopeId = newScopeId;
+        this.newContextId = newContextId;
+        this.contexts = [];
     }
     log(message, nodeContext){
         message = `${this.padding}[${this.scopeId}] ${message}`;
-        console.log(message, '(some node context)');
+        const contextId = nodeContext ? this.getNodeContextId(nodeContext) : undefined;
+        console.log(`${message}${(contextId === undefined ? '':` (node ${contextId})`)}`)
+    }
+    getNodeContextId(nodeContext){
+        if(this.parentLogger){
+            return this.parentLogger.getNodeContextId(nodeContext);
+        }
+        const contextRecord = this.contexts.find(r => r.context === nodeContext);
+        if(contextRecord){
+            return contextRecord.id;
+        }
+        const id = this.newContextId++;
+        this.contexts.push({
+            id,
+            context: nodeContext
+        });
+        return id;
+    }
+    finalize(){
+        const nodeContexts = {};
+        for(const record of this.contexts){
+            nodeContexts[record.id] = record.context;
+        }
+        console.log(nodeContexts);
     }
     getNewScopeId(){
         if(this.parentLogger){
@@ -19,10 +44,10 @@ class Logger{
         return this.newScopeId++;
     }
     forNewScope(){
-        return new Logger(this, this.numberOfIndents + 1, this.getNewScopeId(), undefined);
+        return new Logger(this, this.numberOfIndents + 1, this.getNewScopeId(), undefined, undefined);
     }
     static create(){
-        return new Logger(undefined, 0, 0, 1);
+        return new Logger(undefined, 0, 0, 1, 0);
     }
 }
 
@@ -73,6 +98,8 @@ class SelfAndAllParentsFilter extends NodeFilter{
         if(!this.filter.debugNodePassesFilter(nodeContext, logger.forNewScope())){
             logger.log(`node does not itself pass: (${this.filter}):`, nodeContext)
             return false;
+        }else{
+            logger.log(`node itself passes (${this.filter}):`, nodeContext)
         }
         const parent = nodeContext.getParent();
         if(!parent){
@@ -112,6 +139,8 @@ class SelfAndNoParentFilter extends NodeFilter{
         if(!this.filter.debugNodePassesFilter(nodeContext, logger.forNewScope())){
             logger.log(`node does not itself pass: (${this.filter}):`, nodeContext)
             return false;
+        }else{
+            logger.log(`node itself does pass (${this.filter})`, nodeContext)
         }
         const parent = nodeContext.getParent();
         if(!parent){
@@ -120,7 +149,9 @@ class SelfAndNoParentFilter extends NodeFilter{
         }
         const allParentsResult = this.allParentsFilter.debugNodePassesFilter(parent, logger.forNewScope());
         if(!allParentsResult){
-            logger.log(`node has some parent that does match (${this.filter}):`, nodeContext)
+            logger.log(`node has some parent that also matches (${this.filter}):`, nodeContext)
+        }else{
+            logger.log(`node itself but no parent matches (${this.filter})`, nodeContext)
         }
         return allParentsResult;
     }
@@ -320,6 +351,7 @@ export class BlockedPageSuggestionProvider{
         const contextForElement = filterContexts.find(c => c.node === element);
         const logger = Logger.create();
         const result = this.firstFilter.debugNodePassesFilter(contextForElement, logger);
+        logger.finalize();
         console.log(`BlockedPageSuggestionProvider concluded that element does${result ? '':' not'} pass the first filter`)
     }
     createSuggestions(suggestionCollection){
