@@ -70,7 +70,6 @@ export function contentScriptFunction(navigation, messageBus, documentMutationsP
         tabId = currentNavigation.tabId;
         console.log(`navigation id '${navigationId}', navigation history id '${navigationHistoryId}', tabId ${tabId}`);
         ruleCollection.notifications.listen(notification => {
-            console.log(`there was a rule collection notification; creating suggestions`)
             sendNotification(notification, getSelectedElementNotification(), createSuggestions())
         });
         await ruleCollection.refresh();
@@ -92,14 +91,12 @@ export function contentScriptFunction(navigation, messageBus, documentMutationsP
             url = location.href;
             navigationId = newNavigationId;
             await ruleCollection.refresh();
-            console.log(`responding to a navigation replaced; creating suggestions`)
             sendNotification(ruleCollection.getNotification(), getSelectedElementNotification(), createSuggestions());
         });
         macros.onRequestToEmitRules(({tabId: _tabId}) => {
             if(_tabId != tabId){
                 return;
             }
-            console.log(`responding to request to emit rules`)
             sendNotification(ruleCollection.getNotification(), getSelectedElementNotification(), createSuggestions());
         });
         macros.onExecuteRuleRequest(({ruleId, navigationId: _navigationId}, sendResponse) => {
