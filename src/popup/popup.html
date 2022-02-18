@@ -2,54 +2,201 @@
 	<head>
 		<script src="vue.js"></script>
 		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
-		<script src="macros.js"></script>
 		<link rel="stylesheet" type="text/css" href="shared.css" />
 		<link rel="stylesheet" type="text/css" href="popup.css" />
 	</head>
 <body>
+	<template id="ruleViewTemplate">
+		<div class="row rule-view"
+			v-on:dragenter="onDragEnter($event)"
+			v-on:dragleave="onDragLeave($event)"
+			v-on:dragover="onDragOver($event)"
+			v-on:drop="onDrop($event)"
+			v-bind:class="{'drop-zone': isDraggedOver, 'dragged-over': isDraggedOver}">
+			<div class="rule-view-inner">
+				<div class="row-part left">{{name}}<span v-if="isDraft" class="draft-rule-notification">draft</span></div>
+				<div class="row-part">
+					<div class="button" v-on:click="onExecuteClicked()" v-if="canExecute && !isExecuting && !hasExecuted">
+						<span class="run-button fa fa-play"></span>
+					</div>
+					<div class="padding-5" v-if="!canExecute && !isExecuting && !hasExecuted">
+						<span class="run-button-disabled fa fa-play"></span>
+					</div>
+					<div class="padding-5" v-if="hasExecuted">
+						<span class="run-button fa fa-check"></span>
+					</div>
+					<div class="button" v-if="isExecuting">
+						<span class="fa fa-circle-notch fa-spin"></span>
+					</div>
+					<div class="button" v-on:click="onEditClicked()" v-if="editable">
+						<span class="fa fa-edit"></span>
+					</div>
+				</div>
+			</div>
+		</div>
+	</template>
 	<template id="ruleTemplate">
-		<div class="row">
-			<div class="row-part left">{{rule.name}}</div>
-			<div class="row-part">
-				<div class="button" v-on:click="onExecuteClicked()" v-if="canExecute && !isExecuting">
-					<span class="run-button fa fa-play"></span>
-				</div>
-				<div class="padding-5" v-if="!canExecute && !isExecuting && !hasExecuted">
-					<span class="run-button-disabled fa fa-play"></span>
-				</div>
-				<div class="padding-5" v-if="hasExecuted">
-					<span class="run-button fa fa-check"></span>
-				</div>
-				<div class="button" v-if="isExecuting">
+		<rule-view
+			v-bind:name="rule.name"
+			v-bind:can-execute="canExecute"
+			v-bind:is-executing="isExecuting"
+			v-bind:has-executed="hasExecuted"
+			v-bind:editable="editable"
+			v-on:suggestion-dropped="onDrop()"
+			v-on:execute-clicked="onExecuteClicked()"
+			v-on:edit-clicked="onEditClicked()"></rule-view>
+	</template>
+	<template id="draftRuleTemplate">
+		<rule-view
+			v-bind:name="draftRule.name"
+			v-bind:can-execute="canExecute"
+			v-bind:is-executing="isExecuting"
+			v-bind:is-draft="true"
+			v-bind:has-executed="hasExecuted"
+			v-bind:editable="editable"
+			v-on:suggestion-dropped="onDrop()"
+			v-on:execute-clicked="onExecuteClicked()"
+			v-on:edit-clicked="onEditClicked()"></rule-view>
+	</template>
+	<template id="noRulesTemplate">
+		<div 
+		v-on:dragenter="onDragEnter($event)"
+		v-on:dragleave="onDragLeave($event)"
+		v-on:dragover="onDragOver($event)"
+		v-on:drop="onDrop()"
+		v-bind:class="{'drop-zone': isDraggedOver}">
+			<div class="row" v-if="!isDraggedOver">
+				<div class="no-rules-message">{{message}}</div>
+			</div>
+			<new-rule 
+				v-if="isDraggedOver"
+				v-bind:navigation-id="navigationId"
+			></new-rule>
+		</div>
+	</template>
+	<template id="newRuleTemplate">
+		<rule-view 
+			name="new rule"
+			v-bind:is-drop-zone="true"
+			v-bind:editable="true"
+			v-bind:is-draft="true"
+			v-on:suggestion-dropped="onDrop()"
+			></rule-view>
+	</template>
+	<template id="ruleListTemplate">
+		<div>
+			<div class="banner" v-if="loading">
+				<div class="banner-center">
 					<span class="fa fa-circle-notch fa-spin"></span>
 				</div>
-				<div class="button" v-on:click="onEditClicked()" v-if="editable">
-					<span class="fa fa-edit"></span>
-				</div>
 			</div>
+			<rule 
+				v-for="rule of rules"
+				v-if="!loading"
+				:key="rule.id"
+				v-bind:rule="rule"
+				v-bind:navigation-id="navigationId"
+				v-on:replaced="onRuleReplaced($event)"></rule>
+			<draft-rule
+				v-if="draftRule && !loading"
+				v-bind:draft-rule="draftRule"
+				v-bind:navigation-id="navigationId"></draft-rule>
+			<no-rules 
+				v-if="empty && !draftRule"
+				v-bind:suggestions-present="suggestionsPresent"
+				v-bind:navigation-id="navigationId"></no-rules>
+			<new-rule 
+				v-if="!empty && dragIsHappening && !draftRule"
+				v-bind:navigation-id="navigationId"
+				></new-rule>
 		</div>
 	</template>
-	<template id="navigationTemplate">
-		<div>
-			<div class="row" v-if="navigation.rules.length === 0">
-				<div class="row-part left">
-					No macros for this page.
+	<template id="suggestionListTemplate">
+		<div class="suggestion-list">
+			<div class="banner" v-if="loading">
+				<div class="banner-center">
+					<span class="fa fa-circle-notch fa-spin"></span>
 				</div>
 			</div>
-			<rule v-for="rule of navigation.rules" v-bind:navigationid="navigation.navigationId" v-bind:rulecurrentlyexecuting="rulecurrentlyexecuting" v-bind:rule="rule" v-on:editclicked="onEditClicked(rule)" v-on:executeclicked="onExecuteClicked(rule)"></rule>
+			<div class="suggestion-list-header"><span class="suggestion-reload-button fa fa-redo" v-on:click="onReloadClicked()"></span></div>
+			<suggestion 
+				v-for="suggestion of suggestions"
+				v-if="!loading"
+				:key="suggestion.id"
+				v-bind:suggestion="suggestion"
+				v-bind:navigation-id="navigationId"
+				v-on:removed="onSuggestionRemoved($event)"
+				v-on:suggestion-drag-start="onSuggestionDragStart()"
+				v-on:suggestion-drag-end="onSuggestionDragEnd()"></suggestion>
 		</div>
-		
+	</template>
+	<template id="suggestionTemplate">
+		<div class="suggestion-outer" 
+			draggable="true"
+			v-on:dragstart="startDragging($event)"
+			v-on:dragend="stopDragging($event)"
+			v-bind:class="{dragged: isBeingDragged}"
+			v-on:mouseover="onMouseOverOuter()"
+			v-on:mouseleave="onMouseLeaveOuter()">
+			<div class="suggestion-inner" v-on:mouseenter="onMouseEnter()" v-on:mouseleave="onMouseLeave()">
+				<div class="suggestion-inner-inner">
+					<div class="suggestion-dragger suggestion-part">
+						<span class="suggestion-dragger-icon fa fa-lightbulb"></span>
+					</div>
+					<div class="suggestion-body suggestion-part">
+						<div class="suggestion-title">{{suggestion.description}}</div>
+					</div>
+					<div class="suggestion-button suggestion-part suggestion-button-action" v-if="canExecute && !isExecuting && !hasExecuted" v-on:click="onExecuteClicked()">
+						<span class="suggestion-button-icon run-button fa fa-play"></span>
+					</div>
+					<div class="suggestion-button suggestion-part" v-if="!canExecute && !isExecuting && !hasExecuted">
+						<span class="suggestion-button-icon run-button-disabled fa fa-play"></span>
+					</div>
+					<div class="suggestion-button suggestion-part" v-if="!canExecute && !isExecuting && hasExecuted">
+						<span class="suggestion-button-icon run-button-disabled fa fa-undo"></span>
+					</div>
+					<div class="suggestion-button suggestion-part suggestion-button-action" v-if="hasExecuted && !isExecuting" v-on:click="onUndoClicked()">
+						<span class="suggestion-button-icon run-button fa fa-undo"></span>
+					</div>
+					<div class="suggestion-button suggestion-part" v-if="isExecuting">
+						<span class="suggestion-button-icon fa fa-circle-notch fa-spin"></span>
+					</div>
+				</div>
+			</div>
+			<span v-if="mouseIsOverOuter" class="remove-suggestion-button fa fa-trash" v-on:click="onRemoveClicked()"></span>
+		</div>
 	</template>
 	<div id="app">
-		<select class="navigation-selector" v-if="navigations.length > 0" v-model="navigationIdOption">
-			<option v-for="navigation of navigations" v-bind:value="navigation.navigationId">{{navigation.origin}}</option>
+		<div class="banner" v-if="loading">
+			<div class="banner-center">
+				<span class="fa fa-circle-notch fa-spin"></span>
+			</div>
+		</div>
+		<div class="banner" v-if="!loading && !hasNavigations">
+			<div class="banner-center">
+				<span>No navigations</span>
+			</div>
+		</div>
+		<select class="navigation-selector" v-if="!loading && hasNavigations" v-model="selectedNavigationId">
+			<option v-for="navigation of navigations" v-bind:value="navigation.id">{{navigation.name}}</option>
 		</select>
-		<navigation v-bind:navigation="selectedNavigation" v-bind:rulecurrentlyexecuting="ruleCurrentlyExecuting" v-if="selectedNavigation" v-on:executeclicked="onExecuteClicked($event)" v-on:editclicked="onEditClicked($event)"></navigation>
-		<div class="row">
+		<rule-list 
+			v-if="!loading && hasNavigations"
+			v-bind:navigation-id="selectedNavigationId"
+			v-bind:suggestions-present="suggestionsPresent"
+			v-bind:drag-is-happening="suggestionIsBeingDragged"
+			v-on:load-finish="onFinishLoadingRules()"></rule-list>
+		<suggestion-list
+			v-if="loadedRules && hasNavigations" 
+			v-bind:navigation-id="selectedNavigationId"
+			v-on:suggestion-drag-start="onSuggestionDragStart()"
+			v-on:suggestion-drag-end="onSuggestionDragEnd()"
+			v-on:suggestions-present="onSuggestionsPresent($event)"></suggestion-list>
+		<div class="row bottom">
 			<div class="action-button row-part" v-on:click="goToManagementPage()">
 				<span class="button fa fa-cog"></span>
 			</div>
-			<div v-if="selectedNavigation" class="action-button row-part" v-on:click="addRule()">
+			<div v-if="!loading && hasNavigations" class="action-button row-part" v-on:click="addRule()">
 				<span class="button fa fa-plus"></span>
 			</div>
 		</div>

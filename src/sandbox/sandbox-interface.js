@@ -19,8 +19,11 @@ class BaseSandboxInterface{
         this.pushHistoryStateMessage = windowMessageBus.createChannel(new MessageType('pushHistoryState'));
         this.focusNavigationMessage = windowMessageBus.createChannel(new MessageType('focusNavigation'));
         this.popupTabIdMessage = windowMessageBus.createChannel(new MessageType('getPopupTabId'));
+        this.getNavigationsForPopupMessage = windowMessageBus.createChannel(new MessageType('getNavigationsForPopup'));
         this.openTabMessage = windowMessageBus.createChannel(new MessageType('openTab'));
         this.inspectedWindowTabIdMessage = windowMessageBus.createChannel(new MessageType('inspectedWindowTabId'))
+        this.closeWindowMessage = windowMessageBus.createChannel(new MessageType('closeWindow'));
+        this.unsavedChangesWarningEnabledMessage = windowMessageBus.createChannel(new MessageType('unsavedChangesWarningEnabled'));
         this.windowMessageBus = windowMessageBus;
     }
 }
@@ -36,6 +39,12 @@ class SandboxInterfaceForParent extends BaseSandboxInterface{
     }
     onDocumentTitleChanged(listener, cancellationToken){
         return this.documentTitleChannel.source.onMessage(listener, cancellationToken);
+    }
+    onWindowCloseRequested(listener, cancellationToken){
+        return this.closeWindowMessage.source.onMessage(listener, cancellationToken);
+    }
+    onUnsavedChangesWarningEnabled(listener, cancellationToken){
+        return this.unsavedChangesWarningEnabledMessage.source.onMessage(listener, cancellationToken);
     }
     setNavigationDisappeared(navigationDisappearedEventSource){
         navigationDisappearedEventSource.listen(() => {
@@ -53,6 +62,9 @@ class SandboxInterfaceForParent extends BaseSandboxInterface{
     }
     onRequestToFocusNavigation(listener, cancellationToken){
         return this.focusNavigationMessage.source.onMessage(listener, cancellationToken);
+    }
+    onRequestNavigationsForPopup(listener, cancellationToken){
+        return this.getNavigationsForPopupMessage.source.onMessage(listener, cancellationToken);
     }
     onRequestPopupTabId(listener, cancellationToken){
         return this.popupTabIdMessage.source.onMessage(listener, cancellationToken);
@@ -97,6 +109,7 @@ class SandboxInterfaceForIframe extends BaseSandboxInterface{
         const navigationPropsRequestTarget = this.getNavigationPropertiesRequest.target;
         const focusNavigationMessageTarget = this.focusNavigationMessage.target;
         const popupTabIdMessageTarget = this.popupTabIdMessage.target;
+        const navigationsForPopupMessageTarget = this.getNavigationsForPopupMessage.target;
         const openTabMessageTarget = this.openTabMessage.target;
         return new NavigationInterfaceForSandbox(
             navigationDisappearedMessageSource,
@@ -104,12 +117,15 @@ class SandboxInterfaceForIframe extends BaseSandboxInterface{
             navigationPropsRequestTarget,
             focusNavigationMessageTarget,
             popupTabIdMessageTarget,
+            navigationsForPopupMessageTarget,
             openTabMessageTarget);
     }
     getPageInterface(){
         const documentTitleMessageTarget = this.documentTitleChannel.target;
         const historyStateMessageTarget = this.pushHistoryStateMessage.target;
-        return new PageInterfaceForIframe(documentTitleMessageTarget, historyStateMessageTarget);
+        const closeWindowMessageTarget = this.closeWindowMessage.target;
+        const unsavedChangesWarningEnabledMessageTarget = this.unsavedChangesWarningEnabledMessage.target;
+        return new PageInterfaceForIframe(documentTitleMessageTarget, historyStateMessageTarget, closeWindowMessageTarget, unsavedChangesWarningEnabledMessageTarget);
     }
     getInspectedWindow(){
         const inspectedWindowTabIdMessageTarget = this.inspectedWindowTabIdMessage.target;

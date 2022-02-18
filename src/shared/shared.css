@@ -1,6 +1,14 @@
+:root{
+	--row-padding: 10px;
+	--button-padding: 5px;
+}
 .row{
-	padding: 10px;
-	border-bottom: 1pt solid #ddd;
+	padding: var(--row-padding);
+	border-bottom: 1px solid #ddd;
+}
+.row.bottom{
+	border-top: 1px solid #ddd;
+	border-bottom: none;
 }
 .row-part{
 	display: inline-block;
@@ -11,7 +19,7 @@
 }
 .button{
 	cursor: pointer;
-	padding: 5px;
+	padding: var(--button-padding);
 }
 .run-button{
 	color: #0a0;
@@ -30,4 +38,19 @@
 }
 .node-id{
 	color: #2a2;
+}
+.banner {
+	text-align: center;
+}
+.banner-center{
+	position:relative;
+	top: 50%;
+	transform: translateY(-50%);
+}
+.draft-rule-notification{
+	background-color: #eee;
+	margin: 5px;
+	padding: 5px;
+	border-radius: 3px;
+	text-transform: capitalize;
 }

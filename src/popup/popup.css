@@ -1,15 +1,108 @@
 body{
 	margin:0px;
 	padding: 0px;
+	font-size: 12px;
 }
 .row{
-	width:200px;
+	width:180px;
 }
 .row-part.left{
-	width: 170px;
+	width: 150px;
 }
 .navigation-selector{
-	width:220px;
+	width:200px;
 	padding: 5px;
 	color: #666;
+}
+.suggestion-list{
+	max-height: 300px;
+	overflow-x: hidden;
+	overflow-y: scroll;
+}
+.suggestion-outer{
+	margin: 10px;
+	user-select: none;
+}
+.suggestion-outer.dragged{
+	opacity: .5;
+}
+.suggestion-inner{
+	display: inline-block;
+}
+.suggestion-inner-inner{
+	display: flex;
+}
+.suggestion-part{
+	height: 15px;
+	padding: 5px;
+	border-color: #ddd;
+	border-style: solid;
+	border-left-width: 0;
+	border-right-width: 0;
+	border-top-width: 1px;
+	border-bottom-width: 1px;
+}
+.suggestion-button{
+	width: 20px;
+	border-right-width: 1px;
+	border-bottom-right-radius: 3px;
+	border-top-right-radius: 3px;
+}
+.suggestion-button-icon{
+	margin-top: 3px;
+	margin-left: 3px;
+}
+.remove-suggestion-button{
+	cursor: pointer;
+	color: #777;
+}
+.suggestion-button-action{
+	cursor: pointer;
+}
+.suggestion-dragger-icon{
+	margin-top: 2px;
+	margin-left: 5px;
+	color: #444;
+}
+.suggestion-title{
+	position: relative;
+	top: -1px;
+}
+.suggestion-dragger{
+	width: 20px;
+	border-left-width: 1px;
+	border-bottom-left-radius: 3px;
+	border-top-left-radius: 3px;
+	background-color: #eee;
+	cursor: grab;
+}
+.suggestion-list-header{
+	padding: 10px;
+}
+.suggestion-reload-button{
+	cursor: pointer;
+	float: right;
+}
+.banner {
+	width:200px;
+	height: 100px;
+}
+.drop-zone * {
+	pointer-events: none;
+}
+.no-rules-message{
+	padding: 5px;
+	background-color: #eee;
+	color: #888;
+	border: 1px dashed #888;
+	height:calc(2em + 4 * var(--button-padding) - 12px)
+}
+
+.rule-view.dragged-over{
+	padding: 0;
+	width: 200px;
+}
+.rule-view.dragged-over .rule-view-inner{
+	padding: calc(var(--row-padding) - 2px);
+	border: 2px solid #000;
 }

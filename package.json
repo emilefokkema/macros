@@ -4,8 +4,8 @@
   "description": "define modifications to a page",
   "main": "background.js",
   "scripts": {
-    "build": "node ./copy-files.js && npm run build:macros && npm run build:sandbox-js && npm run build:background && npm run build:content-script && npm run build:devtools",
-    "build-dev": "node ./copy-files.js -d && npm run build:macros-dev && npm run build:sandbox-js-dev && npm run build:background-dev && npm run build:content-script-dev && npm run build:devtools-dev",
+    "build": "node ./copy-files.js && npm run build:macros && npm run build:sandbox-js && npm run build:background && npm run build:content-script && npm run build:devtools && npm run build:popup && npm run build:create-rule",
+    "build-dev": "node ./copy-files.js -d && npm run build:macros-dev && npm run build:sandbox-js-dev && npm run build:background-dev && npm run build:content-script-dev && npm run build:devtools-dev && npm run build:popup-dev && npm run build:create-rule-dev",
     "build:macros": "npx webpack --config ./webpack.config.macros.js",
     "build:macros-dev": "npx webpack --config ./webpack.config.macros.js  --mode development --devtool cheap-source-map",
     "build:background": "npx webpack --config ./webpack.config.background.js",
@@ -16,6 +16,10 @@
     "build:devtools-dev": "npx webpack --config ./webpack.config.devtools.js --mode development  --devtool cheap-source-map",
     "build:sandbox-js": "npx webpack --config ./webpack.config.sandbox.js",
     "build:sandbox-js-dev": "npx webpack --config ./webpack.config.sandbox.js --mode development  --devtool cheap-source-map",
+    "build:popup": "npx webpack --config ./webpack.config.popup.js",
+    "build:popup-dev": "npx webpack --config ./webpack.config.popup.js --mode development --devtool cheap-source-map",
+    "build:create-rule": "npx webpack --config ./webpack.config.create-rule.js",
+    "build:create-rule-dev": "npx webpack --config ./webpack.config.create-rule.js --mode development --devtool cheap-source-map",
     "test": "jest"
   },
   "repository": {

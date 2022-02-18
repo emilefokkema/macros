@@ -12,6 +12,9 @@ export class FakeNavigationInterface{
     openTab(){
 
     }
+    async getNavigationsForTabId(){
+        return [];
+    }
     async navigationExists(){
         return true;
     }

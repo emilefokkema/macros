@@ -66,6 +66,34 @@ export class NavigationInterface{
             }
         });
     }
+    async getNavigationsForTabId(tabId){
+        const currentlyActiveFrames = await this.tabCollection.getAllFramesInTab(tabId);
+        const result = [];
+        const usedNames = {};
+        for(let frame of currentlyActiveFrames){
+            if(!/^https?:\/\//.test(frame.url)){
+                continue;
+            }
+            let name = new URL(frame.url).hostname;
+            if(usedNames[name] !== undefined){
+                name = `${name} (${++usedNames[name].count})`
+            }else{
+                usedNames[name] = {count: 1};
+            }
+            result.push({
+                top: frame.frameId === 0,
+                frameId: frame.frameId,
+                url: frame.url,
+                id: getNavigationId(tabId, frame.frameId, frame.url),
+                name: name
+            });
+        }
+        return result;
+    }
+    async getNavigationsForPopup(){
+        const currentlyActiveTab = await this.tabCollection.getCurrentlyActiveTab();
+        return await this.getNavigationsForTabId(currentlyActiveTab.id);
+    }
     async getNavigation(navigationId){
         const tabs = await this.tabCollection.getAllTabs();
         for(let tab of tabs){

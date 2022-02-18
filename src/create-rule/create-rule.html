@@ -2,40 +2,45 @@
 <head>
 	<title>Create rule</title>
 	<script src="vue.js"></script>
-	<script src="macros.js"></script>
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
 	<link rel="stylesheet" type="text/css" href="shared.css" />
 	<link rel="stylesheet" type="text/css" href="create-rule.css" />
 </head>
 <body>
 	<template id="removeStylePropertyActionTemplate">
-		<input class="text-input" type="text" v-model="action.property"/>
+		<input class="text-input" type="text" v-model="form.propertyName"/>
 	</template>
 	<template id="removeClassActionTemplate">
-		<input class="text-input" type="text" v-model="action.class"/>
+		<input class="text-input" type="text" v-model="form.className"/>
 	</template>
 	<template id="selectActionTemplate">
 		<div class="row-part">
 			<div class="row-part">
 				Select nodes matching
-				<input type="text" class="text-input" v-model="action.selector"/>
+				<div class="row-part">
+					<input type="text" class="text-input" v-model="form.selector"/>
+					<div class="error-message" v-if="hasSelectorRequiredError && showErrors">A selector is required</div>
+					<div class="error-message" v-if="hasSelectorInvalidError && showErrors">Invalid selector</div>
+				</div>
 			</div>
 			<div class="row-part">
 				and
-				<select class="text-input" v-model="actionType">
-					<option value="delete">delete them</option>
-					<option value="removeClass">remove class</option>
-					<option value="removeStyleProperty">remove style property</option>
-				</select>
-				<remove-class-action v-if="actionType === 'removeClass'" v-bind:action="action.action"></remove-class-action>
-				<remove-style-property-action v-if="actionType === 'removeStyleProperty'" v-bind:action="action.action"></remove-style-property-action>
+				<div class="row-part">
+					<select class="text-input" v-model="actionType">
+						<option :value="actionTypeConstants.DELETE_ACTION_TYPE">delete them</option>
+						<option :value="actionTypeConstants.REMOVE_CLASS_ACTION_TYPE">remove class</option>
+						<option :value="actionTypeConstants.REMOVE_STYLE_PROPERTY_ACTION_TYPE">remove style property</option>
+					</select>
+					<div class="error-message" v-if="hasActionRequiredError && showErrors">An action is required</div>
+				</div>
+				<remove-class-action v-if="actionType === actionTypeConstants.REMOVE_CLASS_ACTION_TYPE" v-bind:form="form.actionForm"></remove-class-action>
+				<remove-style-property-action v-if="actionType === actionTypeConstants.REMOVE_STYLE_PROPERTY_ACTION_TYPE" v-bind:form="form.actionForm"></remove-style-property-action>
 			</div>
 		</div>
-		
 	</template>
 	<template id="actionTemplate">
 		<div class="row">
-			<select-action v-if="action.type === 'select'" v-bind:action="action"></select-action>
+			<select-action v-if="form.type === actionTypeConstants.SELECT_ACTION_TYPE" v-bind:form="form" v-bind:show-errors="showErrors"></select-action>
 			<div class="row-part">
 				<div class="action-buttons">
 					<div class="button" v-if="isExecuting">
@@ -53,12 +58,11 @@
 				</div>
 			</div>
 		</div>
-		
 	</template>
 	<template id="actionAdderTemplate">
 		<div>
 			<select class="text-input" v-model="type">
-				<option value="select">Select nodes</option>
+				<option :value="actionTypeConstants.SELECT_ACTION_TYPE">Select nodes</option>
 			</select>
 			<input type="button" value="Add" v-on:click="onAddClicked()"/>
 		</div>
@@ -74,26 +78,34 @@
 		
 		<div class="row">
 			<label class="label" for="name-input">Name</label>
-			<input class="text-input wide" type="text" id="name-input" v-model="name"/>	
+			<input class="text-input wide" type="text" id="name-input" v-model="form.name"/><span class="error-message" v-if="hasNameRequiredError && showErrors">Name is required</span>	
 		</div>
 		<div class="row">
 			<label class="label" for="pattern-input">Url pattern</label>
-			<input class="text-input wide" type="text" id="pattern-input" v-model="urlPattern"/>	
+			<input class="text-input wide" type="text" id="pattern-input" v-model="form.urlPattern"/><span class="error-message" v-if="hasUrlPatternRequiredError && showErrors">Url pattern is required</span>	
 		</div>
 		<div class="row">
 			<div class="row-part label">Actions</div>
 			<div class="row-part">
-				<action v-for="action of actions" v-bind:action="action" v-bind:runnable="hasPage" v-bind:runningaction="runningAction" v-on:executeclicked="executeAction(action)" v-on:deleteclicked="deleteAction(action)"></action>
+				<action 
+					v-for="actionForm of form.actions"
+					v-bind:form="actionForm"
+					v-bind:runnable="hasPage"
+					v-bind:executing-action-id="executingActionId"
+					v-bind:show-errors="showErrors"
+					v-on:delete-clicked="deleteActionById(actionForm.id)"
+					v-on:execute-clicked="executeActionById(actionForm.id)"
+					:key="actionForm.id"></action>
 				<action-adder v-on:addtype="onAddType($event)"></action-adder>
 				
 			</div>
 		</div>
 		<div class="row">
 			<label class="label" for="automatic-input">Automatic</label>
-			<input type="checkbox" id="automatic-input" v-model="automatic"/>	
+			<input type="checkbox" id="automatic-input" v-model="form.automatic"/>	
 		</div>
 		<div class="row">
-			<input type="button" v-on:click="saveRule()" value="Save"/>
+			<input class="save-button" v-bind:class="{'dirty': isDirty}" type="button" v-bind:disabled="saveDisabled" v-on:click="saveRule()" value="Save"/>
 		</div>
 	</div>
 <script src="create-rule.js">

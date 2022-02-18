@@ -16,9 +16,11 @@ export function backgroundScript(
 
         setPopup('sandbox.html?page=popup.html');
 
-        navigationInterface.onDisappeared(() => {
-            editorCollection.prune();
-            buttons.prune();
+        navigationInterface.onDisappeared(async () => {
+            await editorCollection.prune();
+            const navigationIdsWithDraftRule = await editorCollection.getNavigationsWithDraftRule();
+            await rules.pruneDraftRules(navigationIdsWithDraftRule);
+            await buttons.prune();
         });
         macros.onRequestRulesForUrl((url, sendResponse) => {
             rules.getRulesForUrl(url).then(sendResponse);
@@ -28,13 +30,17 @@ export function backgroundScript(
             buttons.addNotification(notification);
         });
         macros.onRequestToOpenEditor((req, sendResponse) => {
-            editorCollection.openEditor(req).then((alreadyOpen) => {
-                sendResponse(alreadyOpen);
+            editorCollection.openEditor(req).then(() => {
+                sendResponse({});
             });
             return true;
         });
         macros.onEditedStatusRequest(({ruleId}, sendResponse) => {
             editorCollection.getEditedStatus(ruleId).then(st => sendResponse(st));
+            return true;
+        });
+        macros.onGetEditableStatusRequest(({ruleId, navigationId}, sendResponse) => {
+            editorCollection.getEditableStatus(ruleId, navigationId).then(sendResponse);
             return true;
         });
         macros.onGetRuleByIdRequest((ruleId, sendResponse) => {
@@ -56,6 +62,43 @@ export function backgroundScript(
         macros.onEditorLoaded(({ruleId, otherNavigationId}, navigation) => {
             editorCollection.addOpenedEditor(ruleId, navigation, otherNavigationId);
         });
+        macros.onAddSuggestionToNewRuleRequest(async ({navigationId, suggestionId}) => {
+            const suggestion = await macros.getAndRemoveSuggestion(suggestionId, navigationId);
+            await editorCollection.ensureEditorOpen(navigationId);
+            macros.requestToAddAction({navigationId, actionDefinition: suggestion.actionDefinition});
+        });
+        macros.onRequestToAddSelectAction(async ({navigationId, selectorText, ruleId}) => {
+            await editorCollection.openEditor({navigationId, ruleId});
+            macros.addSelectActionToEditor(navigationId, ruleId, selectorText);
+        });
+        macros.onAddSuggestionToRuleRequest(async ({ruleId, navigationId, suggestionId}) => {
+            const suggestion = await macros.getAndRemoveSuggestion(suggestionId, navigationId);
+            const rule = await rules.getRule(ruleId);
+            rule.actions.push(suggestion.actionDefinition);
+            rules.saveRule(rule);
+        });
+        macros.onRequestToCreateNewDraftRuleForNavigation(({navigationId}, sendResponse) => { 
+            navigationInterface.getNavigation(navigationId).then(navigation => {
+                if(!navigation){
+                    sendResponse({});
+                }else{
+                    rules.createDraftRuleForNavigation(navigation).then((result) => {
+                        sendResponse(result);
+                        macros.notifyDraftRuleCreated(navigationId, result);
+                    })
+                }
+            });
+            return true;
+        });
+        macros.onRequestDraftRuleForNavigation(({navigationId}, sendResponse) => {
+            rules.getDraftRuleForNavigation(navigationId).then((draftRule) => {
+                sendResponse(draftRule);
+            });
+            return true;
+        });
+        macros.onDraftRuleChanged(({navigationId, draftRule}) => {
+            rules.updateDraftRuleForNavigation(navigationId, draftRule)
+        });
         
         rules.ruleAdded.listen(() => {
             macros.notifyRuleAdded();
@@ -65,6 +108,9 @@ export function backgroundScript(
         });
         rules.ruleUpdated.listen((msg) => {
             macros.notifyRuleUpdated(msg);
+        });
+        rules.draftRulesRemoved.listen((navigationIds) => {
+            macros.notifyDraftRulesRemoved(navigationIds);
         });
         editorCollection.editedStatusChanged.listen(({ruleId, otherNavigationId, edited}) => {
             macros.notifyEditedStatusChanged({ruleId, otherNavigationId, edited});

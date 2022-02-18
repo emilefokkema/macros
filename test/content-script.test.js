@@ -3,53 +3,11 @@ import { FakeNavigationInterface } from './fake-navigation-interface';
 import { FakeMessageBus } from './fake-message-bus';
 import { Event } from '../src/shared/events';
 
-class Element{
-    constructor(attributeNames, selector){
-        this.removed = new Event();
-        this.parentNode = {
-            removeChild: () => this.removed.dispatch()
-        };
-        this.attributeNames = attributeNames || [];
-        this.selector = selector;
-        this.localName = 'element';
-    }
-    getAttributeNames(){
-        return this.attributeNames;
-    }
-    matches(selector){
-        return this.selector === selector;
-    }
-}
-
-class ElementList{
-    constructor(){
-        this.elements = [];
-        this.elementRemoved = new Event();
-    }
-    getElements(){
-        return this.elements.slice();
-    }
-    removeElement(el){
-        var index = this.elements.indexOf(el);
-        if(index === -1){
-            return;
-        }
-        this.elements.splice(index, 1);
-        this.elementRemoved.dispatch();
-    }
-    addElement(){
-        var el = new Element();
-        el.removed.listen(() => this.removeElement(el))
-        this.elements.push(el);
-    }
-}
-
 describe('given navigation, etc', () => {
     let navigationInterface;
     let messageBus;
     let currentNavigation;
     let url;
-    let querySelectorAllResults;
     let documentMutationsProvider;
     let documentMutationOccurred;
 
@@ -61,13 +19,11 @@ describe('given navigation, etc', () => {
             }
         };
         url = 'http://a.b/c';
-        querySelectorAllResults = {};
         jest.spyOn(global, 'location', 'get').mockImplementation(() => {
             return {
                 href: url
             };
         });
-        jest.spyOn(global.document, 'querySelectorAll').mockImplementation((selector) => querySelectorAllResults[selector].getElements());
         currentNavigation = {
             id: 'nav0',
             historyId: 'history0',
@@ -78,27 +34,33 @@ describe('given navigation, etc', () => {
         messageBus = new FakeMessageBus();
     });
 
+    afterEach(() => {
+        document.body.innerHTML = '';
+    });
+
     describe('and there is an element for a selector', () => {
         let selector;
-        let elementsForSelector;
+        let removeSpy;
+        let div;
 
         beforeEach(() => {
             selector = 'div';
-            elementsForSelector = new ElementList();
-            elementsForSelector.addElement();
-            querySelectorAllResults[selector] = elementsForSelector;
+            div = document.createElement('div');
+            removeSpy = jest.spyOn(div, 'remove');
+            document.body.append(div);
         })
 
         describe('and the content script has executed', () => {
-            let elementSelectedInDevtools;
+            let onElementSelectedInDevtools;
 
             beforeEach(() => {
                 const result = contentScriptFunction(navigationInterface, messageBus, documentMutationsProvider);
-                elementSelectedInDevtools = result.elementSelectedInDevtools;
+                onElementSelectedInDevtools = result.onElementSelectedInDevtools;
             });
 
             describe('and an automatically deleting rule is returned', () => {
                 let existingRuleForUrl;
+                let ruleStateForNavigationChangedNotification;
 
                 beforeEach(async () => {
                     existingRuleForUrl = {
@@ -116,13 +78,36 @@ describe('given navigation, etc', () => {
                         ]
                     };
                     const message = messageBus.channels['requestRulesForUrl'].target.expectMessage(m => true);
-                    const whenRemoved = elementsForSelector.elementRemoved.next();
+                    const ruleStateForNavigationChangedNotificationPromise = messageBus.channels['ruleStateForNavigationChangeNotification'].source.nextMessage();
+                    messageBus.channels['requestEditableStatus'].source.onMessage((msg, sendResponse) => {
+                        sendResponse(true)
+                    });
+                    messageBus.channels['draftRuleForNavigationRequest'].source.onMessage((msg, sendResponse) => {
+                        sendResponse({
+                            name: 'draft',
+                            actions: []
+                        });
+                    });
                     message.sendResponse([existingRuleForUrl]);
-                    await whenRemoved;
+                    ruleStateForNavigationChangedNotification = await ruleStateForNavigationChangedNotificationPromise;
+                });
+
+                it('should have emitted a notification that the rule has executed', () => {
+                    expect(ruleStateForNavigationChangedNotification).toEqual({
+                        navigationId: currentNavigation.id,
+                        state: {
+                            editable: true,
+                            effectsOnElement: [],
+                            hasExecuted: true,
+                            hasSomethingToDo: false,
+                            id: existingRuleForUrl.id,
+                            name: existingRuleForUrl.name
+                        }
+                    })
                 });
 
                 it('should have removed the element', () => {
-                    expect(elementsForSelector.getElements().length).toBe(0);
+                    expect(removeSpy).toHaveBeenCalled();
                 });
 
                 describe('and then a dom mutation is emitted', () => {
@@ -149,8 +134,7 @@ describe('given navigation, etc', () => {
                             ],
                             numberOfRules: 1,
                             numberOfRulesThatHaveSomethingToDo: 0,
-                            numberOfRulesThatHaveExecuted: 1,
-                            selectedElement: null
+                            numberOfRulesThatHaveExecuted: 1
                         });
                     });
 
@@ -171,8 +155,7 @@ describe('given navigation, etc', () => {
                                 rules: [],
                                 numberOfRules: 0,
                                 numberOfRulesThatHaveSomethingToDo: 0,
-                                numberOfRulesThatHaveExecuted: 0,
-                                selectedElement: null
+                                numberOfRulesThatHaveExecuted: 0
                             });
                         });
                     });
@@ -200,6 +183,15 @@ describe('given navigation, etc', () => {
                     };
                     const message = messageBus.channels['requestRulesForUrl'].target.expectMessage(m => true);
                     const notificationPromise = messageBus.channels['notifyRulesForNavigation'].source.nextMessage();
+                    messageBus.channels['requestEditableStatus'].source.onMessage((msg, sendResponse) => {
+                        sendResponse(true)
+                    });
+                    messageBus.channels['draftRuleForNavigationRequest'].source.onMessage((msg, sendResponse) => {
+                        sendResponse({
+                            name: 'draft',
+                            actions: []
+                        });
+                    });
                     message.sendResponse([existingRuleForUrl]);
                     notification = await notificationPromise;
                 });
@@ -219,8 +211,7 @@ describe('given navigation, etc', () => {
                         ],
                         numberOfRules: 1,
                         numberOfRulesThatHaveSomethingToDo: 1,
-                        numberOfRulesThatHaveExecuted: 0,
-                        selectedElement: null
+                        numberOfRulesThatHaveExecuted: 0
                     })
                 });
 
@@ -229,7 +220,6 @@ describe('given navigation, etc', () => {
 
                     beforeEach(async () => {
                         const otherSelector = 'a';
-                        querySelectorAllResults[otherSelector] = new ElementList();
                         existingRuleForUrl.actions[0].selector = otherSelector;
                         messageBus.channels['notifyRuleUpdated'].target.sendMessage({ruleId: existingRuleForUrl.id});
                         const message = messageBus.channels['requestRulesForUrl'].target.expectMessage(m => true);
@@ -253,8 +243,7 @@ describe('given navigation, etc', () => {
                             ],
                             numberOfRules: 1,
                             numberOfRulesThatHaveSomethingToDo: 0,
-                            numberOfRulesThatHaveExecuted: 0,
-                            selectedElement: null
+                            numberOfRulesThatHaveExecuted: 0
                         });
                     });
                 });
@@ -263,42 +252,30 @@ describe('given navigation, etc', () => {
                     let notification;
     
                     beforeEach(async () => {
-                        const notificationPromise = messageBus.channels['notifyRulesForNavigation'].source.nextMessage();
-                        elementSelectedInDevtools(new Element([], selector));
+                        const notificationPromise = messageBus.channels['ruleStateForNavigationChangeNotification'].source.nextMessage();
+                        onElementSelectedInDevtools(div);
                         notification = await notificationPromise;
                     });
     
                     it('should have emitted a notification', () => {
                         expect(notification).toEqual({
                             navigationId: currentNavigation.id,
-                            url: url,
-                            tabId: currentNavigation.tabId,
-                            rules: [
-                                {
-                                    name: existingRuleForUrl.name,
-                                    id: existingRuleForUrl.id,
-                                    hasSomethingToDo: true,
-                                    hasExecuted: false
-                                }
-                            ],
-                            numberOfRules: 1,
-                            numberOfRulesThatHaveSomethingToDo: 1,
-                            numberOfRulesThatHaveExecuted: 0,
-                            selectedElement: {
-                                effect: [
+                            state: {
+                                editable: true,
+                                effectsOnElement: [
                                     {
-                                        ruleId: existingRuleForUrl.id,
-                                        effect: ['will delete this element']
+                                        actionDefinition: {
+                                            type: 'delete'
+                                        },
+                                        description: 'will delete this element'
                                     }
                                 ],
-                                selector: {
-                                    attributeNames: [],
-                                    classes: [],
-                                    nodeName: 'element',
-                                    text: 'element'
-                                }
+                                hasExecuted: false,
+                                hasSomethingToDo: true,
+                                id: existingRuleForUrl.id,
+                                name: existingRuleForUrl.name
                             }
-                        })
+                        });
                     });
                 });
 
@@ -318,7 +295,7 @@ describe('given navigation, etc', () => {
                     });
 
                     it('should have deleted the element', () => {
-                        expect(elementsForSelector.getElements().length).toBe(0);
+                        expect(removeSpy).toHaveBeenCalled();
                     });
                 });
 
@@ -349,7 +326,6 @@ describe('given navigation, etc', () => {
                                     }
                                 ]
                             };
-                            querySelectorAllResults[addedRuleSelector] = new ElementList();
                             const message = messageBus.channels['requestRulesForUrl'].target.expectMessage(m => true);
                             const notificationPromise = messageBus.channels['notifyRulesForNavigation'].source.nextMessage();
                             message.sendResponse([
@@ -380,8 +356,7 @@ describe('given navigation, etc', () => {
                                 ],
                                 numberOfRules: 2,
                                 numberOfRulesThatHaveSomethingToDo: 1,
-                                numberOfRulesThatHaveExecuted: 0,
-                                selectedElement: null
+                                numberOfRulesThatHaveExecuted: 0
                             });
                         });
                     });
@@ -416,8 +391,7 @@ describe('given navigation, etc', () => {
                                 rules: [],
                                 numberOfRules: 0,
                                 numberOfRulesThatHaveSomethingToDo: 0,
-                                numberOfRulesThatHaveExecuted: 0,
-                                selectedElement: null
+                                numberOfRulesThatHaveExecuted: 0
                             });
                         });
                     });
@@ -440,8 +414,7 @@ describe('given navigation, etc', () => {
                             rules: [],
                             numberOfRules: 0,
                             numberOfRulesThatHaveSomethingToDo: 0,
-                            numberOfRulesThatHaveExecuted: 0,
-                            selectedElement: null
+                            numberOfRulesThatHaveExecuted: 0
                         });
                     });
                 });
@@ -459,10 +432,8 @@ describe('given navigation, etc', () => {
             let notification;
             let existingRuleForUrl;
             let existingRuleSelector;
-            let elementsForSelector;
 
             beforeEach(async () => {
-                elementsForSelector = new ElementList();
                 existingRuleSelector = 'div';
                 existingRuleForUrl = {
                     id: 1,
@@ -478,9 +449,17 @@ describe('given navigation, etc', () => {
                         }
                     ]
                 };
-                querySelectorAllResults[existingRuleSelector] = elementsForSelector;
                 const message = messageBus.channels['requestRulesForUrl'].target.expectMessage(m => true);
                 const notificationPromise = messageBus.channels['notifyRulesForNavigation'].source.nextMessage();
+                messageBus.channels['draftRuleForNavigationRequest'].source.onMessage((msg, sendResponse) => {
+                    sendResponse({
+                        name: 'draft',
+                        actions: []
+                    });
+                });
+                messageBus.channels['requestEditableStatus'].source.onMessage((msg, sendResponse) => {
+                    sendResponse(true)
+                });
                 message.sendResponse([existingRuleForUrl]);
                 notification = await notificationPromise;
             });
@@ -500,42 +479,41 @@ describe('given navigation, etc', () => {
                     ],
                     numberOfRules: 1,
                     numberOfRulesThatHaveSomethingToDo: 0,
-                    numberOfRulesThatHaveExecuted: 0,
-                    selectedElement: null
-                })
-            });
-
-            it('should respond to a request to emit a notification', async () => {
-                const notificationPromise = messageBus.channels['notifyRulesForNavigation'].source.nextMessage();
-                messageBus.channels['emitRulesRequest'].target.sendMessage({tabId: currentNavigation.tabId});
-                const notification = await notificationPromise;
-                expect(notification).toEqual({
-                    navigationId: currentNavigation.id,
-                    url: url,
-                    tabId: currentNavigation.tabId,
-                    rules: [
-                        {
-                            name: existingRuleForUrl.name,
-                            id: existingRuleForUrl.id,
-                            hasSomethingToDo: false,
-                            hasExecuted: false
-                        }
-                    ],
-                    numberOfRules: 1,
-                    numberOfRulesThatHaveSomethingToDo: 0,
-                    numberOfRulesThatHaveExecuted: 0,
-                    selectedElement: null
+                    numberOfRulesThatHaveExecuted: 0
                 })
             });
 
             describe('and then a dom mutation happens', () => {
                 let newNotification;
+                let removeSpy;
+                let ruleStateForNavigationChangedNotification;
 
                 beforeEach(async () => {
-                    elementsForSelector.addElement();
+                    const element = document.createElement('div');
+                    removeSpy = jest.spyOn(element, 'remove');
+                    document.body.append(element);
+                    messageBus.channels['requestEditableStatus'].source.onMessage((msg, sendResponse) => {
+                        sendResponse(true)
+                    });
                     const notificationPromise = messageBus.channels['notifyRulesForNavigation'].source.nextMessage();
+                    const ruleStateForNavigationChangedNotificationPromise = messageBus.channels['ruleStateForNavigationChangeNotification'].source.nextMessage();
                     documentMutationOccurred.dispatch();
                     newNotification = await notificationPromise;
+                    ruleStateForNavigationChangedNotification = await ruleStateForNavigationChangedNotificationPromise;
+                });
+
+                it('should have emitted a notification about how a rule has something to do', () => {
+                    expect(ruleStateForNavigationChangedNotification).toEqual({
+                        navigationId: currentNavigation.id,
+                        state: {
+                            editable: true,
+                            effectsOnElement: [],
+                            hasExecuted: false,
+                            hasSomethingToDo: true,
+                            id: existingRuleForUrl.id,
+                            name: existingRuleForUrl.name
+                        }
+                    })
                 });
 
                 it('should have emitted a new notification', () => {
@@ -553,8 +531,7 @@ describe('given navigation, etc', () => {
                         ],
                         numberOfRules: 1,
                         numberOfRulesThatHaveSomethingToDo: 1,
-                        numberOfRulesThatHaveExecuted: 0,
-                        selectedElement: null
+                        numberOfRulesThatHaveExecuted: 0
                     })
                 });
 
@@ -568,7 +545,7 @@ describe('given navigation, etc', () => {
                     });
 
                     it('should have removed the element', () => {
-                        expect(elementsForSelector.getElements().length).toBe(0);
+                        expect(removeSpy).toHaveBeenCalled();
                     });
 
                     describe('and then a dom mutation is emitted', () => {
@@ -595,8 +572,7 @@ describe('given navigation, etc', () => {
                                 ],
                                 numberOfRules: 1,
                                 numberOfRulesThatHaveSomethingToDo: 0,
-                                numberOfRulesThatHaveExecuted: 1,
-                                selectedElement: null
+                                numberOfRulesThatHaveExecuted: 1
                             });
                         });
                     });

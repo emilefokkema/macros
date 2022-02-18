@@ -1,11 +1,34 @@
 (function(){
-	
+	Vue.component('rule-view', {
+		template: document.getElementById('ruleViewTemplate').innerHTML,
+		props: {
+			name: String,
+			effects: Array,
+			editable: Boolean,
+			isDraft: Boolean
+		},
+		methods: {
+			onAddActionClicked(){
+				this.$emit('add-action-clicked');
+			}
+		}
+	});
 	new Vue({
 		el: "#app",
 		data: function(){
+			let tabId;
+			const url = new URL(location.href);
+			const tabIdString = url.searchParams.get('tabId');
+			if(tabIdString){
+				tabId = parseInt(tabIdString);
+			}
 			return {
 				navigations: [],
-				selectedNavigation: undefined
+				selectedNavigation: undefined,
+				loading: true,
+				selectedElement: undefined,
+				tabId,
+				nonHtmlElementSelected: false
 			};
 		},
 		mounted: function(){
@@ -22,135 +45,124 @@
 						this.selectedNavigation = navigation;
 					}
 				}
+			},
+			nodeOtherThanHtmlElementSelected(){
+				return this.selectedElement && !this.selectedElement.isHtmlElement;
 			}
 		},
 		methods: {
-			pruneNavigations(){
-				for(var navigation of this.navigations){
-					this.removeNavigationIfNecessary(navigation.navigationId);
-				}
-			},
-			async removeNavigationIfNecessary(navigationId){
-				if(await macros.navigation.navigationExists(navigationId)){
-					return;
-				}
-				console.log(`removing navigation id ${navigationId}`)
-				var index = this.navigations.findIndex(n => n.navigationId === navigationId);
-				if(index === -1){
-					return;
-				}
-				var [removed] = this.navigations.splice(index, 1);
-				if(this.selectedNavigation === removed){
-					this.selectedNavigation = undefined;
-				}
-			},
-			replaceNavigationAtIndex(navigation, index){
-				navigation.origin = new URL(navigation.url).origin;
-				var [removed] = this.navigations.splice(index, 1, navigation);
-				if(removed === this.selectedNavigation){
-					this.selectedNavigation = navigation;
-				}
-			},
-			async addNavigation(notification){
-				if(!(await macros.navigation.navigationExists(notification.navigationId))){
-					return;
-				}
-				var existingIndex = this.navigations.findIndex(n => n.navigationId === notification.navigationId);
-				if(existingIndex > -1){
-					console.log(`replacing navigation with id ${notification.navigationId}`)
-					this.replaceNavigationAtIndex(notification, existingIndex);
-					return;
-				}
-				console.log(`adding new navigation with id ${notification.navigationId}:`, notification)
-				notification.origin = new URL(notification.url).origin;
-				this.navigations.push(notification);
-				if(!this.selectedNavigation){
-					this.selectedNavigation = notification;
-				}
-			},
 			initialize: async function(){
-				var tabId = await macros.inspectedWindow.getTabId();
-				macros.onNotifyRulesForNavigation(notification => {
-					if(notification.tabId !== tabId){
+				this.selectedElement = await macros.getSelectedElementInDevtools(this.tabId);
+				macros.onSelectedElementInDevtoolsChange((selectedElement) => {
+					if(selectedElement.tabId !== this.tabId){
 						return;
 					}
-					this.addNavigation(notification);
+					this.selectedElement = selectedElement;
 				});
-				macros.navigation.onDisappeared(() => this.pruneNavigations());
-				macros.requestToEmitRules({tabId});
+				this.loading = false;
 			}
 		},
 		components: {
-			navigation: {
-				template: document.getElementById('navigationTemplate').innerHTML,
+			selector: {
+				template: document.getElementById('selectorTemplate').innerHTML,
 				props: {
-					navigation: Object
+					selector: Object
+				}
+			},
+			'rule-list': {
+				template: document.getElementById('ruleListTemplate').innerHTML,
+				props: {
+					navigationId: String,
+					selectorText: String
 				},
-				data: function(){
+				data(){
 					return {
-						rulesAndEffects: []
+						rules: [],
+						draftRule: undefined,
+						loading: true
 					};
 				},
-				mounted: function(){
-					this.setRulesAndEffects();
-				},
 				watch: {
-					navigation: function(){
-						this.setRulesAndEffects();
+					navigationId(){
+						this.load();
 					}
 				},
-				methods: {
-					setRulesAndEffects(){
-						if(this.navigation.selectedElement){
-							this.rulesAndEffects = this.navigation.rules.map(rule => ({
-								rule,
-								effects: this.navigation.selectedElement.effect.find(e => e.ruleId === rule.id).effect
-							}))
+				mounted(){
+					macros.onDraftRuleStateForNavigation(({navigationId, draftRuleState}) => {
+						if(navigationId !== this.navigationId){
+							return;
 						}
-					},
-					async addActionToNewRule(){
-						await macros.requestToOpenEditor({navigationId: this.navigation.navigationId});
-						console.log(`editor for new rule is open`)
-						macros.requestToAddActionForSelector({navigationId: this.navigation.navigationId, text: this.navigation.selectedElement.selector.text});
+						this.draftRule = draftRuleState;
+					});
+					macros.onRuleStateForNavigationChanged(({navigationId, state: rule}) => {
+						if(navigationId !== this.navigationId){
+							return;
+						}
+						const index = this.rules.findIndex(r => r.id === rule.id);
+						if(index === -1){
+							this.rules.push(rule);
+						}else{
+							this.rules.splice(index, 1, rule);
+						}
+					});
+					macros.onRuleStateForNavigationRemoved(({navigationId, ruleId}) => {
+						if(navigationId !== this.navigationId){
+							return;
+						}
+						const index = this.rules.findIndex(r => r.id === ruleId);
+						if(index === -1){
+							return;
+						}
+						this.rules.splice(index, 1);
+					});
+					this.load();
+				},
+				methods: {
+					async load(){
+						this.loading = true;
+						const rules = await macros.getRuleStatesForNavigation(this.navigationId);
+						const draftRule = await macros.getDraftRuleStateForNavigation(this.navigationId);
+						this.rules = rules;
+						this.draftRule = draftRule;
+						this.loading = false;
 					}
 				},
 				components: {
-					selector: {
-						template: document.getElementById('selectorTemplate').innerHTML,
-						props: {
-							selector: Object
-						}
-					},
 					rule: {
 						template: document.getElementById('ruleTemplate').innerHTML,
 						props: {
 							rule: Object,
-							effects: Array,
-							navigationid: String,
-							selectortext: String
-						},
-						data: function(){
-							return {
-								editable: false
-							};
-						},
-						mounted: function(){
-							this.initialize();
+							navigationId: String,
+							selectorText: String
 						},
 						methods: {
-							async initialize(){
-								var editedStatus = await macros.getEditedStatusAsync(this.rule.id);
-								this.editable = !editedStatus.edited || editedStatus.navigationId === this.navigationid;
-								macros.onEditedStatusChanged(({ruleId, edited, otherNavigationId}) => {
-									if(ruleId !== this.rule.id){
-										return;
-									}
-									this.editable = !edited || otherNavigationId === this.navigationid;
-								});
-							},
-							async onAddActionClicked(){
-								await macros.requestToOpenEditor({ruleId: this.rule.id, navigationId: this.navigationid});
-								macros.requestToAddActionForSelector({ruleId: this.rule.id, navigationId: this.navigationid, text: this.selectortext});
+							onAddActionClicked(){
+								macros.addSelectAction(this.navigationId, this.selectorText, this.rule.id);
+							}
+						}
+					},
+					'draft-rule': {
+						template: document.getElementById('draftRuleTemplate').innerHTML,
+						props: {
+							rule: Object,
+							navigationId: String,
+							selectorText: String
+						},
+						methods: {
+							onAddActionClicked(){
+								macros.addSelectAction(this.navigationId, this.selectorText);
+							}
+						}
+					},
+					'new-rule': {
+						template: document.getElementById('newRuleTemplate').innerHTML,
+						props: {
+							navigationId: String,
+							selectorText: String
+						},
+						methods: {
+							onAddActionClicked(){
+								macros.addSelectAction(this.navigationId, this.selectorText);
 							}
 						}
 					}

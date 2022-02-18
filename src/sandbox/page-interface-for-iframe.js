@@ -1,10 +1,35 @@
+import { WindowInputWatcher } from '../shared/window-input-watcher';
+
 export class PageInterfaceForIframe{
-    constructor(documentTitleMessageTarget, historyStateMessageTarget){
+    constructor(documentTitleMessageTarget, historyStateMessageTarget, closeWindowMessageTarget, unsavedChangesWarningEnabledMessageTarget){
         this.documentTitleMessageTarget = documentTitleMessageTarget;
         this.historyStateMessageTarget = historyStateMessageTarget;
+        this.closeWindowMessageTarget = closeWindowMessageTarget;
+        this.unsavedChangesWarningEnabledMessageTarget = unsavedChangesWarningEnabledMessageTarget;
+        this.unsavedChangesWarningEnabled = false;
+        this.windowInputWatcher = new WindowInputWatcher();
+        this.windowInputWatcher.watch();
     }
     getLocation(){
         return window.location.href;
+    }
+    close(){
+        this.closeWindowMessageTarget.sendMessage({});
+    }
+    setUnsavedChangedWarningEnabled(enabled){
+        if(enabled === this.unsavedChangesWarningEnabled){
+            return;
+        }
+        this.unsavedChangesWarningEnabled = enabled;
+        if(enabled){
+            this.windowInputWatcher.whenInputHasHappened().then(() => {
+                if(this.unsavedChangesWarningEnabled){
+                    this.unsavedChangesWarningEnabledMessageTarget.sendMessage({enabled: true});
+                }
+            });
+        }else{
+            this.unsavedChangesWarningEnabledMessageTarget.sendMessage({enabled: false});
+        }
     }
     async pushHistoryState(newUrl){
         history.pushState('',{}, newUrl);

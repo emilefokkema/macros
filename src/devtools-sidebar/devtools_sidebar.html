@@ -3,6 +3,7 @@
 	<title>Macros</title>
 	<script src="vue.js"></script>
 	<script src="macros.js"></script>
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
 	<link rel="stylesheet" type="text/css" href="shared.css" />
 	<link rel="stylesheet" type="text/css" href="devtools_sidebar.css" />
 </head>
@@ -12,17 +13,63 @@
 			<pre><span class="node-name">{{selector.nodeName}}</span><span v-if="selector.id" class="node-id">#{{selector.id}}</span><span class="class-name" v-for="className of selector.classes"><wbr />.{{className}}</span><span class="attribute" v-for="attributeName of selector.attributeNames"><wbr />[{{attributeName}}]</span></pre>
 		</div>
 	</template>
-	<template id="ruleTemplate">
+	<template id="ruleViewTemplate">
 		<div class="row">
 			<div class="row-part rule-description">
-				<div class="rule-name">{{rule.name}}</div>
+				<div class="rule-name">{{name}}<span v-if="isDraft" class="draft-rule-notification">draft</span></div>
 				<div>
-					<div v-for="effect of effects" class="effect">{{effect}}</div>
+					<div v-if="effects" v-for="effect of effects" class="effect">{{effect.description}}</div>
 				</div>
 			</div>
 			<div class="row-part" v-if="editable">
 				<div class="add-action-button" v-on:click="onAddActionClicked()">add action</div>
 			</div>
+		</div>
+	</template>
+	<template id="newRuleTemplate">
+		<rule-view 
+			name="(new rule)"
+			v-bind:editable="true"
+			v-on:add-action-clicked="onAddActionClicked()"></rule-view>
+	</template>
+	<template id="draftRuleTemplate">
+		<rule-view 
+			v-bind:name="rule.name"
+			v-bind:effects="rule.effectsOnElement"
+			v-bind:editable="true"
+			v-bind:is-draft="true"
+			v-on:add-action-clicked="onAddActionClicked()"></rule-view>
+	</template>
+	<template id="ruleTemplate">
+		<rule-view 
+			v-bind:name="rule.name"
+			v-bind:effects="rule.effectsOnElement"
+			v-bind:editable="rule.editable"
+			v-on:add-action-clicked="onAddActionClicked()"></rule-view>
+	</template>
+	<template id="ruleListTemplate">
+		<div>
+			<div class="banner" v-if="loading">
+				<div class="banner-center">
+					<span class="fa fa-circle-notch fa-spin"></span>
+				</div>
+			</div>
+			<rule 
+				v-if="!loading"
+				v-for="rule of rules"
+				:key="rule.id"
+				v-bind:rule="rule"
+				v-bind:navigation-id="navigationId"
+				v-bind:selector-text="selectorText"></rule>
+			<draft-rule 
+				v-if="draftRule"
+				v-bind:rule="draftRule"
+				v-bind:navigation-id="navigationId"
+				v-bind:selector-text="selectorText"></draft-rule>
+			<new-rule 
+				v-if="!draftRule"
+				v-bind:navigation-id="navigationId"
+				v-bind:selector-text="selectorText"></new-rule>
 		</div>
 	</template>
 	<template id="navigationTemplate">
@@ -38,10 +85,17 @@
 		</div>
 	</template>
 	<div id="app">
-		<select class="navigation-selector" v-if="navigations.length > 0" v-model="navigationIdOption">
-			<option v-for="navigation of navigations" v-bind:value="navigation.navigationId">{{navigation.origin}}</option>
-		</select>
-		<navigation v-bind:navigation="selectedNavigation" v-if="selectedNavigation"></navigation>
+		<div class="banner" v-if="loading">
+			<div class="banner-center">
+				<span class="fa fa-circle-notch fa-spin"></span>
+			</div>
+		</div>
+		<selector v-bind:selector="selectedElement.selector" v-if="selectedElement && !nodeOtherThanHtmlElementSelected"></selector>
+		<div v-if="nodeOtherThanHtmlElementSelected">This element is not an html element.</div>
+		<rule-list
+			v-if="selectedElement && !loading && !nodeOtherThanHtmlElementSelected"
+			v-bind:navigation-id="selectedElement.navigationId"
+			v-bind:selector-text="selectedElement.selector.text"></rule-list>
 	</div>
 	<script src="devtools_sidebar.js">
 	</script>

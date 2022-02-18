@@ -11,13 +11,78 @@ class RuleCollection{
 		this.loaded = false;
 		this.latestRuleId = 0;
 		this.rules = [];
+		this.draftRules = [];
 		this.ruleUpdated = new Event();
 		this.ruleAdded = new Event();
 		this.ruleDeleted = new Event();
+		this.draftRulesRemoved = new Event();
 		this.storage = storage;
+	}
+	async getDraftRuleForNavigation(navigationId){
+		await this.ensureLoaded();
+		const record = this.draftRules.find(r => r.navigationId === navigationId);
+		if(!record){
+			return null;
+		}
+		return record.rule;
+	}
+	async pruneDraftRules(allowedNavigationIds){
+		await this.ensureLoaded();
+		const newDraftRules = [];
+		const removedDraftRulesForNavigationIds = [];
+		for(let draftRuleRecord of this.draftRules){
+			if(allowedNavigationIds.some(id => id === draftRuleRecord.navigationId)){
+				newDraftRules.push(draftRuleRecord);
+			}else{
+				removedDraftRulesForNavigationIds.push(draftRuleRecord.navigationId);
+			}
+		}
+		this.draftRules = newDraftRules;
+		await this.save();
+		if(removedDraftRulesForNavigationIds.length > 0){
+			this.draftRulesRemoved.dispatch(removedDraftRulesForNavigationIds);
+		}
+	}
+	async updateDraftRuleForNavigation(navigationId, draftRule){
+		await this.ensureLoaded();
+		const record = this.draftRules.find(r => r.navigationId === navigationId);
+		if(!record){
+			return;
+		}
+		record.rule = draftRule;
+		await this.save();
+	}
+	async createDraftRuleForNavigation(navigation){
+		await this.ensureLoaded();
+		const navigationUrl = new URL(navigation.url);
+		const originallyProposedName = navigationUrl.hostname;
+		let proposedName = originallyProposedName;
+		let suffixIndex = 0;
+		const existingDraftRuleRecord = this.draftRules.find(r => r.navigationId === navigation.id);
+		const existingNames = this.rules.map(r => r.name).concat(this.draftRules.filter(d => d !== existingDraftRuleRecord).map(d => d.rule.name));
+		while(existingNames.includes(proposedName)){
+			proposedName = `${originallyProposedName} (${++suffixIndex})`;
+		}
+		const urlPattern = `${navigationUrl.origin}/*`;
+		const draftRule = {
+			name: proposedName,
+			urlPattern,
+			actions: []
+		};
+		if(existingDraftRuleRecord){
+			existingDraftRuleRecord.rule = draftRule;
+		}else{
+			this.draftRules.push({
+				navigationId: navigation.id,
+				rule: draftRule
+			});
+		}
+		await this.save();
+		return draftRule;
 	}
 	async load(){
 		this.rules = await this.storage.getItem('rules') || [];
+		this.draftRules = await this.storage.getItem('draftRules') || [];
 		if(this.rules.length > 0){
 			this.latestRuleId = Math.max.apply(Math, this.rules.map(r => r.id));
 		}
@@ -31,6 +96,7 @@ class RuleCollection{
 	}
 	async save(){
 		await this.storage.setItem('rules', this.rules);
+		await this.storage.setItem('draftRules', this.draftRules);
 	}
 	async deleteRule(ruleId){
 		await this.ensureLoaded();

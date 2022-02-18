@@ -9,15 +9,20 @@ class Selector{
     static forElement(element){
         var id, classes = [];
         var nodeName = element.localName || '';
-        var attributeNames = element.getAttributeNames();
+        var attributeNames = [];
+        try{
+            attributeNames = element.getAttributeNames();
+        }catch(e){
+            console.log(`could not getAttributeNames() for element`, element)
+        }
         var attributePartOfText = '';
         var classPartOfText = '';
         for(let attributeName of attributeNames){
             if(attributeName === 'id'){
                 id = element.getAttribute('id');
             }else if(attributeName === 'class'){
-                classes = (element.getAttribute('class') || '').match(/\S+/g);
-                classPartOfText = classes.map(c => `.${c}`).join('');
+                classes = (element.getAttribute('class') || '').match(/\S+/g) || [];
+                classPartOfText = classes.map(c => `.${c.replace(/[\.:]/g,'\\$&')}`).join('');
             }else{
                 attributePartOfText += `[${attributeName}]`;
             }
@@ -56,6 +61,14 @@ class Selector{
 		}
 		return new Selector(text, nodeName, id, classes, attributeNames);
 	}
+    static isValidSelector(text){
+        try{
+            document.querySelector(text);
+            return true;
+        }catch(e){
+            return false;
+        }
+    }
 }
 
 export { Selector };

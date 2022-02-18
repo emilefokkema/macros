@@ -246,16 +246,11 @@ describe('given storage, navigation etc.', () => {
                     });
     
                     describe('when opening an editor for the rule is requested', () => {
-                        let editorWasAlreadyOpen;
                         let focusSpy;
     
                         beforeEach(async () => {
                             focusSpy = jest.spyOn(existingNavigation, 'focus');
-                            editorWasAlreadyOpen = await messageBus.channels['openEditor'].target.sendMessageAsync({ruleId: existingRule1.id});
-                        });
-    
-                        it('should have reponded that the editor was already open', () => {
-                            expect(editorWasAlreadyOpen).toBe(true);
+                            await messageBus.channels['openEditor'].target.sendMessageAsync({ruleId: existingRule1.id});
                         });
     
                         it('should have focussed the editor\'s navigation', () => {
@@ -363,16 +358,12 @@ describe('given storage, navigation etc.', () => {
             });
 
             describe('and then an editor is requested', () => {
-                let editorWasAlreadyOpen;
                 let spy;
+                let openEditorPromise;
 
-                beforeEach(async () => {
+                beforeEach(() => {
                     spy = jest.spyOn(navigationInterface, 'openTab');
-                    editorWasAlreadyOpen = await messageBus.channels['openEditor'].target.sendMessageAsync({ruleId: existingRule1.id});
-                });
-
-                it('should have answered that is was not yet open', () => {
-                    expect(editorWasAlreadyOpen).toBe(false);
+                    openEditorPromise = messageBus.channels['openEditor'].target.sendMessageAsync({ruleId: existingRule1.id});
                 });
 
                 it('should have opened a tab with the right url', () => {
@@ -387,6 +378,11 @@ describe('given storage, navigation etc.', () => {
                         editorNavigationId = 'navId';
                         editorNavigation = {id: editorNavigationId};
                         messageBus.channels['editorLoaded'].target.sendMessage({ruleId: existingRule1.id}, editorNavigation);
+                    });
+
+                    it('the promise from opening the editor should have resolved', async () => {
+                        await openEditorPromise;
+                        expect(true).toBe(true);
                     });
 
                     it('should have saved the new editor', () => {

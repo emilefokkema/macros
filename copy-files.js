@@ -7,9 +7,9 @@ if(!fs.existsSync('./dist')){
 }
 
 copyFile('./src/manifest.json', './dist/manifest.json');
+copyFile('./src/injected.css', './dist/injected.css');
 
 copyFile('./src/create-rule/create-rule.css', './dist/create-rule.css');
-copyFile('./src/create-rule/create-rule.js', './dist/create-rule.js');
 copyFile('./src/create-rule/create-rule.html', './dist/create-rule.html');
 
 copyFile('./src/management/management.css', './dist/management.css');
@@ -17,7 +17,6 @@ copyFile('./src/management/management.js', './dist/management.js');
 copyFile('./src/management/management.html', './dist/management.html');
 
 copyFile('./src/popup/popup.css', './dist/popup.css');
-copyFile('./src/popup/popup.js', './dist/popup.js');
 copyFile('./src/popup/popup.html', './dist/popup.html');
 
 copyFile('./src/devtools-sidebar/devtools_sidebar.css', './dist/devtools_sidebar.css');

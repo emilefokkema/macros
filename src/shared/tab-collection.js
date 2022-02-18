@@ -8,6 +8,17 @@ export class TabCollection{
     getAllFramesInTab(tabId){
         return new Promise((resolve) => chrome.webNavigation.getAllFrames({tabId}, resolve));
     }
+    getCurrentlyActiveTab(){
+        return new Promise((resolve, reject) => {
+            chrome.tabs.query({active: true, currentWindow: true}, tabs => {
+                if(tabs.length !== 1){
+                    reject(new Error(`looked for the single active tab, but found ${tabs.length} tabs`));
+                    return;
+                }
+                resolve(tabs[0]);
+            });
+        });
+    }
     getPopupTabId(){
         return new Promise((resolve, reject) => {
             chrome.tabs.query({lastFocusedWindow: true, active: true}, tabs => {

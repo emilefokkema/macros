@@ -28,11 +28,14 @@ class DocumentMutations extends EventSource{
 	addListener(listener){
 		this.listeners.push(listener);
 		if(!this.observing){
-			this.observer.observe(document, {
+			const specs = {
 				childList: true,
-				subtree: true,
-				attributeFilter: this.attributeNames
-			});
+				subtree: true
+			};
+			if(this.attributeNames && this.attributeNames.length > 0){
+				specs.attributeFilter = this.attributeNames;
+			}
+			this.observer.observe(document, specs);
 			this.observing = true;
 		}
 	}

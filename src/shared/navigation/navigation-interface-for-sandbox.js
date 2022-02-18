@@ -19,16 +19,21 @@ export class NavigationInterfaceForSandbox{
         navigationPropsRequestTarget,
         focusNavigationMessageTarget,
         popupTabIdMessageTarget,
+        navigationsForPopupMessageTarget,
         openTabMessageTarget){
             this.navigationDisappearedMessageSource = navigationDisappearedMessageSource;
             this.navigationExistsMessageTarget = navigationExistsMessageTarget;
             this.navigationPropsRequestTarget = navigationPropsRequestTarget;
             this.focusNavigationMessageTarget = focusNavigationMessageTarget;
             this.popupTabIdMessageTarget = popupTabIdMessageTarget;
+            this.navigationsForPopupMessageTarget = navigationsForPopupMessageTarget;
             this.openTabMessageTarget = openTabMessageTarget;
     }
     openTab(url){
         this.openTabMessageTarget.sendMessage(url);
+    }
+    getNavigationsForPopup(){
+        return this.navigationsForPopupMessageTarget.sendMessageAsync();
     }
     getPopupTabId(){
         return this.popupTabIdMessageTarget.sendMessageAsync();

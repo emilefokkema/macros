@@ -1,3 +1,8 @@
+:root{
+	--error-color: #f00;
+	--dirty-color: #00f;
+}
+
 .url{
 	color: blue;
 	text-decoration: underline;
@@ -51,4 +56,16 @@
 }
 .indent{
 	width: 5em;
+}
+.save-button.dirty{
+	border: 2px solid var(--dirty-color);
+	border-radius: 3px;
+	color: var(--dirty-color);
+}
+.save-button.dirty:disabled{
+	border-color: var(--error-color);
+	color: var(--error-color);
+}
+.error-message{
+	color: var(--error-color);
 }

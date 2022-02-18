@@ -19,6 +19,20 @@ describe('given the dependencies', () => {
         createSidebarPaneInElements = jest.fn();
         elementSelectionChanged = new Event();
         navigationInterface = new FakeNavigationInterface();
+        jest.spyOn(navigationInterface, 'getNavigationsForTabId').mockImplementation(() => Promise.resolve([
+            {
+                top: true,
+                frameId: 0,
+                url: 'http://a.b/c',
+                name: 'a'
+            },
+            {
+                top: false,
+                frameId: 1,
+                url: 'http://c.d/e',
+                name: 'b'
+            }
+        ]))
         messageBus = new FakeMessageBus();
     });
 
@@ -29,47 +43,22 @@ describe('given the dependencies', () => {
         });
 
         it('should have created a sidebar pane in elements', () => {
-            expect(createSidebarPaneInElements).toHaveBeenCalledWith('Macros', 'sandbox.html?page=devtools_sidebar.html');
+            expect(createSidebarPaneInElements).toHaveBeenCalledWith('Macros', 'sandbox.html?page=devtools_sidebar.html%3FtabId%3D1');
         });
 
         describe('and the element selection changes', () => {
-            let notification;
+            let evalSpy;
 
             beforeEach(async () => {
-                const notificationPromise = messageBus.channels['elementSelectionChangedForTab'].source.nextMessage();
+                evalSpy = spyOn(inspectedWindow, 'eval');
                 elementSelectionChanged.dispatch();
-                notification = await notificationPromise;
+                await new Promise((res) => setTimeout(res, 2));
             });
 
-            it('should emit that the element selection has changed for the tab', () => {
-                expect(notification).toEqual(tabId);
-            });
-
-            describe('and then the notification arrives that the element selection has changed for a navigation', () => {
-                let navigation;
-                let evalInvocation;
-
-                beforeEach(async () => {
-                    navigation = {
-                        id: 1,
-                        frameId: 1,
-                        url: 'http://a.b/c'
-                    };
-                    jest.spyOn(navigationInterface, 'getNavigation').mockImplementation(() => Promise.resolve(navigation));
-                    const evalPromise = whenReturns(inspectedWindow, 'eval');
-                    messageBus.channels['elementSelectionChangedForNavigation'].target.sendMessage(navigation.id);
-                    evalInvocation = await evalPromise;
-                });
-
-                it('should', () => {
-                    expect(evalInvocation.args).toEqual([
-                        'contentScript.elementSelectedInDevtools($0)',
-                        {
-                            useContentScriptContext: true,
-                            frameURL: navigation.url
-                        }
-                    ]);
-                });
+            it('should have called eval on the inspected window', () => {
+                expect(evalSpy).toHaveBeenCalledTimes(2);
+                expect(evalSpy).toHaveBeenCalledWith('contentScript.onElementSelectedInDevtools($0)', {useContentScriptContext: true});
+                expect(evalSpy).toHaveBeenCalledWith('contentScript.onElementSelectedInDevtools($0)', {useContentScriptContext: true, frameURL: 'http://c.d/e'});
             });
         });
     });

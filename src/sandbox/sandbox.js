@@ -12,7 +12,9 @@ import { TabMessagesTargetFactory } from '../shared/message-bus/tab-messages-tar
 import { TabCollection } from '../shared/tab-collection';
 import { NavigationInterface } from '../shared/navigation/navigation-interface';
 import { inspectedWindow } from '../shared/inspected-window/inspected-window';
+import { UnsavedChangesWarning } from '../shared/unsaved-changes-warning';
 
+const unsavedChangesWarning = new UnsavedChangesWarning();
 const tabMessagesTargetFactory = new TabMessagesTargetFactory();
 const runtimeMessagesTarget = new RuntimeMessagesTarget();
 const runtimeMessagesEventSource = new RuntimeMessagesEventSource();
@@ -30,6 +32,14 @@ const iFrame = document.getElementById('iframe');
 const sandboxInterface = SandboxInterface.createForParent(iFrame.contentWindow, new WindowMessagesEventSource(), messageBus);
 
 sandboxInterface.onDocumentTitleChanged(title => document.title = title);
+sandboxInterface.onWindowCloseRequested(() => window.close());
+sandboxInterface.onUnsavedChangesWarningEnabled(({enabled}) => {
+    if(enabled){
+        unsavedChangesWarning.enable();
+    }else{
+        unsavedChangesWarning.disable();
+    }
+});
 sandboxInterface.setNavigationDisappeared(navigationEventProvider.navigationDisappeared);
 sandboxInterface.onRequestNavigationExists(async (navigationId, sendResponse) => {
     sendResponse(await navigation.navigationExists(navigationId));
@@ -54,12 +64,17 @@ sandboxInterface.onRequestToFocusNavigation(async (navigationId) => {
     }
     _navigation.focus();
 });
+sandboxInterface.onRequestNavigationsForPopup(async (_, sendResponse) => {
+    sendResponse(await navigation.getNavigationsForPopup());
+});
 sandboxInterface.onRequestPopupTabId(async (_, sendResponse) => {
     sendResponse(await navigation.getPopupTabId());
 });
 sandboxInterface.onBodySizeChange(({width, height}, sendResponse) => {
     document.body.style.width = width + 'px';
     document.body.style.height = (height + 1) + 'px';
+    iFrame.style.width = width + 'px';
+    iFrame.style.height = (height + 1) + 'px';
     sendResponse();
 });
 sandboxInterface.onRequestToOpenTab((url) => {

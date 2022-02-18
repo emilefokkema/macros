@@ -39,12 +39,16 @@ class EditorCollection{
 		this.storage = storage;
 	}
 	save(){
-		this.storage.setItem('editors', this.editors.map(e => e.serialize()));
+		return this.storage.setItem('editors', this.editors.map(e => e.serialize()));
 	}
 	async prune(){
 		await this.ensureLoaded();
 		await Promise.all(this.editors.map(e => this.removeEditorIfNecessary(e)))
-		this.save();
+		await this.save();
+	}
+	async getNavigationsWithDraftRule(){
+		await this.ensureLoaded();
+		return this.editors.filter(e => e.ruleId === undefined && e.otherNavigationId !== undefined).map(e => e.otherNavigationId);
 	}
 	async removeEditorIfNecessary(editor){
 		if(await editor.exists()){
@@ -55,7 +59,7 @@ class EditorCollection{
 			return;
 		}
 		this.editors.splice(index, 1);
-		this.editedStatusChanged.dispatch({ruleId: editor.ruleId, edited: false});
+		this.editedStatusChanged.dispatch({ruleId: editor.ruleId, edited: false, otherNavigationId: editor.otherNavigationId});
 	}
 	async tryToAddEditor({ruleId, ownNavigationId, otherNavigationId}){
 		var recreated = await Editor.recreate(this.navigationInterface, {ruleId, ownNavigationId, otherNavigationId});
@@ -84,23 +88,44 @@ class EditorCollection{
 	addEditor(editor){
 		this.editors.push(editor);
 	}
-	async openEditor({navigationId: otherNavigationId, ruleId}){
+	async findEditor(otherNavigationId, ruleId){
 		await this.ensureLoaded();
 		if(ruleId !== undefined){
 			var editorForRule = this.editors.find(e => e.ruleId === ruleId);
 			if(editorForRule){
-				editorForRule.focus();
-				return true;
+				return editorForRule;
 			}
 		}else if(otherNavigationId !== undefined){
 			var editorForOtherNavigation = this.editors.find(e => e.otherNavigationId === otherNavigationId);
 			if(editorForOtherNavigation){
-				editorForOtherNavigation.focus();
-				return true;
+				return editorForOtherNavigation;
 			}
 		}
+		return null;
+	}
+	async createEditor(otherNavigationId, ruleId){
 		this.navigationInterface.openTab(editors.createEditorUrl(otherNavigationId, ruleId));
-		return false;
+		await this.editedStatusChanged.when(({ruleId: _ruleId, otherNavigationId: _otherNavigationId, edited}) => edited && (ruleId !== undefined && _ruleId === ruleId || _otherNavigationId === otherNavigationId));
+	}
+	async ensureEditorOpen(otherNavigationId, ruleId){
+		const existingEditor = await this.findEditor(otherNavigationId, ruleId);
+		if(existingEditor){
+			return;
+		}
+		await this.createEditor(otherNavigationId, ruleId);
+	}
+	async openEditor({navigationId: otherNavigationId, ruleId}){
+		const existingEditor = await this.findEditor(otherNavigationId, ruleId);
+		if(existingEditor){
+			existingEditor.focus();
+			return;
+		}
+		await this.createEditor(otherNavigationId, ruleId);
+	}
+	async getEditableStatus(ruleId, navigationId){
+		await this.ensureLoaded();
+		const editorForRule = this.editors.find(e => e.ruleId === ruleId);
+		return !editorForRule || editorForRule.otherNavigationId === navigationId;
 	}
 	async getEditedStatus(ruleId){
 		await this.ensureLoaded();
