@@ -5,9 +5,13 @@
 	"permissions":[
 		"activeTab",
 		"tabs",
-        "http://*/",
-		"https://*/",
-		"webNavigation"
+		"webNavigation",
+		"storage",
+		"scripting"
+	],
+	"host_permissions": [
+		"http://*/",
+		"https://*/"
 	],
 	"content_scripts": [
 		{
@@ -22,10 +26,6 @@
 		"48": "icon_48.png",
 	   "128": "icon_128.png" 
 	},
-	"background":{
-		"scripts":["background.js"],
-		"persistent":false
-	},
 	"sandbox": {
 		"pages": [
 			"create-rule.html",
@@ -34,11 +34,13 @@
 			"devtools_sidebar.html"
 		]
 	},
-	"browser_action":{
+	"background":{
+		"service_worker": "background.js"
+	},
+	"action":{
 		"default_title":"Macros",
 		"dafault_popup":"popup.html"
 	},
 	"devtools_page": "devtools.html",
-	"content_security_policy": "script-src 'self' 'unsafe-eval'; object-src 'self'",
-	"manifest_version":2
+	"manifest_version":3
 }

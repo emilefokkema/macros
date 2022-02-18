@@ -1,5 +1,5 @@
 export class URLProvider{
     getURL(fileName){
-        return chrome.extension.getURL(fileName);
+        return chrome.runtime.getURL(fileName);
     }
 }

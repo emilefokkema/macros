@@ -1,11 +1,11 @@
 var setPopup = function(url, tabId){
     if(tabId !== undefined){
-        chrome.browserAction.setPopup({
+        chrome.action.setPopup({
             tabId: tabId,
             popup: url
         });
     }else{
-        chrome.browserAction.setPopup({popup: url});
+        chrome.action.setPopup({popup: url});
     }
 };
 
