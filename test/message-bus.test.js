@@ -118,8 +118,10 @@ describe('given prerequisites', () => {
 
                         beforeEach(async () => {
                             messageFromBackground = {foo: 9};
-                            channelForBackground.target.sendMessage(messageFromBackground);
                             const tabMessagesTarget = tabMessagesTargetFactory.targets[tabId];
+                            const nextMessagePromise = tabMessagesTarget.nextMessage();
+                            channelForBackground.target.sendMessage(messageFromBackground);
+                            await nextMessagePromise;
                             const {args: [m]} = tabMessagesTarget.expectMessage();
                             messageToTab = m;
                         });

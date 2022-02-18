@@ -21,11 +21,11 @@ export class CrossBoundarySubscriptionCollection{
         }
         this.save();
     }
-    ensureLoaded(){
+    async ensureLoaded(){
         if(this.loaded){
             return;
         }
-        const serialized = this.storage.getItem('crossBoundarySubscriptions');
+        const serialized = await this.storage.getItem('crossBoundarySubscriptions');
         if(serialized){
             for(let type of Object.getOwnPropertyNames(serialized)){
                 const combinedTarget = CombinedMessagesTarget.create(serialized[type], this.runtimeMessagesTarget, this.tabMessagesTargetFactory);
@@ -35,8 +35,8 @@ export class CrossBoundarySubscriptionCollection{
         }
         this.loaded = true;
     }
-    save(){
-        this.storage.setItem('crossBoundarySubscriptions', this.serialize());
+    async save(){
+        await this.storage.setItem('crossBoundarySubscriptions', this.serialize());
     }
     serialize(){
         const result = {};
@@ -50,8 +50,8 @@ export class CrossBoundarySubscriptionCollection{
         }
         return result;
     }
-    addTargetForType(type, target){
-        this.ensureLoaded();
+    async addTargetForType(type, target){
+        await this.ensureLoaded();
         let combinedTarget = this.subscriptions[type];
         if(!combinedTarget){
             combinedTarget = new CombinedMessagesTarget([], this.runtimeMessagesTarget);
@@ -60,8 +60,8 @@ export class CrossBoundarySubscriptionCollection{
         }
         combinedTarget.addTarget(target);
     }
-    getTargetForType(type){
-        this.ensureLoaded();
+    async getTargetForType(type){
+        await this.ensureLoaded();
         return this.subscriptions[type] || new CombinedMessagesTarget([], this.runtimeMessagesTarget);
     }
 }

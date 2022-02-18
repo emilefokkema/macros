@@ -69,7 +69,7 @@ class EditorCollection{
 		if(this.loaded){
 			return;
 		}
-		var stringifiedEditors = this.storage.getItem('editors') || [];
+		var stringifiedEditors = await this.storage.getItem('editors') || [];
 		await Promise.all(stringifiedEditors.map(e => this.tryToAddEditor(e)));
 		this.loaded = true;
 	}
@@ -78,8 +78,8 @@ class EditorCollection{
 			return;
 		}
 		this.addEditor(new Editor(this.navigationInterface, ruleId, navigation, otherNavigationId));
-		this.save();
 		this.editedStatusChanged.dispatch({ruleId, otherNavigationId, edited: true});
+		this.save();
 	}
 	addEditor(editor){
 		this.editors.push(editor);

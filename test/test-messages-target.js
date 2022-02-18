@@ -14,6 +14,9 @@ export class TestMessagesTarget extends MessagesTarget{
         let [result] = this.messages.splice(index, 1);
         return result;
     }
+    nextMessage(){
+        return this.event.next();
+    }
     sendMessageAsync(...args){
         if(args.length === 0){
             args = [undefined];

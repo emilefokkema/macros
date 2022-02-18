@@ -2,10 +2,7 @@ import { Macros } from '../shared/macros-class';
 
 export function devtoolsFunction(inspectedWindow, createSidebarPaneInElements, elementSelectionChanged, navigationInterface, messageBus){
     var macros = new Macros(undefined, undefined, messageBus);
-
-    createSidebarPaneInElements('Macros', 'devtools_sidebar.html');
-
-    var tabId = inspectedWindow.tabId;
+    var tabId;
 
     async function notifyContentScriptForNavigation(navigation){
         try{
@@ -19,12 +16,19 @@ export function devtoolsFunction(inspectedWindow, createSidebarPaneInElements, e
         }
     }
 
-    macros.onElementSelectionChangedForNavigation(async (navigationId) => {
-        const navigation = await navigationInterface.getNavigation(navigationId);
-        notifyContentScriptForNavigation(navigation);
-    })
+    async function initialize(){
+        createSidebarPaneInElements('Macros', 'sandbox.html?page=devtools_sidebar.html');
+        tabId = await inspectedWindow.getTabId();
 
-    elementSelectionChanged.listen(async () => {
-        macros.notifyElementSelectionChangedOnTab(tabId);
-    });
+        macros.onElementSelectionChangedForNavigation(async (navigationId) => {
+            const navigation = await navigationInterface.getNavigation(navigationId);
+            notifyContentScriptForNavigation(navigation);
+        })
+    
+        elementSelectionChanged.listen(async () => {
+            macros.notifyElementSelectionChangedOnTab(tabId);
+        });
+    }
+
+    initialize();
 }

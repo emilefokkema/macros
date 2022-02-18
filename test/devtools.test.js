@@ -29,7 +29,7 @@ describe('given the dependencies', () => {
         });
 
         it('should have created a sidebar pane in elements', () => {
-            expect(createSidebarPaneInElements).toHaveBeenCalledWith('Macros', 'devtools_sidebar.html');
+            expect(createSidebarPaneInElements).toHaveBeenCalledWith('Macros', 'sandbox.html?page=devtools_sidebar.html');
         });
 
         describe('and the element selection changes', () => {

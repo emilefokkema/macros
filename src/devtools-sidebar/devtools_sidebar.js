@@ -69,7 +69,7 @@
 				}
 			},
 			initialize: async function(){
-				var tabId = macros.inspectedWindow.tabId;
+				var tabId = await macros.inspectedWindow.getTabId();
 				macros.onNotifyRulesForNavigation(notification => {
 					if(notification.tabId !== tabId){
 						return;

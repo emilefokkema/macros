@@ -27,6 +27,8 @@ copyFile('./src/devtools-sidebar/devtools_sidebar.html', './dist/devtools_sideba
 copyFile('./src/shared/shared.css', './dist/shared.css');
 copyFile('./src/devtools.html', './dist/devtools.html');
 
+copyFile('./src/sandbox/sandbox.html', './dist/sandbox.html');
+copyFile('./src/sandbox/sandbox.css', './dist/sandbox.css');
 copyFile('./src/icon_128.png', './dist/icon_128.png');
 copyFile('./src/icon_48.png', './dist/icon_48.png');
 copyFile('./src/icon_16.png', './dist/icon_16.png');

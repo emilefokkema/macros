@@ -14,15 +14,16 @@ class ChannelMessageTargetForBackground extends MessagesTarget{
         this.messageType = new MessageType(type);
         this.subscriptionCollection = subscriptionCollection;
     }
-    getTarget(){
-        const target = this.subscriptionCollection.getTargetForType(this.type);
+    async getTarget(){
+        const target = await this.subscriptionCollection.getTargetForType(this.type);
         return target.ofType(this.messageType);
     }
     sendMessage(msg){
-        this.getTarget().sendMessage(msg);
+        this.getTarget().then(target => target.sendMessage(msg))
     }
-    sendMessageAsync(msg){
-        return this.getTarget().sendMessageAsync(msg);
+    async sendMessageAsync(msg){
+        const target = await this.getTarget();
+        return target.sendMessageAsync(msg);
     }
 }
 
@@ -134,8 +135,8 @@ export class MessageBus{
                 });
             tabRemoved.listen(() => subscriptionCollection.pruneSubscriptions());
             runtimeMessagesSource.ofType(targetRequestType).onMessage(({type}, sendResponse) => {
-                const target = subscriptionCollection.getTargetForType(type);
-                sendResponse(target.serialize());
+                subscriptionCollection.getTargetForType(type).then(target => sendResponse(target.serialize()));
+                return true;
             });
             return new MessageBusForBackground(subscriptionCollection, navigationEventProvider, runtimeMessagesSource);
     }

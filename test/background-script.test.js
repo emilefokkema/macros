@@ -103,7 +103,7 @@ describe('given storage, navigation etc.', () => {
                             });
 
                             it('should have deleted buttons from storage', () => {
-                                expect(storage.getItem('buttons')).toEqual([]);
+                                expect(storage.items['buttons']).toEqual([]);
                             });
                         });
                     });
@@ -136,7 +136,7 @@ describe('given storage, navigation etc.', () => {
                         });
 
                         it('should have removed the button from the storage', () => {
-                            expect(storage.getItem('buttons')).toEqual([]);
+                            expect(storage.items['buttons']).toEqual([]);
                         });
                     });
 
@@ -161,7 +161,7 @@ describe('given storage, navigation etc.', () => {
                         });
 
                         it('should have updated the button in the storage', () => {
-                            expect(storage.getItem('buttons')).toEqual([
+                            expect(storage.items['buttons']).toEqual([
                                 {
                                     tabId: tabId,
                                     notifications: [
@@ -226,7 +226,7 @@ describe('given storage, navigation etc.', () => {
                             });
     
                             it('should have updated the list of editors in the storage', () => {
-                                expect(storage.getItem('editors')).toEqual([]);
+                                expect(storage.items['editors']).toEqual([]);
                             });
                         });
                     });
@@ -275,7 +275,7 @@ describe('given storage, navigation etc.', () => {
                             });
 
                             it('should have deleted the editor from storage', () => {
-                                expect(storage.getItem('editors')).toEqual([]);
+                                expect(storage.items['editors']).toEqual([]);
                             });
 
                             it('should have emitted a notification that the rule is no longer being edited', () => {
@@ -316,7 +316,7 @@ describe('given storage, navigation etc.', () => {
                     });
 
                     it('should have saved the notification', () => {
-                        expect(storage.getItem('buttons')).toEqual([
+                        expect(storage.items['buttons']).toEqual([
                             {
                                 tabId: tabId,
                                 notifications: [
@@ -341,7 +341,7 @@ describe('given storage, navigation etc.', () => {
             });
 
             it('the popup should have been set', () => {
-                expect(setPopup.mock.calls[0]).toEqual(['popup.html']);
+                expect(setPopup.mock.calls[0]).toEqual(['sandbox.html?page=popup.html']);
             });
 
             it('should return the rule', async () => {
@@ -358,7 +358,7 @@ describe('given storage, navigation etc.', () => {
                 const ruleDeletedMessagePromise = messageBus.channels['notifyRuleDeleted'].source.nextMessage();
                 await messageBus.channels['requestDeleteRule'].target.sendMessageAsync(existingRule1.id);
                 const ruleDeletedMessage = await ruleDeletedMessagePromise;
-                expect(storage.getItem('rules')).toEqual([existingRule2]);
+                expect(storage.items['rules']).toEqual([existingRule2]);
                 expect(ruleDeletedMessage).toEqual({ruleId: existingRule1.id});
             });
 
@@ -376,7 +376,7 @@ describe('given storage, navigation etc.', () => {
                 });
 
                 it('should have opened a tab with the right url', () => {
-                    expect(spy).toHaveBeenCalledWith(`create-rule.html?ruleId=${existingRule1.id}`);
+                    expect(spy).toHaveBeenCalledWith(`sandbox.html?page=create-rule.html%3FruleId%3D${existingRule1.id}`);
                 });
 
                 describe('and then the editor is loaded', () => {
@@ -390,7 +390,7 @@ describe('given storage, navigation etc.', () => {
                     });
 
                     it('should have saved the new editor', () => {
-                        expect(storage.getItem('editors')).toEqual([
+                        expect(storage.items['editors']).toEqual([
                             {
                                 ruleId: existingRule1.id,
                                 ownNavigationId: editorNavigationId,
@@ -433,7 +433,7 @@ describe('given storage, navigation etc.', () => {
                 });
         
                 it('should have updated the storage', () => {
-                    expect(storage.getItem('rules')).toEqual([
+                    expect(storage.items['rules']).toEqual([
                         existingRule1,
                         existingRule2,
                         {
@@ -465,7 +465,7 @@ describe('given storage, navigation etc.', () => {
                 });
 
                 it('should have updated the storage', () => {
-                    expect(storage.getItem('rules')).toEqual([
+                    expect(storage.items['rules']).toEqual([
                         existingRule2,
                         {
                             id: existingRule1.id,
@@ -500,7 +500,7 @@ describe('given storage, navigation etc.', () => {
             });
 
             it('should have saved the new rule', () => {
-                expect(storage.getItem('rules')).toEqual([
+                expect(storage.items['rules']).toEqual([
                     {
                         urlPattern,
                         id: 1

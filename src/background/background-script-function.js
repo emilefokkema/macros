@@ -14,14 +14,15 @@ export function backgroundScript(
         var editorCollection = new EditorCollection(navigationInterface, storage);
         var buttons = new ButtonCollection(navigationInterface, storage, buttonInteraction);
 
-        setPopup('popup.html');
+        setPopup('sandbox.html?page=popup.html');
 
         navigationInterface.onDisappeared(() => {
             editorCollection.prune();
             buttons.prune();
         });
         macros.onRequestRulesForUrl((url, sendResponse) => {
-            sendResponse(rules.getRulesForUrl(url));
+            rules.getRulesForUrl(url).then(sendResponse);
+            return true;
         });
         macros.onNotifyRulesForNavigation(notification => {
             buttons.addNotification(notification);
@@ -37,17 +38,20 @@ export function backgroundScript(
             return true;
         });
         macros.onGetRuleByIdRequest((ruleId, sendResponse) => {
-            sendResponse(rules.getRule(ruleId));
+            rules.getRule(ruleId).then(sendResponse);
+            return true;
         });
         macros.onGetAllRulesRequest((_, sendResponse) => {
-            sendResponse(rules.getAll());
+            rules.getAll().then(sendResponse);
+            return true;
         });
         macros.onSaveRuleRequest((rule, sendResponse) => {
-            sendResponse(rules.saveRule(rule));
+            rules.saveRule(rule).then(sendResponse);
+            return true;
         });
         macros.onDeleteRuleRequest((ruleId, sendResponse) => {
-            rules.deleteRule(ruleId);
-            sendResponse({});
+            rules.deleteRule(ruleId).then(sendResponse);
+            return true;
         });
         macros.onEditorLoaded(({ruleId, otherNavigationId}, navigation) => {
             editorCollection.addOpenedEditor(ruleId, navigation, otherNavigationId);

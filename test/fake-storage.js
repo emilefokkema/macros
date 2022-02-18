@@ -2,10 +2,10 @@ export class FakeStorage{
     constructor(){
         this.items = {};
     }
-    getItem(key){
+    async getItem(key){
         return this.items[key];
     }
-    setItem(key, value){
+    async setItem(key, value){
         this.items[key] = value;
     }
 }
