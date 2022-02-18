@@ -1,14 +1,14 @@
 const path = require('path');
 
 module.exports = {
-	entry: './src/sandbox/macros-main.js',
+	entry: './src/devtools-sidebar/devtools_sidebar.js',
 	resolve: {
 	  extensions: [ '.js' ]
 	},
 	output: {
-	  filename: 'macros.js',
+	  filename: 'devtools_sidebar.js',
 	  path: path.resolve(__dirname, 'dist'),
-	  library: 'macros',
+	  library: 'devtools-sidebar',
 	  libraryTarget: 'umd',
 	  globalObject: 'this'
 	}

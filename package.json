@@ -4,10 +4,8 @@
   "description": "define modifications to a page",
   "main": "background.js",
   "scripts": {
-    "build": "node ./copy-files.js && npm run build:macros && npm run build:sandbox-js && npm run build:background && npm run build:content-script && npm run build:devtools && npm run build:popup && npm run build:create-rule",
-    "build-dev": "node ./copy-files.js -d && npm run build:macros-dev && npm run build:sandbox-js-dev && npm run build:background-dev && npm run build:content-script-dev && npm run build:devtools-dev && npm run build:popup-dev && npm run build:create-rule-dev",
-    "build:macros": "npx webpack --config ./webpack.config.macros.js",
-    "build:macros-dev": "npx webpack --config ./webpack.config.macros.js  --mode development --devtool cheap-source-map",
+    "build": "node ./copy-files.js && npm run build:sandbox-js && npm run build:background && npm run build:content-script && npm run build:devtools && npm run build:popup && npm run build:create-rule && npm run build:devtools-sidebar && npm run build:management",
+    "build-dev": "node ./copy-files.js -d && npm run build:sandbox-js-dev && npm run build:background-dev && npm run build:content-script-dev && npm run build:devtools-dev && npm run build:popup-dev && npm run build:create-rule-dev && npm run build:devtools-sidebar-dev && npm run build:management-dev",
     "build:background": "npx webpack --config ./webpack.config.background.js",
     "build:background-dev": "npx webpack --config ./webpack.config.background.js  --mode development --devtool cheap-source-map",
     "build:content-script": "npx webpack --config ./webpack.config.content-script.js",
@@ -20,6 +18,10 @@
     "build:popup-dev": "npx webpack --config ./webpack.config.popup.js --mode development --devtool cheap-source-map",
     "build:create-rule": "npx webpack --config ./webpack.config.create-rule.js",
     "build:create-rule-dev": "npx webpack --config ./webpack.config.create-rule.js --mode development --devtool cheap-source-map",
+    "build:devtools-sidebar": "npx webpack --config ./webpack.config.devtools_sidebar.js",
+    "build:devtools-sidebar-dev": "npx webpack --config ./webpack.config.devtools_sidebar.js --mode development --devtool cheap-source-map",
+    "build:management": "npx webpack --config ./webpack.config.management.js",
+    "build:management-dev": "npx webpack --config ./webpack.config.management.js --mode development --devtool cheap-source-map",
     "test": "jest"
   },
   "repository": {
