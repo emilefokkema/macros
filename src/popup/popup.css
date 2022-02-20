@@ -1,13 +1,28 @@
+:root{
+	font-size: 16px;
+}
 body{
 	margin:0px;
 	padding: 0px;
-	font-size: 12px;
 }
 .row{
 	width:180px;
+	position: relative;
 }
 .row-part.left{
-	width: 150px;
+	width: 125px;
+}
+.rule-button-row{
+	text-align: right;
+}
+.rule-message{
+	font-size: .6rem;
+	position: absolute;
+	bottom: var(--row-padding);
+	color: #666;
+}
+.rule-button-row .button{
+	display: inline-block;
 }
 .navigation-selector{
 	width:200px;

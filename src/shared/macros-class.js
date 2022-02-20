@@ -10,6 +10,7 @@ class Macros{
 		this.page = pageInterface;
 		this.rulesForUrlRequest = messageBus.createChannel('requestRulesForUrl');
 		this.rulesForDownloadRequest = messageBus.createChannel('requestRulesForDownload');
+		this.urlWithEncodedRuleRequest = messageBus.createChannel('urlWithEncodedRuleRequest');
 		this.rulesJsonUploadRequest = messageBus.createChannel('uploadRulesJson');
 		this.rulesForNavigationNotification = messageBus.createChannel('notifyRulesForNavigation');
 		this.executeRuleMessage = messageBus.createChannel('executeRule');
@@ -64,6 +65,12 @@ class Macros{
 	}
 	onGetRulesForDownloadRequest(listener, cancellationToken){
 		return this.rulesForDownloadRequest.source.onMessage(listener, cancellationToken);
+	}
+	getUrlWithEncodedRule(ruleId, navigationId){
+		return this.urlWithEncodedRuleRequest.target.sendMessageAsync({ruleId, navigationId})
+	}
+	onUrlWithEncodedRuleRequest(listener, cancellationToken){
+		return this.urlWithEncodedRuleRequest.source.onMessage(listener, cancellationToken);
 	}
 	uploadRulesJson(jsonString){
 		return this.rulesJsonUploadRequest.target.sendMessageAsync({jsonString});

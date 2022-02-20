@@ -1,5 +1,6 @@
 import { Event } from '../shared/events';
 import { validateArrayOfRules } from './rule-validation';
+import { ruleDefinitions } from '../shared/rule-definitions';
 
 function urlMatchesPattern(url, pattern){
 	var regexPattern = pattern.replace(/[.+?^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '[\\S]*?');
@@ -115,6 +116,15 @@ class RuleCollection{
 		}
 		await this.updateRule(rule);
 		return rule.id;
+	}
+	async saveNewRuleIfNoEqualExists(rule){
+		await this.ensureLoaded();
+		for(let existingRule of this.rules){
+			if(ruleDefinitions.rulesAreEqual(existingRule, rule, doLog)){
+				return;
+			}
+		}
+		return this.saveNewRule(rule);
 	}
 	async saveNewRule(rule){
 		rule.id = ++this.latestRuleId;
