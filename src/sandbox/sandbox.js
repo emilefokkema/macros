@@ -13,7 +13,9 @@ import { TabCollection } from '../shared/tab-collection';
 import { NavigationInterface } from '../shared/navigation/navigation-interface';
 import { inspectedWindow } from '../shared/inspected-window/inspected-window';
 import { UnsavedChangesWarning } from '../shared/unsaved-changes-warning';
+import { Download } from '../shared/download';
 
+const download = new Download();
 const unsavedChangesWarning = new UnsavedChangesWarning();
 const tabMessagesTargetFactory = new TabMessagesTargetFactory();
 const runtimeMessagesTarget = new RuntimeMessagesTarget();
@@ -82,6 +84,13 @@ sandboxInterface.onRequestToOpenTab((url) => {
 });
 sandboxInterface.onRequestInspectedWindowTabId(async (_, sendResponse) => {
     sendResponse(await inspectedWindow.getTabId());
+});
+sandboxInterface.onRequestToDownloadJson(async ({object, fileName}) => {
+    const json = JSON.stringify(object);
+    const blob = new Blob([json], {type: 'application/json'});
+    const objectUrl = URL.createObjectURL(blob);
+    await download.download({filename: fileName, url: objectUrl, saveAs: true});
+    URL.revokeObjectURL(objectUrl);
 });
 
 const urlProvider = new URLProvider();

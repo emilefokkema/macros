@@ -1,4 +1,5 @@
 import { Event } from '../shared/events';
+import { validateArrayOfRules } from './rule-validation';
 
 function urlMatchesPattern(url, pattern){
 	var regexPattern = pattern.replace(/[.+?^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '[\\S]*?');
@@ -142,6 +143,39 @@ class RuleCollection{
 	async getRule(ruleId){
 		await this.ensureLoaded();
 		return this.rules.find(r => r.id === ruleId);
+	}
+	async getRulesForDownload(ruleIds){
+		await this.ensureLoaded();
+		const result = [];
+		const rules = this.rules.filter(r => ruleIds.includes(r.id));
+		for(let rule of rules){
+			const {id, ...rest} = rule;
+			result.push(rest);
+		}
+		return result;
+	}
+	async uploadRulesJson(jsonString){
+		let content;
+		try{
+			content = JSON.parse(jsonString);
+		}catch(e){
+			return {error: e.toString()};
+		}
+		const validationError = validateArrayOfRules(content);
+		if(validationError){
+			return {error: validationError};
+		}
+		await this.ensureLoaded();
+		const newRuleIds = [];
+		for(let ruleToAdd of content){
+			const ruleId = ++this.latestRuleId;
+			ruleToAdd.id = ruleId;
+			this.rules.push(ruleToAdd);
+			newRuleIds.push(ruleId);
+		}
+		await this.save();
+		this.ruleAdded.dispatch();
+		return {ruleIds: newRuleIds}
 	}
 	async getRulesForUrl(url){
 		await this.ensureLoaded();

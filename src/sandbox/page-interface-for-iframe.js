@@ -1,11 +1,17 @@
 import { WindowInputWatcher } from '../shared/window-input-watcher';
 
 export class PageInterfaceForIframe{
-    constructor(documentTitleMessageTarget, historyStateMessageTarget, closeWindowMessageTarget, unsavedChangesWarningEnabledMessageTarget){
+    constructor(
+            documentTitleMessageTarget,
+            historyStateMessageTarget,
+            closeWindowMessageTarget,
+            unsavedChangesWarningEnabledMessageTarget,
+            downloadJsonMessageTarget){
         this.documentTitleMessageTarget = documentTitleMessageTarget;
         this.historyStateMessageTarget = historyStateMessageTarget;
         this.closeWindowMessageTarget = closeWindowMessageTarget;
         this.unsavedChangesWarningEnabledMessageTarget = unsavedChangesWarningEnabledMessageTarget;
+        this.downloadJsonMessageTarget = downloadJsonMessageTarget;
         this.unsavedChangesWarningEnabled = false;
         this.windowInputWatcher = new WindowInputWatcher();
         this.windowInputWatcher.watch();
@@ -15,6 +21,9 @@ export class PageInterfaceForIframe{
     }
     close(){
         this.closeWindowMessageTarget.sendMessage({});
+    }
+    downloadJson(object, fileName){
+        this.downloadJsonMessageTarget.sendMessage({object, fileName});
     }
     setUnsavedChangedWarningEnabled(enabled){
         if(enabled === this.unsavedChangesWarningEnabled){

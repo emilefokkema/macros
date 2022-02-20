@@ -26,6 +26,14 @@ export function backgroundScript(
             rules.getRulesForUrl(url).then(sendResponse);
             return true;
         });
+        macros.onGetRulesForDownloadRequest(({ruleIds}, sendResponse) => {
+            rules.getRulesForDownload(ruleIds).then(sendResponse);
+            return true;
+        });
+        macros.onUploadRulesJson(({jsonString}, sendResponse) => {
+            rules.uploadRulesJson(jsonString).then(sendResponse);
+            return true;
+        });
         macros.onNotifyRulesForNavigation(notification => {
             buttons.addNotification(notification);
         });

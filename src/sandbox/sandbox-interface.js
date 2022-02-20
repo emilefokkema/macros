@@ -24,6 +24,7 @@ class BaseSandboxInterface{
         this.inspectedWindowTabIdMessage = windowMessageBus.createChannel(new MessageType('inspectedWindowTabId'))
         this.closeWindowMessage = windowMessageBus.createChannel(new MessageType('closeWindow'));
         this.unsavedChangesWarningEnabledMessage = windowMessageBus.createChannel(new MessageType('unsavedChangesWarningEnabled'));
+        this.downloadJsonMessage = windowMessageBus.createChannel(new MessageType('downloadJson'))
         this.windowMessageBus = windowMessageBus;
     }
 }
@@ -50,6 +51,9 @@ class SandboxInterfaceForParent extends BaseSandboxInterface{
         navigationDisappearedEventSource.listen(() => {
             this.navigationDisappearedMessage.target.sendMessage();
         });
+    }
+    onRequestToDownloadJson(listener, cancellationToken){
+        return this.downloadJsonMessage.source.onMessage(listener, cancellationToken);
     }
     onRequestNavigationExists(listener, cancellationToken){
         return this.navigationExistsRequest.source.onMessage(listener, cancellationToken);
@@ -125,7 +129,13 @@ class SandboxInterfaceForIframe extends BaseSandboxInterface{
         const historyStateMessageTarget = this.pushHistoryStateMessage.target;
         const closeWindowMessageTarget = this.closeWindowMessage.target;
         const unsavedChangesWarningEnabledMessageTarget = this.unsavedChangesWarningEnabledMessage.target;
-        return new PageInterfaceForIframe(documentTitleMessageTarget, historyStateMessageTarget, closeWindowMessageTarget, unsavedChangesWarningEnabledMessageTarget);
+        const downloadJsonMessageTarget = this.downloadJsonMessage.target;
+        return new PageInterfaceForIframe(
+            documentTitleMessageTarget,
+            historyStateMessageTarget,
+            closeWindowMessageTarget,
+            unsavedChangesWarningEnabledMessageTarget,
+            downloadJsonMessageTarget);
     }
     getInspectedWindow(){
         const inspectedWindowTabIdMessageTarget = this.inspectedWindowTabIdMessage.target;

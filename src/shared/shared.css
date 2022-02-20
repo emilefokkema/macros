@@ -21,6 +21,9 @@
 	cursor: pointer;
 	padding: var(--button-padding);
 }
+.button.active{
+	color: #00f;
+}
 .run-button{
 	color: #0a0;
 }

@@ -7,8 +7,13 @@
 	<link rel="stylesheet" type="text/css" href="management.css" />
 </head>
 <body>
+	<template id="ruleSelectorTemplate">
+		<div class="select-checkbox row-part">
+			<input type="checkbox" v-model="selected" />
+		</div>
+	</template>
 	<template id="ruleTemplate">
-		<div class="row">
+		<div class="rule row">
 			<div class="row-part rule-data">
 				<div class="rule-name">{{rule.name}}</div>
 				<div class="url-pattern">{{rule.urlPattern}}</div>
@@ -20,11 +25,42 @@
 				<div class="button row-part" v-on:click="onDeleteClicked()" v-if="deletable">
 					<span class="fa fa-trash"></span>
 				</div>
+				<rule-selector v-bind:rule-id="rule.id"></rule-selector>
 			</div>
 		</div>
 	</template>
-	<div id="app">
+	<template id="resultPanelTemplate">
+		<div class="result-panel" v-bind:class="{'error-panel': isError, 'success-panel': isSuccess}">
+			<div class="panel"><span>{{message}}</span><span v-on:click="closeClicked()" class="button fa fa-times"></span></div>
+		</div>
+	</template>
+	<template id="actionPanelTemplate">
+		<div class="action-panel">
+			<div class="panel">
+				<span v-if="selectionExists" class="button fa fa-download" v-on:click="download()"></span><span v-on:click="onUploadClicked()" class="button fa fa-upload"></span>
+			</div>
+			<input class="file-input" ref="fileInput" type="file" accept=".json" v-on:change="onFileInputChange()" />
+		</div>
+	</template>
+	<template id="selectionActionsPanel">
+		<div class="selection-actions" v-bind:class="{'shown': selectionExists, 'hidden': hidden}">
+			<div class="panel">
+				<span class="button fa fa-check-square" v-on:click="selectAll()"></span>
+				<span class="button far fa-square" v-on:click="selectNone()"></span>
+			</div>
+		</div>
+	</template>
+	<div id="app" v-bind:class="{'with-selection': selectionExists}">
+		<selection-actions v-bind:rule-ids="ruleIds"></selection-actions>
+		<action-panel
+			v-on:file-upload-error="onFileUploadError($event)"
+			v-on:file-upload-success="onFileUploadSuccess($event)"></action-panel>
 		<rule v-for="rule of rules" v-bind:rule="rule" v-on:deleteruleclicked="onDeleteRuleClicked(rule)" :key="rule.id"></rule>
+		<result-panel 
+			v-if="resultMessage"
+			v-bind:error-message="fileUploadError"
+			v-bind:success-message="fileUploadSuccessMessage"
+			v-on:close="onResultMessageCloseClicked()"></result-panel>
 	</div>
 <script src="management.js">
 	

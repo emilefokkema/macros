@@ -9,6 +9,8 @@ class Macros{
 		this.ruleDefinitions = ruleDefinitions;
 		this.page = pageInterface;
 		this.rulesForUrlRequest = messageBus.createChannel('requestRulesForUrl');
+		this.rulesForDownloadRequest = messageBus.createChannel('requestRulesForDownload');
+		this.rulesJsonUploadRequest = messageBus.createChannel('uploadRulesJson');
 		this.rulesForNavigationNotification = messageBus.createChannel('notifyRulesForNavigation');
 		this.executeRuleMessage = messageBus.createChannel('executeRule');
 		this.openEditorRequest = messageBus.createChannel('openEditor');
@@ -56,6 +58,18 @@ class Macros{
 	}
 	getRuleById(ruleId){
 		return this.ruleByIdRequest.target.sendMessageAsync(ruleId);
+	}
+	getRulesForDownload(ruleIds){
+		return this.rulesForDownloadRequest.target.sendMessageAsync({ruleIds});
+	}
+	onGetRulesForDownloadRequest(listener, cancellationToken){
+		return this.rulesForDownloadRequest.source.onMessage(listener, cancellationToken);
+	}
+	uploadRulesJson(jsonString){
+		return this.rulesJsonUploadRequest.target.sendMessageAsync({jsonString});
+	}
+	onUploadRulesJson(listener, cancellationToken){
+		return this.rulesJsonUploadRequest.source.onMessage(listener, cancellationToken);
 	}
 	getAllRules(){
 		return this.allRulesRequest.target.sendMessageAsync({});
