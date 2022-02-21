@@ -120,7 +120,7 @@ class RuleCollection{
 	async saveNewRuleIfNoEqualExists(rule){
 		await this.ensureLoaded();
 		for(let existingRule of this.rules){
-			if(ruleDefinitions.rulesAreEqual(existingRule, rule, doLog)){
+			if(ruleDefinitions.rulesAreEqual(existingRule, rule)){
 				return;
 			}
 		}
