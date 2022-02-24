@@ -24,6 +24,7 @@ class BaseSandboxInterface{
         this.inspectedWindowTabIdMessage = windowMessageBus.createChannel(new MessageType('inspectedWindowTabId'))
         this.closeWindowMessage = windowMessageBus.createChannel(new MessageType('closeWindow'));
         this.unsavedChangesWarningEnabledMessage = windowMessageBus.createChannel(new MessageType('unsavedChangesWarningEnabled'));
+        this.copyToClipboardMessage = windowMessageBus.createChannel(new MessageType('copyToClipboard'));
         this.downloadJsonMessage = windowMessageBus.createChannel(new MessageType('downloadJson'))
         this.windowMessageBus = windowMessageBus;
     }
@@ -46,6 +47,9 @@ class SandboxInterfaceForParent extends BaseSandboxInterface{
     }
     onUnsavedChangesWarningEnabled(listener, cancellationToken){
         return this.unsavedChangesWarningEnabledMessage.source.onMessage(listener, cancellationToken);
+    }
+    onCopyToClipboardMessage(listener, cancellationToken){
+        return this.copyToClipboardMessage.source.onMessage(listener, cancellationToken);
     }
     setNavigationDisappeared(navigationDisappearedEventSource){
         navigationDisappearedEventSource.listen(() => {
@@ -130,12 +134,14 @@ class SandboxInterfaceForIframe extends BaseSandboxInterface{
         const closeWindowMessageTarget = this.closeWindowMessage.target;
         const unsavedChangesWarningEnabledMessageTarget = this.unsavedChangesWarningEnabledMessage.target;
         const downloadJsonMessageTarget = this.downloadJsonMessage.target;
+        const copyToClipboardMessageTarget = this.copyToClipboardMessage.target;
         return new PageInterfaceForIframe(
             documentTitleMessageTarget,
             historyStateMessageTarget,
             closeWindowMessageTarget,
             unsavedChangesWarningEnabledMessageTarget,
-            downloadJsonMessageTarget);
+            downloadJsonMessageTarget,
+            copyToClipboardMessageTarget);
     }
     getInspectedWindow(){
         const inspectedWindowTabIdMessageTarget = this.inspectedWindowTabIdMessage.target;

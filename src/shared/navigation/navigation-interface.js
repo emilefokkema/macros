@@ -130,6 +130,9 @@ export class NavigationInterface{
     onDisappeared(listener, cancellationToken){
         return this.navigationEventProvider.navigationDisappeared.listen(listener, cancellationToken);
     }
+    onCreated(listener, cancellationToken){
+        return this.navigationEventProvider.navigationCreated.listen(listener, cancellationToken);
+    }
     whenDisappeared(navigationId){
         return this.navigationEventProvider.navigationDisappeared.mapAsync(async () => [await this.navigationExists(navigationId)]).filter(e => !e).next();
     }

@@ -6,12 +6,14 @@ export class PageInterfaceForIframe{
             historyStateMessageTarget,
             closeWindowMessageTarget,
             unsavedChangesWarningEnabledMessageTarget,
-            downloadJsonMessageTarget){
+            downloadJsonMessageTarget,
+            copyToClipboardMessageTarget){
         this.documentTitleMessageTarget = documentTitleMessageTarget;
         this.historyStateMessageTarget = historyStateMessageTarget;
         this.closeWindowMessageTarget = closeWindowMessageTarget;
         this.unsavedChangesWarningEnabledMessageTarget = unsavedChangesWarningEnabledMessageTarget;
         this.downloadJsonMessageTarget = downloadJsonMessageTarget;
+        this.copyToClipboardMessageTarget = copyToClipboardMessageTarget;
         this.unsavedChangesWarningEnabled = false;
         this.windowInputWatcher = new WindowInputWatcher();
         this.windowInputWatcher.watch();
@@ -24,6 +26,9 @@ export class PageInterfaceForIframe{
     }
     downloadJson(object, fileName){
         this.downloadJsonMessageTarget.sendMessage({object, fileName});
+    }
+    copyToClipboard(text){
+        return this.copyToClipboardMessageTarget.sendMessageAsync({text});
     }
     setUnsavedChangedWarningEnabled(enabled){
         if(enabled === this.unsavedChangesWarningEnabled){
