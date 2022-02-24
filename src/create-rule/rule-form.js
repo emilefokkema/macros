@@ -158,6 +158,12 @@ export class RuleForm{
         this.valid = false;
         this.errors = undefined;
     }
+    get id(){
+        return this._id;
+    }
+    set id(value){
+        this._id = value;
+    }
     get name(){
         return this._name;
     }

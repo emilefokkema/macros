@@ -127,6 +127,7 @@ new Vue({
 			if(this.isNew){
 				this.isNew = false;
 				this.ruleId = ruleId;
+				this.form.id = ruleId;
 				this.setTitle();
 				var currentUrl = macros.page.getLocation();
 				var newUrl = macros.editors.replaceParamsInHref(currentUrl, this.otherNavigationId, this.ruleId);
