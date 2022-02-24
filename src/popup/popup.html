@@ -14,22 +14,32 @@
 			v-on:drop="onDrop($event)"
 			v-bind:class="{'drop-zone': isDraggedOver, 'dragged-over': isDraggedOver}">
 			<div class="rule-view-inner">
-				<div class="row-part left">{{name}}<span v-if="isDraft" class="draft-rule-notification">draft</span></div>
+				<div class="row-part left">
+					<div>{{name}}<span v-if="isDraft" class="draft-rule-notification">draft</span></div>
+					<div class="rule-message" v-if="message">{{message}}</div>
+				</div>
 				<div class="row-part">
-					<div class="button" v-on:click="onExecuteClicked()" v-if="canExecute && !isExecuting && !hasExecuted">
-						<span class="run-button fa fa-play"></span>
+					<div class="rule-button-row">
+						<div class="button" v-on:click="onExecuteClicked()" v-if="canExecute && !isExecuting && !hasExecuted">
+							<span class="run-button fa fa-play"></span>
+						</div>
+						<div class="button" v-if="!canExecute && !isExecuting && !hasExecuted">
+							<span class="run-button-disabled fa fa-play"></span>
+						</div>
+						<div class="button" v-if="hasExecuted">
+							<span class="run-button fa fa-check"></span>
+						</div>
+						<div class="button" v-if="isExecuting">
+							<span class="fa fa-circle-notch fa-spin"></span>
+						</div>
 					</div>
-					<div class="padding-5" v-if="!canExecute && !isExecuting && !hasExecuted">
-						<span class="run-button-disabled fa fa-play"></span>
-					</div>
-					<div class="padding-5" v-if="hasExecuted">
-						<span class="run-button fa fa-check"></span>
-					</div>
-					<div class="button" v-if="isExecuting">
-						<span class="fa fa-circle-notch fa-spin"></span>
-					</div>
-					<div class="button" v-on:click="onEditClicked()" v-if="editable">
-						<span class="fa fa-edit"></span>
+					<div class="rule-button-row">
+						<div class="button" v-on:click="onShareClicked()" v-if="shareable">
+							<span class="fa fa-link"></span>
+						</div>
+						<div class="button" v-on:click="onEditClicked()" v-if="editable">
+							<span class="fa fa-edit"></span>
+						</div>
 					</div>
 				</div>
 			</div>
@@ -41,10 +51,13 @@
 			v-bind:can-execute="canExecute"
 			v-bind:is-executing="isExecuting"
 			v-bind:has-executed="hasExecuted"
+			v-bind:shareable="true"
 			v-bind:editable="editable"
+			v-bind:message="temporaryMessage"
 			v-on:suggestion-dropped="onDrop()"
 			v-on:execute-clicked="onExecuteClicked()"
-			v-on:edit-clicked="onEditClicked()"></rule-view>
+			v-on:edit-clicked="onEditClicked()"
+			v-on:share-clicked="onShareClicked()"></rule-view>
 	</template>
 	<template id="draftRuleTemplate">
 		<rule-view

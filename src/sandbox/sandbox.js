@@ -92,6 +92,9 @@ sandboxInterface.onRequestToDownloadJson(async ({object, fileName}) => {
     await download.download({filename: fileName, url: objectUrl, saveAs: true});
     URL.revokeObjectURL(objectUrl);
 });
+sandboxInterface.onCopyToClipboardMessage(({text}, sendResponse) => {
+    navigator.clipboard.writeText(text).then(() => sendResponse({}));
+});
 
 const urlProvider = new URLProvider();
 const page = new URL(location.href).searchParams.get('page');

@@ -10,7 +10,7 @@ export class SelectActionSuggestion extends Suggestion{
     equals(otherSelectActionSuggestion){
         return !!otherSelectActionSuggestion && 
             otherSelectActionSuggestion.selectorText === this.selectorText && 
-            ruleDefinitions.actionsAreEqual(this.nodeActionDefinition, otherSelectActionSuggestion.nodeActionDefinition)
+            ruleDefinitions.nodeActionsAreEqual(this.nodeActionDefinition, otherSelectActionSuggestion.nodeActionDefinition)
     }
     isAchievedByRules(ruleCollection){
         let nodesCheckedCount = 0;

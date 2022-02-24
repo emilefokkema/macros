@@ -8,6 +8,7 @@ export class NavigationEventProvider{
         tabRemoved,
         webNavigationCommitted,
         historyStateUpdatedOrReferenceFragmentUpdated){
+            this.navigationCreated = webNavigationCommitted.map(({tabId, frameId, url}) => [new Navigation(tabId, frameId, url)]);
             this.navigationMessages = runtimeMessagesEventSource
                 .filter((msg, sender) => !!sender.tab && sender.tab.id > 0)
                 .map((msg, {frameId, tab, url}, sendResponse) => [msg, new Navigation(tab.id, frameId, tab.url), sendResponse]);

@@ -2,6 +2,7 @@ import { Macros } from '../shared/macros-class';
 import { RuleCollection } from './rules';
 import { ButtonCollection } from './button';
 import { EditorCollection } from './editor-collection';
+import { addRuleToUrl, getRuleFromUrl } from '../shared/rule-link-builder';
 
 export function backgroundScript(
     setPopup,
@@ -16,6 +17,19 @@ export function backgroundScript(
 
         setPopup('sandbox.html?page=popup.html');
 
+        async function getUrlWithEncodedRule(ruleId, navigationId){
+            const [rule, navigation] = await Promise.all([rules.getRule(ruleId), navigationInterface.getNavigation(navigationId)]);
+            return addRuleToUrl(rule, navigation.url);
+        }
+
+        navigationInterface.onCreated(async (navigation) => {
+            const rule = getRuleFromUrl(navigation.url);
+            if(!rule){
+                return;
+            }
+            await rules.saveNewRuleIfNoEqualExists(rule);
+        });
+
         navigationInterface.onDisappeared(async () => {
             await editorCollection.prune();
             const navigationIdsWithDraftRule = await editorCollection.getNavigationsWithDraftRule();
@@ -28,6 +42,10 @@ export function backgroundScript(
         });
         macros.onGetRulesForDownloadRequest(({ruleIds}, sendResponse) => {
             rules.getRulesForDownload(ruleIds).then(sendResponse);
+            return true;
+        });
+        macros.onUrlWithEncodedRuleRequest(({ruleId, navigationId}, sendResponse) => {
+            getUrlWithEncodedRule(ruleId, navigationId).then(sendResponse);
             return true;
         });
         macros.onUploadRulesJson(({jsonString}, sendResponse) => {
