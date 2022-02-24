@@ -33,4 +33,7 @@ export class FakeNavigationInterface{
     whenDisappeared(){
         
     }
+    onCreated(listener, cancellationToken){
+
+    }
 }
