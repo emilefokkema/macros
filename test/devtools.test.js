@@ -43,7 +43,7 @@ describe('given the dependencies', () => {
         });
 
         it('should have created a sidebar pane in elements', () => {
-            expect(createSidebarPaneInElements).toHaveBeenCalledWith('Macros', 'sandbox.html?page=devtools_sidebar.html%3FtabId%3D1');
+            expect(createSidebarPaneInElements).toHaveBeenCalledWith('RuleTool', 'sandbox.html?page=devtools_sidebar.html%3FtabId%3D1');
         });
 
         describe('and the element selection changes', () => {
