@@ -1,0 +1,71 @@
+:root{
+	--error-color: #f00;
+	--dirty-color: #00f;
+}
+
+.url{
+	color: blue;
+	text-decoration: underline;
+	cursor: pointer;
+}
+.text-input{
+	padding:5px;
+}
+.collapsed .row:not(:first-child){
+	display: none;
+}
+.wide{
+	width: 40em;
+}
+.label{
+	display: inline-block;
+}
+.right{
+	position: absolute;
+	right: 20px;
+}
+.row.with-buttons{
+	min-width: 10em;
+}
+.row .label{
+	width: 10em;
+}
+.action-buttons{
+	border-left: 1pt solid #ddd;
+}
+.class-finder{
+	position: absolute;
+	top: 20px;
+	right: 20px;
+	border: 1pt solid #ddd;
+	padding: 10px;
+	background-color: #fff;
+}
+::placeholder{
+	color: #aaa;
+}
+.comparison-select{
+	border: none;
+}
+.list{
+	height: 200px;
+	overflow: auto;
+}
+.selector-text{
+	color: #222;
+}
+.indent{
+	width: 5em;
+}
+.save-button.dirty{
+	border: 2px solid var(--dirty-color);
+	border-radius: 3px;
+	color: var(--dirty-color);
+}
+.save-button.dirty:disabled{
+	border-color: var(--error-color);
+	color: var(--error-color);
+}
+.error-message{
+	color: var(--error-color);
+}

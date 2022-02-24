@@ -1,0 +1,83 @@
+:root{
+	--panel-padding: 10px;
+	--panel-border-thickness: 1px;
+	--panel-border-radius: 3px;
+	--selection-actions-panel-shown-height: calc(1em + 2 * var(--panel-padding) + 2 * var(--panel-border-thickness) + 2 * var(--panel-border-radius) + 2 * var(--button-padding));
+}
+@keyframes selection-action-panel-shown{
+	from { height: 0;}
+	to { height: var(--selection-actions-panel-shown-height); }
+}
+@keyframes selection-action-panel-hidden{
+	from { height: var(--selection-actions-panel-shown-height); }
+	to { height: 0;}
+}
+.rule-data{
+	width: 400px;
+}
+.rule-name{
+	font-weight: bold;
+}
+.url-pattern{
+	color: #aaa;
+}
+.select-checkbox{
+	display: none;
+}
+.row.rule:hover .select-checkbox{
+	display: inline-block;
+}
+.with-selection .select-checkbox{
+	display: inline-block;
+}
+.panel{
+	padding: var(--panel-padding);
+	border: var(--panel-border-thickness) solid #000;
+	border-radius: var(--panel-border-radius);
+	background-color: #fff;
+	margin-bottom: 10px;
+}
+.action-panel{
+	position: absolute;
+	top: 10px;
+	right: 20px;
+}
+.result-panel{
+	position: absolute;
+	bottom: 10px;
+	right: 20px;
+}
+.error-panel{
+	color: #900;
+}
+.success-panel{
+	color: #090;
+}
+.error-panel .panel{
+	border-color: #f00;
+	background-color: #fcc;
+}
+.success-panel .panel{
+	border-color: #0f0;
+	background-color: #cfc;
+}
+.action-panel .panel{
+	display: inline-block;
+}
+.selection-actions{
+	height: 0;
+	overflow: hidden;
+	width: 75px;
+}
+.selection-actions.hidden{
+	animation-name: selection-action-panel-hidden;
+	animation-duration: .3s;
+}
+.selection-actions.shown{
+	animation-name: selection-action-panel-shown;
+	animation-duration: .2s;
+	height: var(--selection-actions-panel-shown-height);
+}
+.file-input{
+	display: none;
+}

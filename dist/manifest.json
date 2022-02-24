@@ -1,0 +1,48 @@
+{
+	"name":"RuleTool",
+	"description":"define rules to modify a web page",
+	"version":"0.1.0",
+	"permissions":[
+		"activeTab",
+		"tabs",
+		"webNavigation",
+		"storage",
+		"scripting",
+		"downloads"
+	],
+	"host_permissions": [
+		"http://*/",
+		"https://*/"
+	],
+	"content_scripts": [
+		{
+			"matches": ["http://*/*", "https://*/*"],
+			"all_frames": true,
+			"js": ["content-script.js"],
+			"css": ["injected.css"],
+			"run_at": "document_start"
+		}
+	],
+	"icons": { 
+		"16": "icon_16.png",
+		"48": "icon_48.png",
+	   "128": "icon_128.png" 
+	},
+	"sandbox": {
+		"pages": [
+			"create-rule.html",
+			"management.html",
+			"popup.html",
+			"devtools_sidebar.html"
+		]
+	},
+	"background":{
+		"service_worker": "background.js"
+	},
+	"action":{
+		"default_title":"RuleTool",
+		"dafault_popup":"popup.html"
+	},
+	"devtools_page": "devtools.html",
+	"manifest_version":3
+}

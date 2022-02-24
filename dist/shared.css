@@ -1,0 +1,59 @@
+:root{
+	--row-padding: 10px;
+	--button-padding: 5px;
+}
+.row{
+	padding: var(--row-padding);
+	border-bottom: 1px solid #ddd;
+}
+.row.bottom{
+	border-top: 1px solid #ddd;
+	border-bottom: none;
+}
+.row-part{
+	display: inline-block;
+	vertical-align: top;
+}
+.padding-5{
+	padding: 5px;
+}
+.button{
+	cursor: pointer;
+	padding: var(--button-padding);
+}
+.button.active{
+	color: #00f;
+}
+.run-button{
+	color: #0a0;
+}
+.run-button-disabled{
+	color: #aaa;
+}
+.class-name{
+	color: #22a;
+}
+.attribute{
+	color: #a72;
+}
+.node-name{
+	color: #a22;
+}
+.node-id{
+	color: #2a2;
+}
+.banner {
+	text-align: center;
+}
+.banner-center{
+	position:relative;
+	top: 50%;
+	transform: translateY(-50%);
+}
+.draft-rule-notification{
+	background-color: #eee;
+	margin: 5px;
+	padding: 5px;
+	border-radius: 3px;
+	text-transform: capitalize;
+}
