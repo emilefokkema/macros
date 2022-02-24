@@ -9,10 +9,6 @@
 		"storage",
 		"downloads"
 	],
-	"host_permissions": [
-		"http://*/",
-		"https://*/"
-	],
 	"content_scripts": [
 		{
 			"matches": ["http://*/*", "https://*/*"],
