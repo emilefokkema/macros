@@ -55,7 +55,7 @@ export function devtoolsFunction(inspectedWindow, createSidebarPaneInElements, e
         const page = `devtools_sidebar.html?${searchParams}`;
         const searchParams2 = new URLSearchParams();
         searchParams2.set('page', page);
-        createSidebarPaneInElements('Macros', `sandbox.html?${searchParams2}`);
+        createSidebarPaneInElements('RuleTool', `sandbox.html?${searchParams2}`);
 
         macros.onGetSelectedElementInDevtoolsRequest(({tabId}, sendResponse) => {
             if(tabId !== inspectedTabId){

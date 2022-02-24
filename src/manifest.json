@@ -1,7 +1,7 @@
 {
-	"name":"Macros",
-	"description":"define modifications to a page",
-	"version":"0.1",
+	"name":"RuleTool",
+	"description":"define rules to modify a web page",
+	"version":"0.1.0",
 	"permissions":[
 		"activeTab",
 		"tabs",
@@ -40,7 +40,7 @@
 		"service_worker": "background.js"
 	},
 	"action":{
-		"default_title":"Macros",
+		"default_title":"RuleTool",
 		"dafault_popup":"popup.html"
 	},
 	"devtools_page": "devtools.html",
