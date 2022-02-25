@@ -22,12 +22,12 @@ class Selector{
                 id = element.getAttribute('id');
             }else if(attributeName === 'class'){
                 classes = (element.getAttribute('class') || '').match(/\S+/g) || [];
-                classPartOfText = classes.map(c => `.${c.replace(/[\.:]/g,'\\$&')}`).join('');
+                classPartOfText = classes.map(c => `.${CSS.escape(c)}`).join('');
             }else{
-                attributePartOfText += `[${attributeName}]`;
+                attributePartOfText += `[${CSS.escape(attributeName)}]`;
             }
         }
-        var text  = `${nodeName}${(id ? `#${id}`: '')}${classPartOfText}${attributePartOfText}`;
+        var text  = `${nodeName}${(id ? `#${CSS.escape(id)}`: '')}${classPartOfText}${attributePartOfText}`;
         return new Selector(text, nodeName, id, classes, attributeNames);
     }
 	static create(text){
