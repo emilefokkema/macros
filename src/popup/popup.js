@@ -41,7 +41,9 @@ Vue.component('rule-view', {
 	template: document.getElementById('ruleViewTemplate').innerHTML,
 	data(){
 		return {
-			isDraggedOver: false
+			isDraggedOver: false,
+			shown: false,
+			hidden: false
 		};
 	},
 	props: {
@@ -52,7 +54,20 @@ Vue.component('rule-view', {
 		editable: Boolean,
 		isDraft: Boolean,
 		shareable: Boolean,
-		message: String
+		message: String,
+		isDropZone: Boolean,
+		visible: Boolean
+	},
+	watch: {
+		visible(v){
+			if(v){
+				this.hidden = false;
+				this.shown = true;
+			}else{
+				this.hidden = true;
+				this.shown = false;
+			}
+		}
 	},
 	methods: {
 		onExecuteClicked(){
@@ -89,7 +104,8 @@ Vue.component('rule-view', {
 Vue.component('new-rule', {
 	template: document.getElementById('newRuleTemplate').innerHTML,
 	props: {
-		navigationId: String
+		navigationId: String,
+		visible: Boolean
 	},
 	inject: ['dragManager'],
 	methods: {
@@ -232,7 +248,8 @@ new Vue({
 					template: document.getElementById("ruleTemplate").innerHTML,
 					props: {
 						rule: Object,
-						navigationId: String
+						navigationId: String,
+						isDropZone: Boolean
 					},
 					data: function(){
 						return {
@@ -307,7 +324,8 @@ new Vue({
 					template: document.getElementById('draftRuleTemplate').innerHTML,
 					props: {
 						draftRule: Object,
-						navigationId: String
+						navigationId: String,
+						isDropZone: Boolean
 					},
 					data(){
 						return {

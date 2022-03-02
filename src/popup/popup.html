@@ -12,7 +12,7 @@
 			v-on:dragleave="onDragLeave($event)"
 			v-on:dragover="onDragOver($event)"
 			v-on:drop="onDrop($event)"
-			v-bind:class="{'drop-zone': isDraggedOver, 'dragged-over': isDraggedOver}">
+			v-bind:class="{'visible': visible, 'shown': shown, 'hidden': hidden, 'drop-zone': isDropZone, 'dragged-over': isDraggedOver}">
 			<div class="rule-view-inner">
 				<div class="row-part left">
 					<div>{{name}}<span v-if="isDraft" class="draft-rule-notification">draft</span></div>
@@ -49,6 +49,8 @@
 		<rule-view
 			v-bind:name="rule.name"
 			v-bind:can-execute="canExecute"
+			v-bind:is-drop-zone="isDropZone"
+			v-bind:visible="true"
 			v-bind:is-executing="isExecuting"
 			v-bind:has-executed="hasExecuted"
 			v-bind:shareable="true"
@@ -63,6 +65,8 @@
 		<rule-view
 			v-bind:name="draftRule.name"
 			v-bind:can-execute="canExecute"
+			v-bind:is-drop-zone="isDropZone"
+			v-bind:visible="true"
 			v-bind:is-executing="isExecuting"
 			v-bind:is-draft="true"
 			v-bind:has-executed="hasExecuted"
@@ -83,6 +87,7 @@
 			</div>
 			<new-rule 
 				v-if="isDraggedOver"
+				v-bind:visible="true"
 				v-bind:navigation-id="navigationId"
 			></new-rule>
 		</div>
@@ -91,6 +96,7 @@
 		<rule-view 
 			name="new rule"
 			v-bind:is-drop-zone="true"
+			v-bind:visible="visible"
 			v-bind:editable="true"
 			v-bind:is-draft="true"
 			v-on:suggestion-dropped="onDrop()"
@@ -108,10 +114,12 @@
 				v-if="!loading"
 				:key="rule.id"
 				v-bind:rule="rule"
+				v-bind:is-drop-zone="dragIsHappening"
 				v-bind:navigation-id="navigationId"
 				v-on:replaced="onRuleReplaced($event)"></rule>
 			<draft-rule
 				v-if="draftRule && !loading"
+				v-bind:is-drop-zone="dragIsHappening"
 				v-bind:draft-rule="draftRule"
 				v-bind:navigation-id="navigationId"></draft-rule>
 			<no-rules 
@@ -119,7 +127,7 @@
 				v-bind:suggestions-present="suggestionsPresent"
 				v-bind:navigation-id="navigationId"></no-rules>
 			<new-rule 
-				v-if="!empty && dragIsHappening && !draftRule"
+				v-bind:visible="!empty && dragIsHappening && !draftRule"
 				v-bind:navigation-id="navigationId"
 				></new-rule>
 		</div>

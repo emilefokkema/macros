@@ -1,5 +1,14 @@
 :root{
 	font-size: 16px;
+	--rule-view-shown-height: calc(2 * var(--row-padding) + 4 * var(--button-padding) + 1.5rem)
+}
+@keyframes rule-view-shown{
+	from { height: 0;}
+	to { height: var(--rule-view-shown-height); }
+}
+@keyframes rule-view-hidden{
+	from { height: var(--rule-view-shown-height); }
+	to { height: 0;}
 }
 body{
 	margin:0px;
@@ -112,10 +121,27 @@ body{
 	border: 1px dashed #888;
 	height:calc(2em + 4 * var(--button-padding) - 12px)
 }
-
-.rule-view.dragged-over{
+.rule-view{
 	padding: 0;
 	width: 200px;
+	height: 0;
+	overflow-y: hidden;
+	border-width: 0;
+}
+.rule-view.visible{
+	height: var(--rule-view-shown-height);
+	border-width: 1px;
+}
+.rule-view.shown{
+	animation-name: rule-view-shown;
+	animation-duration: .2s;
+}
+.rule-view.hidden{
+	animation-name: rule-view-hidden;
+	animation-duration: .2s;
+}
+.rule-view .rule-view-inner{
+	padding: var(--row-padding);
 }
 .rule-view.dragged-over .rule-view-inner{
 	padding: calc(var(--row-padding) - 2px);
