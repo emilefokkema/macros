@@ -10,6 +10,10 @@ describe('given a suggestion collection that has an unscrollable page suggestion
     let suggestionCollection;
     let classRepository;
 
+    beforeAll(() => {
+        global.CSS = {escape(s){return s;}}
+    });
+
     beforeEach(() => {
         classRepository = new FakeClassRepository();
         const unscrollablePageSuggestionProvider = new UnscrollablePageSuggestionProvider(classRepository);

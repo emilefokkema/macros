@@ -20,6 +20,10 @@ describe('given a suggestion collection that has a blocked page suggestion provi
 
     });
 
+    beforeAll(() => {
+        global.CSS = {escape(s){return s;}}
+    });
+
     afterEach(() => {
         document.body.innerHTML = '';
     });

@@ -9,6 +9,10 @@ describe('given a suggestion collection that has a hidden text suggestion provid
     let suggestionCollection;
     let classRepository;
 
+    beforeAll(() => {
+        global.CSS = {escape(s){return s;}}
+    });
+
     beforeEach(() => {
         classRepository = new FakeClassRepository();
         const hiddenTextSuggestionProvider = new HiddenTextSuggestionProvider(classRepository);
