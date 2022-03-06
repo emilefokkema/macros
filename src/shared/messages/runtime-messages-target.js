@@ -14,6 +14,8 @@ export class RuntimeMessagesTarget extends MessagesTarget{
         });
 	}
 	sendMessage(msg){
-		chrome.runtime.sendMessage(undefined, msg);
+        chrome.runtime.sendMessage(undefined, msg, () => {
+            var lastError = chrome.runtime.lastError;
+        });
 	}
 }

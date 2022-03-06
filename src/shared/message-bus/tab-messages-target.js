@@ -6,7 +6,9 @@ export class TabMessagesTarget extends MessagesTarget{
         this.tabId = tabId;
     }
     sendMessage(msg){
-		chrome.tabs.sendMessage(this.tabId, msg);
+		chrome.tabs.sendMessage(this.tabId, msg, () => {
+            var lastError = chrome.runtime.lastError;
+        });
 	}
     sendMessageAsync(msg){
         return new Promise((resolve, reject) => {
