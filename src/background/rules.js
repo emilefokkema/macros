@@ -10,7 +10,8 @@ function urlMatchesPattern(url, pattern){
 
 class RuleCollection{
 	constructor(storage){
-		this.loaded = false;
+		this.hasLoaded = false;
+		this.loading = false;
 		this.latestRuleId = 0;
 		this.rules = [];
 		this.draftRules = [];
@@ -18,6 +19,7 @@ class RuleCollection{
 		this.ruleAdded = new Event();
 		this.ruleDeleted = new Event();
 		this.draftRulesRemoved = new Event();
+		this.loaded = new Event();
 		this.storage = storage;
 	}
 	async getDraftRuleForNavigation(navigationId){
@@ -83,15 +85,22 @@ class RuleCollection{
 		return draftRule;
 	}
 	async load(){
-		this.rules = this.rules.concat(await this.storage.getItem('rules') || []);
+		this.loading = true;
+		this.rules = await this.storage.getItem('rules') || [];
 		this.draftRules = await this.storage.getItem('draftRules') || [];
 		if(this.rules.length > 0){
 			this.latestRuleId = Math.max.apply(Math, this.rules.map(r => r.id));
 		}
-		this.loaded = true;
+		this.hasLoaded = true;
+		this.loading = false;
+		this.loaded.dispatch();
 	}
 	async ensureLoaded(){
-		if(this.loaded){
+		if(this.hasLoaded){
+			return;
+		}
+		if(this.loading){
+			await this.loaded.next();
 			return;
 		}
 		await this.load();
