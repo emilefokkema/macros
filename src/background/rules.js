@@ -83,7 +83,7 @@ class RuleCollection{
 		return draftRule;
 	}
 	async load(){
-		this.rules = await this.storage.getItem('rules') || [];
+		this.rules = this.rules.concat(await this.storage.getItem('rules') || []);
 		this.draftRules = await this.storage.getItem('draftRules') || [];
 		if(this.rules.length > 0){
 			this.latestRuleId = Math.max.apply(Math, this.rules.map(r => r.id));
