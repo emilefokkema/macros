@@ -32,8 +32,8 @@ export class NavigationInterfaceForSandbox{
     openTab(url){
         this.openTabMessageTarget.sendMessage(url);
     }
-    getNavigationsForPopup(){
-        return this.navigationsForPopupMessageTarget.sendMessageAsync();
+    getNavigationsForPopup(tabURL){
+        return this.navigationsForPopupMessageTarget.sendMessageAsync({tabURL});
     }
     getPopupTabId(){
         return this.popupTabIdMessageTarget.sendMessageAsync();

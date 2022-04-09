@@ -1,0 +1,41 @@
+body{
+    background-color: #fff;
+    margin: 0;
+    padding: 0;
+}
+.annoying-backdrop{
+    display: none;
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 5000;
+    background-color: rgba(0, 0, 0, .5);
+    text-align: center;
+}
+body.has-popup{
+    overflow-y: hidden;
+}
+body.has-popup .annoying-backdrop{
+    display: block;
+}
+.annoying{
+    display: inline-block;
+    position: relative;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 300px;
+    height: 200px;
+    background-color: #aaf;
+    z-index: 5000;
+}
+.interesting-content-container{
+    margin: 10px;
+}
+.interesting-content{
+    display: inline-block;
+    padding: 10px;
+    height: 300px;
+    background-color: #aaa;
+}

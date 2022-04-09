@@ -6,7 +6,8 @@ Vue.component('rule-view', {
 		name: String,
 		effects: Array,
 		editable: Boolean,
-		isDraft: Boolean
+		isDraft: Boolean,
+		e2eIdentifier: String,
 	},
 	methods: {
 		onAddActionClicked(){

@@ -141,4 +141,10 @@ export function backgroundScript(
         editorCollection.editedStatusChanged.listen(({ruleId, otherNavigationId, edited}) => {
             macros.notifyEditedStatusChanged({ruleId, otherNavigationId, edited});
         });
+
+        function addRule(rule){
+            return rules.saveRule(rule);
+        }
+
+        return { addRule };
 }

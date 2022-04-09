@@ -90,9 +90,14 @@ export class NavigationInterface{
         }
         return result;
     }
-    async getNavigationsForPopup(){
-        const currentlyActiveTab = await this.tabCollection.getCurrentlyActiveTab();
-        return await this.getNavigationsForTabId(currentlyActiveTab.id);
+    async getNavigationsForPopup(tabURL){
+        let tab;
+        if(tabURL !== undefined){
+            tab = await this.tabCollection.getTabByUrl(tabURL);
+        }else{
+            tab = await this.tabCollection.getCurrentlyActiveTab();
+        }
+        return await this.getNavigationsForTabId(tab.id);
     }
     async getNavigation(navigationId){
         const tabs = await this.tabCollection.getAllTabs();

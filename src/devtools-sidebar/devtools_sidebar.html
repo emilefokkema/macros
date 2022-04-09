@@ -8,31 +8,33 @@
 </head>
 <body>
 	<template id="selectorTemplate">
-		<div>
+		<div data-e2e="selector">
 			<pre><span class="node-name">{{selector.nodeName}}</span><span v-if="selector.id" class="node-id">#{{selector.id}}</span><span class="class-name" v-for="className of selector.classes"><wbr />.{{className}}</span><span class="attribute" v-for="attributeName of selector.attributeNames"><wbr />[{{attributeName}}]</span></pre>
 		</div>
 	</template>
 	<template id="ruleViewTemplate">
-		<div class="row">
+		<div class="row" v-bind:data-e2e="e2eIdentifier">
 			<div class="row-part rule-description">
-				<div class="rule-name">{{name}}<span v-if="isDraft" class="draft-rule-notification">draft</span></div>
-				<div>
+				<div data-e2e="name" class="rule-name">{{name}}<span v-if="isDraft" class="draft-rule-notification">draft</span></div>
+				<div data-e2e="effect-description">
 					<div v-if="effects" v-for="effect of effects" class="effect">{{effect.description}}</div>
 				</div>
 			</div>
-			<div class="row-part" v-if="editable">
+			<div data-e2e="add-action" class="row-part" v-if="editable">
 				<div class="add-action-button" v-on:click="onAddActionClicked()">add action</div>
 			</div>
 		</div>
 	</template>
 	<template id="newRuleTemplate">
-		<rule-view 
+		<rule-view
+			e2e-identifier="new-rule" 
 			name="(new rule)"
 			v-bind:editable="true"
 			v-on:add-action-clicked="onAddActionClicked()"></rule-view>
 	</template>
 	<template id="draftRuleTemplate">
-		<rule-view 
+		<rule-view
+			e2e-identifier="draft-rule" 
 			v-bind:name="rule.name"
 			v-bind:effects="rule.effectsOnElement"
 			v-bind:editable="true"
@@ -40,7 +42,8 @@
 			v-on:add-action-clicked="onAddActionClicked()"></rule-view>
 	</template>
 	<template id="ruleTemplate">
-		<rule-view 
+		<rule-view
+			e2e-identifier="rule" 
 			v-bind:name="rule.name"
 			v-bind:effects="rule.effectsOnElement"
 			v-bind:editable="rule.editable"

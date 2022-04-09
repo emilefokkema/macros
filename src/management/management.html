@@ -13,17 +13,17 @@
 		</div>
 	</template>
 	<template id="ruleTemplate">
-		<div class="rule row">
+		<div data-e2e="rule" class="rule row">
 			<div class="row-part rule-data">
-				<div class="rule-name">{{rule.name}}</div>
+				<div data-e2e="name" class="rule-name">{{rule.name}}</div>
 				<div class="url-pattern">{{rule.urlPattern}}</div>
 			</div>
 			<div class="row-part">
 				<div class="button row-part">
-					<span class="fa fa-edit" v-on:click="onEditClicked()"></span>
+					<span data-e2e="edit" class="fa fa-edit" v-on:click="onEditClicked()"></span>
 				</div>
 				<div class="button row-part" v-on:click="onDeleteClicked()" v-if="deletable">
-					<span class="fa fa-trash"></span>
+					<span data-e2e="delete" class="fa fa-trash"></span>
 				</div>
 				<rule-selector v-bind:rule-id="rule.id"></rule-selector>
 			</div>
@@ -37,7 +37,7 @@
 	<template id="actionPanelTemplate">
 		<div class="action-panel">
 			<div class="panel">
-				<span v-if="selectionExists" class="button fa fa-download" v-on:click="download()"></span><span v-on:click="onUploadClicked()" class="button fa fa-upload"></span>
+				<span v-if="selectionExists" class="button fa fa-download" v-on:click="download()"></span><span data-e2e="upload" v-on:click="onUploadClicked()" class="button fa fa-upload"></span>
 			</div>
 			<input class="file-input" ref="fileInput" type="file" accept=".json" v-on:change="onFileInputChange()" />
 		</div>

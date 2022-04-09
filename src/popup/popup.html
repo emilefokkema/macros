@@ -8,6 +8,7 @@
 <body>
 	<template id="ruleViewTemplate">
 		<div class="row rule-view"
+			v-bind:data-e2e="e2eIdentifier"
 			v-on:dragenter="onDragEnter($event)"
 			v-on:dragleave="onDragLeave($event)"
 			v-on:dragover="onDragOver($event)"
@@ -15,18 +16,18 @@
 			v-bind:class="{'visible': visible, 'shown': shown, 'hidden': hidden, 'drop-zone': isDropZone, 'dragged-over': isDraggedOver}">
 			<div class="rule-view-inner">
 				<div class="row-part left">
-					<div>{{name}}<span v-if="isDraft" class="draft-rule-notification">draft</span></div>
+					<div data-e2e="name">{{name}}<span v-if="isDraft" class="draft-rule-notification">draft</span></div>
 					<div class="rule-message" v-if="message">{{message}}</div>
 				</div>
 				<div class="row-part">
 					<div class="rule-button-row">
-						<div class="button" v-on:click="onExecuteClicked()" v-if="canExecute && !isExecuting && !hasExecuted">
+						<div data-e2e="execute" class="button" v-on:click="onExecuteClicked()" v-if="canExecute && !isExecuting && !hasExecuted">
 							<span class="run-button fa fa-play"></span>
 						</div>
 						<div class="button" v-if="!canExecute && !isExecuting && !hasExecuted">
 							<span class="run-button-disabled fa fa-play"></span>
 						</div>
-						<div class="button" v-if="hasExecuted">
+						<div data-e2e="has-executed" class="button" v-if="hasExecuted">
 							<span class="run-button fa fa-check"></span>
 						</div>
 						<div class="button" v-if="isExecuting">
@@ -37,7 +38,7 @@
 						<div class="button" v-on:click="onShareClicked()" v-if="shareable">
 							<span class="fa fa-link"></span>
 						</div>
-						<div class="button" v-on:click="onEditClicked()" v-if="editable">
+						<div data-e2e="edit" class="button" v-on:click="onEditClicked()" v-if="editable">
 							<span class="fa fa-edit"></span>
 						</div>
 					</div>
@@ -47,6 +48,7 @@
 	</template>
 	<template id="ruleTemplate">
 		<rule-view
+			e2e-identifier="rule"
 			v-bind:name="rule.name"
 			v-bind:can-execute="canExecute"
 			v-bind:is-drop-zone="isDropZone"
@@ -63,6 +65,7 @@
 	</template>
 	<template id="draftRuleTemplate">
 		<rule-view
+			e2e-identifier="draft-rule"
 			v-bind:name="draftRule.name"
 			v-bind:can-execute="canExecute"
 			v-bind:is-drop-zone="isDropZone"
@@ -77,6 +80,7 @@
 	</template>
 	<template id="noRulesTemplate">
 		<div 
+		data-e2e="no-rules"
 		v-on:dragenter="onDragEnter($event)"
 		v-on:dragleave="onDragLeave($event)"
 		v-on:dragover="onDragOver($event)"
@@ -95,6 +99,7 @@
 	<template id="newRuleTemplate">
 		<rule-view 
 			name="new rule"
+			e2e-identifier="new-rule"
 			v-bind:is-drop-zone="true"
 			v-bind:visible="visible"
 			v-bind:editable="true"
@@ -103,8 +108,8 @@
 			></rule-view>
 	</template>
 	<template id="ruleListTemplate">
-		<div>
-			<div class="banner" v-if="loading">
+		<div data-e2e="rule-list">
+			<div data-e2e="loading-rules" class="banner" v-if="loading">
 				<div class="banner-center">
 					<span class="fa fa-circle-notch fa-spin"></span>
 				</div>
@@ -133,14 +138,15 @@
 		</div>
 	</template>
 	<template id="suggestionListTemplate">
-		<div class="suggestion-list">
+		<div data-e2e="suggestion-list" class="suggestion-list">
 			<div class="banner" v-if="loading">
 				<div class="banner-center">
-					<span class="fa fa-circle-notch fa-spin"></span>
+					<span data-e2e="loading-suggestions" class="fa fa-circle-notch fa-spin"></span>
 				</div>
 			</div>
-			<div class="suggestion-list-header"><span class="suggestion-reload-button fa fa-redo" v-on:click="onReloadClicked()"></span></div>
-			<suggestion 
+			<div class="suggestion-list-header"><span data-e2e="reload-suggestions" class="suggestion-reload-button fa fa-redo" v-on:click="onReloadClicked()"></span></div>
+			<div>
+				<suggestion 
 				v-for="suggestion of suggestions"
 				v-if="!loading"
 				:key="suggestion.id"
@@ -149,10 +155,11 @@
 				v-on:removed="onSuggestionRemoved($event)"
 				v-on:suggestion-drag-start="onSuggestionDragStart()"
 				v-on:suggestion-drag-end="onSuggestionDragEnd()"></suggestion>
+			</div>
 		</div>
 	</template>
 	<template id="suggestionTemplate">
-		<div class="suggestion-outer" 
+		<div data-e2e="suggestion" class="suggestion-outer" 
 			draggable="true"
 			v-on:dragstart="startDragging($event)"
 			v-on:dragend="stopDragging($event)"
@@ -161,13 +168,13 @@
 			v-on:mouseleave="onMouseLeaveOuter()">
 			<div class="suggestion-inner" v-on:mouseenter="onMouseEnter()" v-on:mouseleave="onMouseLeave()">
 				<div class="suggestion-inner-inner">
-					<div class="suggestion-dragger suggestion-part">
+					<div data-e2e="drag-start" class="suggestion-dragger suggestion-part">
 						<span class="suggestion-dragger-icon fa fa-lightbulb"></span>
 					</div>
 					<div class="suggestion-body suggestion-part">
-						<div class="suggestion-title">{{suggestion.description}}</div>
+						<div data-e2e="description" class="suggestion-title">{{suggestion.description}}</div>
 					</div>
-					<div class="suggestion-button suggestion-part suggestion-button-action" v-if="canExecute && !isExecuting && !hasExecuted" v-on:click="onExecuteClicked()">
+					<div data-e2e="execute-suggestion" class="suggestion-button suggestion-part suggestion-button-action" v-if="canExecute && !isExecuting && !hasExecuted" v-on:click="onExecuteClicked()">
 						<span class="suggestion-button-icon run-button fa fa-play"></span>
 					</div>
 					<div class="suggestion-button suggestion-part" v-if="!canExecute && !isExecuting && !hasExecuted">
@@ -176,7 +183,7 @@
 					<div class="suggestion-button suggestion-part" v-if="!canExecute && !isExecuting && hasExecuted">
 						<span class="suggestion-button-icon run-button-disabled fa fa-undo"></span>
 					</div>
-					<div class="suggestion-button suggestion-part suggestion-button-action" v-if="hasExecuted && !isExecuting" v-on:click="onUndoClicked()">
+					<div data-e2e="undo-suggestion" class="suggestion-button suggestion-part suggestion-button-action" v-if="hasExecuted && !isExecuting" v-on:click="onUndoClicked()">
 						<span class="suggestion-button-icon run-button fa fa-undo"></span>
 					</div>
 					<div class="suggestion-button suggestion-part" v-if="isExecuting">
@@ -198,7 +205,7 @@
 				<span>No navigations</span>
 			</div>
 		</div>
-		<select class="navigation-selector" v-if="!loading && hasNavigations" v-model="selectedNavigationId">
+		<select data-e2e="navigation-selector" class="navigation-selector" v-if="!loading && hasNavigations" v-model="selectedNavigationId">
 			<option v-for="navigation of navigations" v-bind:value="navigation.id">{{navigation.name}}</option>
 		</select>
 		<rule-list 
@@ -214,10 +221,10 @@
 			v-on:suggestion-drag-end="onSuggestionDragEnd()"
 			v-on:suggestions-present="onSuggestionsPresent($event)"></suggestion-list>
 		<div class="row bottom">
-			<div class="action-button row-part" v-on:click="goToManagementPage()">
+			<div data-e2e="management" class="action-button row-part" v-on:click="goToManagementPage()">
 				<span class="button fa fa-cog"></span>
 			</div>
-			<div v-if="!loading && hasNavigations" class="action-button row-part" v-on:click="addRule()">
+			<div data-e2e="add-rule" v-if="!loading && hasNavigations" class="action-button row-part" v-on:click="addRule()">
 				<span class="button fa fa-plus"></span>
 			</div>
 		</div>

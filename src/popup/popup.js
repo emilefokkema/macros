@@ -55,6 +55,7 @@ Vue.component('rule-view', {
 		isDraft: Boolean,
 		shareable: Boolean,
 		message: String,
+		e2eIdentifier: String,
 		isDropZone: Boolean,
 		visible: Boolean
 	},
@@ -119,13 +120,15 @@ Vue.component('new-rule', {
 new Vue({
 	el: '#app',
 	data: function(){
+		const tabURL = new URL(location.href).searchParams.get('tabURL');
 		return {
 			navigations: [],
 			loading: true,
 			loadedRules: false,
 			_selectedNavigationId: undefined,
 			suggestionIsBeingDragged: false,
-			suggestionsPresent: false
+			suggestionsPresent: false,
+			tabURL
 		};
 	},
 	mounted: function(){
@@ -184,7 +187,7 @@ new Vue({
 			this.loadedRules = true;
 		},
 		initialize: async function(){
-			const navigations = await macros.navigation.getNavigationsForPopup();
+			const navigations = await macros.navigation.getNavigationsForPopup(this.tabURL || undefined);
 			const topNavigation = navigations.find(n => n.top);
 			this.$data._selectedNavigationId = topNavigation && topNavigation.id;
 			this.navigations = (topNavigation ? [topNavigation] : []).concat(navigations.filter(n => !n.top));

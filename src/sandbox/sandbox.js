@@ -66,8 +66,8 @@ sandboxInterface.onRequestToFocusNavigation(async (navigationId) => {
     }
     _navigation.focus();
 });
-sandboxInterface.onRequestNavigationsForPopup(async (_, sendResponse) => {
-    sendResponse(await navigation.getNavigationsForPopup());
+sandboxInterface.onRequestNavigationsForPopup(async ({tabURL}, sendResponse) => {
+    sendResponse(await navigation.getNavigationsForPopup(tabURL));
 });
 sandboxInterface.onRequestPopupTabId(async (_, sendResponse) => {
     sendResponse(await navigation.getPopupTabId());

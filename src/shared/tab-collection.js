@@ -5,6 +5,13 @@ export class TabCollection{
     getAllTabs(){
         return new Promise((resolve) => chrome.tabs.query({}, resolve));
     }
+    getTabByUrl(url){
+        return new Promise((res) => {
+            chrome.tabs.query({}, tabs => {
+                res(tabs.find(t => t.url === url));
+            });
+        });
+    }
     getAllFramesInTab(tabId){
         return new Promise((resolve) => chrome.webNavigation.getAllFrames({tabId}, resolve));
     }

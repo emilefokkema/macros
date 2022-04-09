@@ -22,7 +22,8 @@
     "build:devtools-sidebar-dev": "npx webpack --config ./webpack.config.devtools_sidebar.js --mode development --devtool cheap-source-map",
     "build:management": "npx webpack --config ./webpack.config.management.js",
     "build:management-dev": "npx webpack --config ./webpack.config.management.js --mode development --devtool cheap-source-map",
-    "test": "jest"
+    "test": "jest",
+    "test-e2e": "jest --config=./test/e2e/jest-e2e.config.js --runInBand"
   },
   "repository": {
     "type": "git",
@@ -43,10 +44,13 @@
     "@babel/plugin-transform-runtime": "^7.13.8",
     "@babel/preset-env": "^7.13.8",
     "babel-plugin-transform-es2015-modules-commonjs": "^6.26.2",
+    "http-server": "^14.1.0",
     "jest": "^26.6.3",
+    "puppeteer": "^13.4.0",
     "vue": "^2.6.12",
     "webpack": "^5.11.0",
     "webpack-cli": "^4.2.0",
+    "ws": "^8.5.0",
     "yargs": "^16.2.0"
   },
   "dependencies": {

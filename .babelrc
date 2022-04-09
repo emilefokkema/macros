@@ -1,13 +1,9 @@
 {
-    "presets": ["@babel/preset-env"],
+    
   
     "env": {
       "test": {
-        "plugins": ["transform-es2015-modules-commonjs", ["@babel/plugin-transform-runtime",
-            {
-              "regenerator": true
-            }
-          ]]
+        "plugins": ["transform-es2015-modules-commonjs"]
       }
     }
   }

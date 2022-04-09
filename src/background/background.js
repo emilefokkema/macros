@@ -38,4 +38,6 @@ const navigation = NavigationInterface.createForBackground(
     runtimeMessagesTarget,
     tabCollection);
 
-backgroundScript(setPopup, storage, buttonInteraction, navigation, messageBus);
+const { addRule } = backgroundScript(setPopup, storage, buttonInteraction, navigation, messageBus);
+
+export { addRule }
