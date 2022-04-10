@@ -15,7 +15,7 @@ class TestPagesServer{
         });
         await new Promise((res) => {
             server.listen({
-                port: 80
+                port: 8080
             }, res)
         });
         return new TestPagesServer(server);
