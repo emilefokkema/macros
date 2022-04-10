@@ -3,6 +3,7 @@
     font-size: 14px;
     font-family: Verdana, Geneva, Tahoma, sans-serif;
     color: var(--black);
+    overflow-x: hidden;
 }
 body{
     margin: 0;
@@ -90,6 +91,7 @@ body{
 .screenshot img{
     opacity: .8;
     filter: none;
+    width: 100%;
 }
 .screenshot-explanation{
     padding: 1rem 1rem 1rem 2rem;
@@ -104,4 +106,30 @@ body{
 .use-case > *{
     display: inline-block;
     vertical-align: top;
+}
+@media(max-width: 600px) {
+    .section-content{
+        width: calc(100% - 2rem);
+    }
+    .logo{
+        margin-left: 0;
+    }
+    .screenshot{
+        width: 100%;
+        height: auto;
+        padding-top: 100%; /* 1:1 Aspect Ratio */
+        position: relative;
+    }
+    .screenshot img {
+        position: absolute;
+        top: 0;
+        left: 0;
+      }
+    .screenshot-explanation-container{
+        width: 100%;
+    }
+    .banner{
+        height: unset;
+        line-height: unset;
+    }
 }
