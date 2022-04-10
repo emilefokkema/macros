@@ -23,9 +23,12 @@ class AnnoyingPopupPage{
     bringToFront(){
         return this.page.bringToFront();
     }
+    async clickShowPopupLink(){
+        const link = await this.frame.$('#showPopup');
+        await link.click();
+    }
     async showPopup(){
-        const element = await this.frame.$('#showPopup');
-        return await Promise.all([element.click(), this.whenPopupIsVisible()]);
+        return await Promise.all([this.clickShowPopupLink(), this.whenPopupIsVisible()]);
     }
     whenPopupIsVisible(){
         return this.frame.waitForSelector('.annoying-backdrop', {visible: true})

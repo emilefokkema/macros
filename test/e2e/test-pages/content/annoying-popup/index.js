@@ -13,9 +13,8 @@ addEventListener('load', () => {
     backdrop = document.getElementById('backdrop');
     backdropParent = backdrop.parentElement;
     backdrop.remove();
-    if(manual){
-        document.getElementById('showPopup').addEventListener('click', showAnnoyingPopup);
-    }else{
+    document.getElementById('showPopup').addEventListener('click', showAnnoyingPopup);
+    if(!manual){
         setTimeout(showAnnoyingPopup, 1000)
     }
 });

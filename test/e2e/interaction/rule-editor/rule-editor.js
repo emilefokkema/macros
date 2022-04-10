@@ -60,6 +60,10 @@ class RuleEditor{
         const saveButton = await this.frame.$('[data-e2e=save]');
         await saveButton.click();
     }
+    async toggleAutomatic(){
+        const checkbox = await this.frame.$('[data-e2e=automatic]');
+        await checkbox.click();
+    }
     bringToFront(){
         return this.page.bringToFront();
     }

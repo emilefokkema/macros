@@ -102,7 +102,7 @@
 		</div>
 		<div class="row">
 			<label class="label" for="automatic-input">Automatic</label>
-			<input type="checkbox" id="automatic-input" v-model="form.automatic"/>	
+			<input data-e2e="automatic" type="checkbox" id="automatic-input" v-model="form.automatic"/>	
 		</div>
 		<div class="row">
 			<input data-e2e="save" class="save-button" v-bind:class="{'dirty': isDirty}" type="button" v-bind:disabled="saveDisabled" v-on:click="saveRule()" value="Save"/>
